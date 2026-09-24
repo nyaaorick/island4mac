@@ -183,11 +183,3 @@ class ShelfStateViewModel: ObservableObject {
 enum SortOrder: String, CaseIterable {
     case dateAdded = "Date Added", name = "Name", size = "Size", type = "Type"
 }
-
-enum ViewMode: String {
-    case grid = "Grid", list = "List"
-}
-
-enum FileFilterType: String, CaseIterable {
-    case all = "All", images = "Images", videos = "Videos", documents = "Documents", folders = "Folders", other = "Other"
-}

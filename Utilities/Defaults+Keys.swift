@@ -17,23 +17,6 @@ struct SettingsKey<T> {
     let defaultValue: T
 }
 
-@propertyWrapper
-struct UserDefault<T> {
-    let key: SettingsKey<T>
-    
-    var wrappedValue: T {
-        get {
-            if let value = UserDefaults.standard.object(forKey: key.key) as? T {
-                return value
-            }
-            return key.defaultValue
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: key.key)
-        }
-    }
-}
-
 final class SettingsDefaults: ObservableObject {
     static let shared = SettingsDefaults()
     private init() {}
