@@ -152,19 +152,14 @@
 		51E1CA5E2F23187F009A87D2 /* ShortcutsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsSettingsView.swift; sourceTree = "<group>"; };
 		51E1CA662F2319F9009A87D2 /* AnimatedFaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedFaceView.swift; sourceTree = "<group>"; };
 		51E1CA9F2F245D83009A87D2 /* BoringAnimationPhysics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringAnimationPhysics.swift; sourceTree = "<group>"; };
-		51E1CAA62F245EAC009A87D2 /* fix_xcode_duplicates.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = fix_xcode_duplicates.sh; sourceTree = "<group>"; };
 		51E1CAC82F24C517009A87D2 /* NotchHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchHomeView.swift; sourceTree = "<group>"; };
 		51E49FAB2F0B8D41002AD746 /* Mac灵动岛.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Mac灵动岛.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		51E49FBE2F0B8F8E002AD746 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		51E49FC62F0B8FF2002AD746 /* HotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
 		51E49FCD2F0B913D002AD746 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		51E49FCE2F0B9149002AD746 /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
-		51F1B0BD2F0E0DB700B89019 /* RELEASE_NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = RELEASE_NOTES.md; sourceTree = "<group>"; };
-		51F1B0C12F0E0DB700B89019 /* TEST_READINESS_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TEST_READINESS_SUMMARY.md; sourceTree = "<group>"; };
-		51F1B0C22F0E0DB700B89019 /* UPDATE_METADATA_FORMAT.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UPDATE_METADATA_FORMAT.md; sourceTree = "<group>"; };
 		51F1B0C52F0E0DB700B89019 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		51F1B0C62F0E0DB700B89019 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
-		51F1B0D02F0E0DB700B89019 /* WARP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WARP.md; sourceTree = "<group>"; };
 		51F1B0D12F0E0DB700B89019 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = Localizable.strings; sourceTree = "<group>"; };
 		51F1B0EE2F0E142900B89019 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = ../en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51F1B0F32F0E159D00B89019 /* ScreenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManager.swift; sourceTree = "<group>"; };
@@ -345,7 +340,6 @@
 		51E49FA22F0B8D41002AD746 = {
 			isa = PBXGroup;
 			children = (
-				51E1CAA62F245EAC009A87D2 /* fix_xcode_duplicates.sh */,
 				51E1CAA02F245D83009A87D2 /* Animations */,
 				5104FC4C2F1A4B5D003F8273 /* Controllers */,
 				511D72E72F18D90300163A46 /* Calendar */,
@@ -357,11 +351,7 @@
 				511D73162F18D90300163A46 /* ViewModels */,
 				51F1B0E82F0E0EBE00B89019 /* Models */,
 				51F1B0EA2F0E0EBE00B89019 /* Services */,
-				51F1B0BD2F0E0DB700B89019 /* RELEASE_NOTES.md */,
-				51F1B0C12F0E0DB700B89019 /* TEST_READINESS_SUMMARY.md */,
-				51F1B0C22F0E0DB700B89019 /* UPDATE_METADATA_FORMAT.md */,
 				51F1B0C92F0E0DB700B89019 /* Utilities */,
-				51F1B0D02F0E0DB700B89019 /* WARP.md */,
 				51F1B0D32F0E0DB700B89019 /* zh-Hans.lproj */,
 				51E49FD92F0B9E29002AD746 /* State */,
 				51E49FC72F0B8FFB002AD746 /* Views */,

@@ -7,6 +7,7 @@ DerivedData/
 results.txt
 *.backup
 *.backup.*
+*.backup_*
 *.bak
 *.xcuserstate
 *.xcodeproj/xcuserdata/

@@ -1,325 +1,104 @@
 # Mac灵动岛 (Mac Dynamic Island)
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![Platform](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey.svg)
-![Swift](https://img.shields.io/badge/swift-5.9-orange.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+A macOS menu bar app that turns the area around the MacBook notch into an interactive "Dynamic Island": now playing with lyrics, clipboard history, a drag-and-drop file shelf, calendar events and a scratchpad. It is based on [boring.notch](https://github.com/TheBoredTeam/boring.notch).
 
-> Transform your Mac's notch into a dynamic, interactive information hub
+## Features
 
-Based on the excellent [boringNotch](https://github.com/TheBoringDude/boringNotch) project with complete feature parity and enhanced Chinese localization.
+- **Now playing**: track, artwork, playback controls and synced lyrics, both in the collapsed island and in the Music tab. Playback state comes from the system MediaRemote framework. Artwork and Apple Music lyrics fall back to AppleScript, and lyrics are also looked up on NetEase Cloud Music and LRCLIB.
+- **Clipboard**: text, links, code and images you copy are kept (50 items for 24 hours by default), can be searched and filtered, and can be pasted back into the frontmost app.
+- **Files shelf**: drag files onto the notch to park them. The shelf keeps security-scoped bookmarks and shows thumbnails and Quick Look previews.
+- **Calendar**: upcoming events from EventKit, with a join button for online meetings.
+- **Zone**: quick actions and a scratchpad.
+- **Menu bar item** to show or hide the island, open Settings and quit.
 
-## ✨ Features
+## Requirements
 
-### 🎵 Music Integration
-- **Apple Music**: Full AppleScript integration
-- **Spotify**: Complete playback control
-- **YouTube Music**: WebSocket/HTTP communication
-- **Now Playing**: System-wide MediaRemote support
-- Album artwork, lyrics, and progress tracking
+- macOS 14.0 or later. The island sits under the notch on MacBooks that have one and at the top center of other screens.
+- Xcode 26 or later to build.
 
-### 🔋 Battery Monitoring
-- Real-time battery level and status
-- Health metrics (cycle count, temperature, voltage)
-- Charging detection with notifications
-- Custom battery visualization
+## Build and run
 
-### 📁 File Shelf
-- Drag & drop file management
-- Thumbnail generation for all media types
-- QuickLook preview integration
-- Advanced search and filtering
-- Security-scoped bookmarks for sandboxed access
-
-### 📅 Calendar
-- EventKit integration
-- Today's and upcoming events
-- Event creation and management
-- Smart time formatting
-
-### 🎨 User Interface
-- Dynamic notch overlay
-- Compact and expanded modes
-- Smooth animations
-- Dark mode support
-- Customizable appearance
-
-### ⚙️ System Integration
-- Global hotkeys (⌥ + Space)
-- Menu bar control
-- Launch at login
-- Fullscreen auto-hide
-- System event indicators
-
-## 📸 Screenshots
-
-[Screenshots would go here]
-
-## 🚀 Getting Started
-
-### Requirements
-
-- macOS 13.0 (Ventura) or later
-- Xcode 15.0+
-- Swift 5.9+
-- Mac with notch (MacBook Pro 14"/16" 2021+)
-
-### Installation
-
-#### Option 1: Build from Source
+Open the project, select the `Mac灵动岛` scheme, pick your team under Signing & Capabilities, and run:
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/Mac灵动岛.git
-cd Mac灵动岛
-
-# Open in Xcode
 open Mac灵动岛.xcodeproj
-
-# Build and run (⌘R)
 ```
 
-#### Option 2: Download Release
+From the command line:
 
-1. Download the latest release from [Releases](https://github.com/yourusername/Mac灵动岛/releases)
-2. Unzip and move to Applications folder
-3. Right-click and select "Open" (first launch only)
-4. Grant required permissions
+```bash
+xcodebuild -project Mac灵动岛.xcodeproj -scheme Mac灵动岛 -destination 'platform=macOS' build
+```
 
-### First Launch
+```bash
+xcodebuild -project Mac灵动岛.xcodeproj -scheme Mac灵动岛 -destination 'platform=macOS' test
+```
 
-1. Complete onboarding tutorial
-2. Grant permissions:
-   - ✅ Accessibility (required for overlay)
-   - ✅ Notifications (for alerts)
-   - ✅ Calendar (for events)
-   - ⭕️ Camera (optional)
+`build_test.sh` runs a clean Debug build and reports the warning count.
 
-3. Configure hotkey (default: ⌥ + Space)
-4. Enjoy!
+The unit tests in `Mac灵动岛Tests` are hosted by the app. When it runs as a test host, the app skips its launch setup (hotkeys, calendar access, clipboard polling and the menu bar item).
 
-## 🎯 Usage
+## Permissions
 
-### Basic Operations
+| Permission | Used for |
+|---|---|
+| Accessibility | Global keyboard shortcuts. Settings → General has a button to request it. |
+| Calendar | Showing upcoming events. |
+| Automation (Apple Events) | Reading lyrics and artwork from Music and Spotify, and pasting clipboard items through System Events. |
 
-- **Toggle Notch**: Press `⌥ + Space`
-- **Expand View**: Click on notch
-- **Music Control**: Appears automatically when playing
-- **Add Files**: Drag & drop to notch
-- **View Calendar**: Automatic event display
-
-### Settings
-
-Access via menu bar icon (⚙️):
-- General: Launch, hotkeys, behavior
-- Appearance: Themes, animations
-- Music: Player preferences
-- Shelf: File management
-- Advanced: Debug, cache, logs
-
-### Keyboard Shortcuts
+## Keyboard shortcuts
 
 | Shortcut | Action |
-|----------|--------|
-| `⌥ + Space` | Toggle notch overlay |
-| `⌘⇧S` | Open settings |
-| `⌘⇧L` | Open shelf |
-| `⌘⇧M` | Toggle music player |
-| Media Keys | Control playback (if enabled) |
+|---|---|
+| ⇧⌘Space | Expand or collapse the island |
+| ⌥⌘Space | Show or hide the island |
+| ⌥⌘V | Open the island on the clipboard tab |
 
-## 🏗️ Architecture
+## Distribution
 
-### Project Structure
+The app ships outside the Mac App Store. It is not sandboxed, because the MediaRemote framework and AppleScript control of other apps don't work in the sandbox. Sign it with a Developer ID certificate (Hardened Runtime is on) and notarize it. The entitlements are Apple Events and calendar access.
 
-```
-Mac灵动岛/
-├── State/              # Central state management
-├── Managers/           # Business logic (15 managers)
-├── Views/              # SwiftUI views (40+ files)
-├── Models/             # Data models
-├── Services/           # Business services
-├── ViewModels/         # MVVM pattern
-├── Extensions/         # Swift extensions
-├── Utilities/          # Helper utilities
-├── XPC/                # Helper service
-├── Configuration/      # Build config, feature flags
-└── Coordinators/       # Navigation
-```
+## Project layout
 
-### Key Technologies
-
-- **SwiftUI**: Modern declarative UI
-- **Combine**: Reactive programming
-- **AppKit**: Window management
-- **IOKit**: Battery monitoring
-- **EventKit**: Calendar integration
-- **MediaRemote**: Now Playing (private API)
-- **AVFoundation**: Media processing
-- **Security**: Bookmarks for file access
-
-### Design Patterns
-
-- MVVM (Model-View-ViewModel)
-- Coordinator (Navigation)
-- Singleton (Shared managers)
-- Observer (Combine publishers)
-- Factory (Object creation)
-
-## 🔧 Configuration
-
-### Build Configuration
-
-See `Configuration/BuildConfig.swift` for environment settings:
-
-```swift
-// Debug mode
-#if DEBUG
-  // Development settings
-#endif
-
-// Feature flags
-FeatureFlags.shared.isEnabled(.musicPlayer)
+```text
+Mac灵动岛/            App entry point (Mac灵动岛App.swift), Info.plist, entitlements, asset catalog
+AppDelegate.swift     App delegate and AppIntegration, which starts the background managers
+Controllers/          OverlayWindowController (the island panel) and StatusBarController (menu bar item)
+State/                AppState, the shared UI state, plus interaction and visibility enums
+Views/                NotchHomeView (root view) and the Music, Clipboard, Shelf, Calendar and Zone views
+Views/Settings/       Settings tabs
+Settings/             Settings window controller and the clipboard settings tab
+Music/                MusicManager: playback state, controls, artwork and lyrics
+Services/             Now playing (MediaRemote), lyrics, clipboard store, shelf persistence, thumbnails, Quick Look
+Managers/             Clipboard polling, global hotkeys, drag detection, screens, analytics
+Calendar/             EventKit access
+Models/, ViewModels/  Now playing and shelf models and the shelf view model
+Utilities/            Settings store (Defaults+Keys.swift), AppleScript, localization, logging and other helpers
+Extensions/           Small AppKit and SwiftUI extensions
+Mac灵动岛Tests/        Unit tests
+docs/archive/         Notes from earlier development; kept for reference and mostly out of date
 ```
 
-### Feature Flags
+## How it starts
 
-Enable/disable features via `Configuration/FeatureFlags.swift`:
-
-```swift
-FeatureFlags.shared.setEnabled(.spotifyIntegration, enabled: true)
+```text
+Mac灵动岛App (@main)
+├─ Settings scene → MainSettingsView
+└─ AppDelegate.applicationDidFinishLaunching
+   ├─ OverlayWindowController.shared   borderless panel at the notch hosting NotchHomeView
+   │  ├─ AppState                       loads clipboard history, starts global drag detection
+   │  └─ NowPlayingManager → MusicManager
+   ├─ AppIntegration.start()            CalendarManager, ClipboardManager, HotKeyManager
+   └─ StatusBarController               menu bar item
 ```
 
-### Package Dependencies
+## Known limitations
 
-Add via Xcode > File > Add Packages:
+- Starting with macOS 15.4, third-party apps can no longer read now-playing information through MediaRemote, so the music features may stay empty on current systems. boring.notch works around this with mediaremote-adapter.
+- The AppIcon set has no images yet.
+- Some settings aren't wired up yet and have no effect: the menu bar icon, shadow, lighting effect, gradient, colored spectrogram, music control slot limit and slider color toggles; "show calendar"; the shelf on/off toggle; the three gesture settings; showing on all displays; expanded drag detection; the settings icon in the notch; the idle face; notch height; and remembering the last tab.
+- ⌥⌘L (position lock) and ⌥⌘M (move mode) are registered, but nothing reads the flags they toggle yet.
 
-```
-https://github.com/sindresorhus/Defaults
-https://github.com/airbnb/lottie-ios (optional)
-```
+## License
 
-## 🧪 Testing
-
-```bash
-# Run tests in Xcode
-⌘U
-
-# Or via command line
-xcodebuild test \
-  -project Mac灵动岛.xcodeproj \
-  -scheme Mac灵动岛 \
-  -destination 'platform=macOS'
-```
-
-## 📊 Performance
-
-- **Launch Time**: < 1 second
-- **Memory Usage**: ~50-80 MB
-- **CPU Impact**: < 1% idle, < 5% active
-- **Battery Impact**: Minimal
-
-### Optimization Features
-
-- Debounced UI updates
-- Lazy loading
-- Image caching (50 MB limit)
-- Efficient observers
-- Background task queues
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Notch doesn't appear**
-- Check Accessibility permissions in System Settings
-- Restart the application
-- Verify hotkey isn't conflicting
-
-**Music not showing**
-- Ensure music app is actually playing
-- Check privacy settings for music apps
-- Try toggling music integration in settings
-
-**High CPU usage**
-- Disable animations if experiencing performance issues
-- Reduce polling intervals in settings
-- Check for runaway background tasks
-
-### Logs
-
-View logs: `~/Library/Logs/Mac灵动岛/`
-
-Enable debug logging:
-```swift
-BuildConfig.enableLogging = true
-```
-
-## 🤝 Contributing
-
-Contributions welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-### Code Style
-
-- Follow Swift API Design Guidelines
-- Use SwiftLint for consistency
-- Document public APIs
-- Write meaningful commit messages
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details
-
-## 🙏 Acknowledgments
-
-- **boringNotch**: Original project inspiration
-- **Apple**: For macOS and development tools
-- All open-source contributors
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/Mac灵动岛/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/Mac灵动岛/discussions)
-- **Email**: support@example.com
-
-## 🗺️ Roadmap
-
-### v1.1
-- [ ] Weather widget
-- [ ] Timer/stopwatch
-- [ ] Pomodoro integration
-
-### v1.2
-- [ ] HomeKit display
-- [ ] Siri integration
-- [ ] Network monitor
-
-### v2.0
-- [ ] Plugin system
-- [ ] Custom widgets
-- [ ] Cloud sync
-
-## 📈 Stats
-
-- **105 Files**: Complete implementation
-- **~18,500 Lines**: Production-ready code
-- **15 Managers**: Business logic
-- **40+ Views**: SwiftUI components
-- **100% Swift**: Native macOS application
-
-## 🌟 Star History
-
-If you find this project useful, please consider giving it a star ⭐️
-
----
-
-**Made with ❤️ for Mac users**
-
-**Version**: 1.0.0  
-**Last Updated**: January 15, 2026  
-**Status**: ✅ Production Ready
+No license file has been added yet. The project is derived from boring.notch, so check boring.notch's license terms before choosing one.
