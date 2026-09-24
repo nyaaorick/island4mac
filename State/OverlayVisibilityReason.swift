@@ -9,14 +9,13 @@ enum OverlayVisibilityReason: Equatable {
     case dragDetected       // Global drag detected (Boring Notch style)
     case dropComplete       // Files dropped, showing actions
     case nowPlaying         // Media playing, showing controls
-    case timer              // Timer running
     case userExpanded       // User explicitly clicked to expand
     case hotkey             // User triggered via hotkey
     case none               // Hidden state
     
     var shouldAutoHide: Bool {
         switch self {
-        case .clipboard, .dropComplete, .timer:
+        case .clipboard, .dropComplete:
             return true
         case .clipboardHistory, .dragHover, .dragDetected, .nowPlaying, .userExpanded, .hotkey:
             return false
@@ -31,8 +30,6 @@ enum OverlayVisibilityReason: Equatable {
             return 1.5
         case .dropComplete:
             return 4.0
-        case .timer:
-            return 2.0
         case .nowPlaying:
             return 2.0  // Show for 2s on track change
         default:

@@ -70,10 +70,7 @@
     
     <key>NSAccessibilityUsageDescription</key>
     <string>Mac灵动岛 needs Accessibility permissions to enable global hotkeys and drag-drop interactions across all apps.</string>
-    
-    <key>NSSystemAdministrationUsageDescription</key>
-    <string>Mac灵动岛 needs system administration access to adjust display brightness and system HUD settings.</string>
-    
+
     <!-- App Transport Security -->
     <key>NSAppTransportSecurity</key>
     <dict>

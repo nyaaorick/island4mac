@@ -100,7 +100,6 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
         let rootView = NotchHomeView()
             .environmentObject(appState)
             .environmentObject(appState.clipboardHub)
-            .environmentObject(ActivityCenter.shared)
             .environmentObject(nowPlayingManager!)
             .ignoresSafeArea()
         

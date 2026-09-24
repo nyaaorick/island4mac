@@ -30,14 +30,6 @@ struct CalendarSettingsView: View {
                     help: "如果检测到在线会议链接，直接在灵动岛内显示加入按钮"
                 )
             }
-            
-            Section(header: Text("摄像头")) {
-                ToggleSettingsRow(
-                    key: SettingsDefaults.showMirror,
-                    title: "显示镜像窗口 (Boring Mirror)",
-                    help: "在灵动岛展开时显示摄像头实时预览"
-                )
-            }
         }
         .formStyle(.grouped)
         .padding()

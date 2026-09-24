@@ -70,16 +70,6 @@ struct MainSettingsView: View {
                     Label(L("settings.tab.calendar"), systemImage: "calendar")
                 }
             
-            BatterySettingsView()
-                .tabItem {
-                    Label(L("settings.tab.battery"), systemImage: "battery.100")
-                }
-            
-            HUDSettingsView()
-                .tabItem {
-                    Label(L("settings.tab.huds"), systemImage: "speaker.wave.2")
-                }
-
             ClipboardSettingsWindow(hubStore: OverlayWindowController.shared.getAppState().clipVault)
                 .tabItem {
                     Label(L("settings.tab.clipboard"), systemImage: "doc.on.clipboard")
