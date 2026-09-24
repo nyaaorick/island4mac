@@ -3,150 +3,221 @@ import Combine
 import AppKit
 import OSLog
 
+/// System-wide now playing (any app that reports to Control Center: Music, Spotify, browsers, video players…).
+///
+/// mediaremoted refuses now-playing reads from third-party processes, so reading goes through
+/// libMediaRemoteAdapter.dylib loaded into the Apple-signed /usr/bin/perl, which streams JSON lines.
+/// Sending commands is still allowed from the app itself.
 @MainActor
 final class NowPlayingManager: ObservableObject {
     @Published var currentState: IslandNowPlayingState = .idle
 
-    private let queue = DispatchQueue(label: "com.maclingdong島.mediaremote", qos: .userInteractive)
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "NowPlaying")
 
-    private typealias MRMediaRemoteGetNowPlayingInfoFunction = @convention(c) (DispatchQueue, @escaping ([String: Any]?) -> Void) -> Void
-    private typealias MRMediaRemoteRegisterForNowPlayingNotificationsFunction = @convention(c) (DispatchQueue) -> Void
-    private typealias MRMediaRemoteSendCommandFunction = @convention(c) (Int, AnyObject?) -> Bool
+    private var helper: Process?
+    private var helperInput: Pipe?
+    private var outputBuffer = Data()
+    private var isRunning = false
+    private var recentCrashes: [Date] = []
+
+    private typealias MRMediaRemoteSendCommandFunction = @convention(c) (Int32, CFDictionary?) -> Bool
     private typealias MRMediaRemoteSetElapsedTimeFunction = @convention(c) (Double) -> Void
 
-    private var MRMediaRemoteGetNowPlayingInfoFunc: MRMediaRemoteGetNowPlayingInfoFunction?
     private var MRMediaRemoteSendCommandFunc: MRMediaRemoteSendCommandFunction?
     private var MRMediaRemoteSetElapsedTimeFunc: MRMediaRemoteSetElapsedTimeFunction?
 
-    init() {
-        loadMediaRemote()
+    /// MRMediaRemoteCommand values
+    private enum Command: Int32 {
+        case play = 0
+        case pause = 1
+        case togglePlayPause = 2
+        case nextTrack = 4
+        case previousTrack = 5
     }
 
-    private func loadMediaRemote() {
-        let bundlePath = "/System/Library/PrivateFrameworks/MediaRemote.framework"
-        guard let bundle = CFBundleCreate(kCFAllocatorDefault, URL(fileURLWithPath: bundlePath) as CFURL) else { return }
+    /// Perl only loads the adapter and hands control to it; the adapter never returns.
+    private static let helperScript = """
+        use DynaLoader;
+        my $lib = DynaLoader::dl_load_file($ARGV[0], 0) or die DynaLoader::dl_error();
+        my $sym = DynaLoader::dl_find_symbol($lib, "mediaremote_adapter_stream") or die "adapter entry point missing";
+        DynaLoader::dl_install_xsub("main::stream", $sym);
+        stream();
+        """
 
-        if let ptr = CFBundleGetFunctionPointerForName(bundle, "MRMediaRemoteGetNowPlayingInfo" as CFString) {
-            MRMediaRemoteGetNowPlayingInfoFunc = unsafeBitCast(ptr, to: MRMediaRemoteGetNowPlayingInfoFunction.self)
+    init() {
+        loadCommandFunctions()
+    }
+
+    // MARK: - Lifecycle
+
+    func start() {
+        guard !isRunning else { return }
+        isRunning = true
+        launchHelper()
+    }
+
+    func stop() {
+        isRunning = false
+        helper?.terminationHandler = nil
+        helper?.terminate()
+        helper = nil
+        // Closing stdin also makes the adapter exit if terminate() raced with launch.
+        try? helperInput?.fileHandleForWriting.close()
+        helperInput = nil
+    }
+
+    private func launchHelper() {
+        guard let adapterURL = Bundle.main.privateFrameworksURL?.appendingPathComponent("libMediaRemoteAdapter.dylib"),
+              FileManager.default.fileExists(atPath: adapterURL.path) else {
+            logger.error("libMediaRemoteAdapter.dylib is missing from the app bundle")
+            return
         }
-        if let ptr = CFBundleGetFunctionPointerForName(bundle, "MRMediaRemoteRegisterForNowPlayingNotifications" as CFString) {
-            let registerFunc = unsafeBitCast(ptr, to: MRMediaRemoteRegisterForNowPlayingNotificationsFunction.self)
-            registerFunc(queue)
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
+        process.arguments = ["-e", Self.helperScript, adapterURL.path]
+
+        // The adapter exits when stdin closes, so it never outlives the app.
+        let input = Pipe()
+        let output = Pipe()
+        process.standardInput = input
+        process.standardOutput = output
+        process.standardError = FileHandle.nullDevice
+
+        outputBuffer.removeAll()
+        output.fileHandleForReading.readabilityHandler = { [weak self] handle in
+            let chunk = handle.availableData
+            // A line can span chunks, so keep them in order (Task hops don't guarantee that).
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { self?.consume(chunk) }
+            }
         }
+        process.terminationHandler = { [weak self] process in
+            output.fileHandleForReading.readabilityHandler = nil
+            let status = process.terminationStatus
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { self?.helperDidExit(status: status) }
+            }
+        }
+
+        do {
+            try process.run()
+            helper = process
+            helperInput = input
+        } catch {
+            logger.error("Failed to launch now-playing helper: \(error.localizedDescription)")
+        }
+    }
+
+    private func helperDidExit(status: Int32) {
+        helper = nil
+        helperInput = nil
+        guard isRunning else { return }
+
+        currentState = .idle
+
+        // Restart after a crash, but give up if it keeps dying.
+        let now = Date()
+        recentCrashes = recentCrashes.filter { now.timeIntervalSince($0) < 60 } + [now]
+        guard recentCrashes.count <= 5 else {
+            logger.error("Now-playing helper keeps exiting (status \(status)); giving up")
+            isRunning = false
+            return
+        }
+        logger.warning("Now-playing helper exited with status \(status); restarting")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard let self, self.isRunning, self.helper == nil else { return }
+            self.launchHelper()
+        }
+    }
+
+    // MARK: - Stream Parsing
+
+    private func consume(_ chunk: Data) {
+        guard !chunk.isEmpty else { return }
+        outputBuffer.append(chunk)
+
+        // Only the newest complete line matters; earlier ones are already stale.
+        guard let lastNewline = outputBuffer.lastIndex(of: UInt8(ascii: "\n")) else { return }
+        let complete = outputBuffer[outputBuffer.startIndex..<lastNewline]
+        outputBuffer = Data(outputBuffer[outputBuffer.index(after: lastNewline)...])
+
+        guard let line = complete.split(separator: UInt8(ascii: "\n")).last else { return }
+        do {
+            let payload = try JSONDecoder().decode(Payload.self, from: Data(line))
+            let newState = payload.state
+            if newState != currentState {
+                currentState = newState
+            }
+        } catch {
+            logger.error("Unreadable now-playing payload: \(error.localizedDescription)")
+        }
+    }
+
+    /// One line from MediaRemoteAdapter; `{}` means nothing is playing.
+    private struct Payload: Decodable {
+        var playing: Bool?
+        var bundleID: String?
+        var parentBundleID: String?
+        var title: String?
+        var artist: String?
+        var album: String?
+        var duration: Double?
+        var elapsed: Double?
+        var rate: Double?
+        var timestamp: Double?
+        var artwork: String?
+
+        var state: IslandNowPlayingState {
+            guard let playing else { return .idle }
+            return IslandNowPlayingState(
+                isPlaying: playing,
+                playbackRate: rate ?? (playing ? 1 : 0),
+                title: title ?? "",
+                artist: artist ?? "",
+                album: album ?? "",
+                duration: duration ?? 0,
+                position: elapsed ?? 0,
+                positionTimestamp: timestamp.map(Date.init(timeIntervalSince1970:)) ?? Date(),
+                // Web players report a helper process; the browser is the app the user knows.
+                sourceApp: parentBundleID ?? bundleID ?? "",
+                artworkData: artwork.flatMap { Data(base64Encoded: $0) }
+            )
+        }
+    }
+
+    // MARK: - Commands
+
+    private func loadCommandFunctions() {
+        let bundleURL = URL(fileURLWithPath: "/System/Library/PrivateFrameworks/MediaRemote.framework")
+        guard let bundle = CFBundleCreate(kCFAllocatorDefault, bundleURL as CFURL) else { return }
+
         if let ptr = CFBundleGetFunctionPointerForName(bundle, "MRMediaRemoteSendCommand" as CFString) {
             MRMediaRemoteSendCommandFunc = unsafeBitCast(ptr, to: MRMediaRemoteSendCommandFunction.self)
         }
         if let ptr = CFBundleGetFunctionPointerForName(bundle, "MRMediaRemoteSetElapsedTime" as CFString) {
             MRMediaRemoteSetElapsedTimeFunc = unsafeBitCast(ptr, to: MRMediaRemoteSetElapsedTimeFunction.self)
         }
-
-        NotificationCenter.default.addObserver(self, selector: #selector(refresh), name: NSNotification.Name("kMRMediaRemoteNowPlayingInfoDidChangeNotification"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(refresh), name: NSNotification.Name("kMRMediaRemoteNowPlayingApplicationDidChangeNotification"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(refresh), name: NSNotification.Name("kMRMediaRemoteNowPlayingApplicationIsPlayingDidChangeNotification"), object: nil)
-        refresh()
     }
 
-    private func doubleValue(_ any: Any?) -> Double {
-        switch any {
-        case let d as Double:
-            return d
-        case let f as Float:
-            return Double(f)
-        case let i as Int:
-            return Double(i)
-        case let n as NSNumber:
-            return n.doubleValue
-        case let s as String:
-            return Double(s) ?? 0
-        default:
-            return 0
-        }
+    private func send(_ command: Command) {
+        _ = MRMediaRemoteSendCommandFunc?(command.rawValue, nil)
     }
 
-    private func dataValue(_ any: Any?) -> Data? {
-        switch any {
-        case let data as Data:
-            return data
-        case let nsData as NSData:
-            return nsData as Data
-        default:
-            return nil
-        }
-    }
-
-    @objc func refresh() {
-        // ✅ 添加静默错误处理：将系统 stderr 重定向到 /dev/null 以隐藏 MediaRemote 的误导性错误日志
-        let originalStderr = dup(STDERR_FILENO)
-        let devNull = open("/dev/null", O_WRONLY)
-        dup2(devNull, STDERR_FILENO)
-        close(devNull)
-
-        MRMediaRemoteGetNowPlayingInfoFunc?(queue) { [weak self] info in
-            // ✅ 恢复 stderr
-            dup2(originalStderr, STDERR_FILENO)
-            close(originalStderr)
-
-            guard let self = self else { return }
-            guard let info = info else {
-                DispatchQueue.main.async {
-                    // ✅ 避免重复发布 idle 触发下游大量回退扫描
-                    if self.currentState != .idle {
-                        self.currentState = .idle
-                    }
-                }
-                return
-            }
-
-            let playbackRate = doubleValue(info["kMRMediaRemoteNowPlayingInfoPlaybackRate"])
-            let title = info["kMRMediaRemoteNowPlayingInfoTitle"] as? String ?? ""
-            let artist = info["kMRMediaRemoteNowPlayingInfoArtist"] as? String ?? ""
-            let album = info["kMRMediaRemoteNowPlayingInfoAlbum"] as? String ?? ""
-            let duration = doubleValue(info["kMRMediaRemoteNowPlayingInfoDuration"])
-            let position = doubleValue(info["kMRMediaRemoteNowPlayingInfoElapsedTime"])
-            let sourceApp = info["kMRMediaRemoteNowPlayingInfoClientBundleIdentifier"] as? String ??
-                info["kMRMediaRemoteNowPlayingInfoSenderDefaultPostNotificationName"] as? String ?? "System"
-            let artworkData = dataValue(info["kMRMediaRemoteNowPlayingInfoArtworkData"])
-
-            let newState = IslandNowPlayingState(
-                isPlaying: playbackRate > 0,
-                playbackRate: playbackRate,
-                title: title,
-                artist: artist,
-                album: album,
-                duration: duration,
-                position: position,
-                sourceApp: sourceApp,
-                artworkData: artworkData
-            )
-
-            DispatchQueue.main.async {
-                if self.currentState != newState {
-                    self.currentState = newState
-                }
-            }
-        }
-    }
-
-    func playPause() { _ = MRMediaRemoteSendCommandFunc?(2, nil); refresh() }
-    func nextTrack() { _ = MRMediaRemoteSendCommandFunc?(4, nil); refresh() }
-    func previousTrack() { _ = MRMediaRemoteSendCommandFunc?(5, nil); refresh() }
+    func play() { send(.play) }
+    func pause() { send(.pause) }
+    func playPause() { send(.togglePlayPause) }
+    func nextTrack() { send(.nextTrack) }
+    func previousTrack() { send(.previousTrack) }
 
     func seek(to position: TimeInterval) {
         MRMediaRemoteSetElapsedTimeFunc?(position)
-        refresh()
     }
 
     func revealSourceApp() {
         let identifier = currentState.sourceApp
-        guard !identifier.isEmpty && identifier != "System" else { return }
-
-        // Modern macOS way: Use bundle identifier directly
-        if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier) {
-            let config = NSWorkspace.OpenConfiguration()
-            NSWorkspace.shared.openApplication(at: appURL, configuration: config, completionHandler: nil)
-        } else {
-            // Fallback: If identifier is actually a name, but this is deprecated and unreliable
-            // We'll stick to bundle identifier as per Apple's recommendation
-        }
+        guard !identifier.isEmpty,
+              let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier) else { return }
+        NSWorkspace.shared.openApplication(at: appURL, configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
     }
 }

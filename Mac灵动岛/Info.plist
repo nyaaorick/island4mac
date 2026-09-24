@@ -53,14 +53,8 @@
     <true/>
     
     <!-- Privacy Usage Descriptions - English -->
-    <key>NSCalendarsUsageDescription</key>
-    <string>Mac灵动岛 needs access to your calendar to display upcoming events in the Dynamic Island overlay.</string>
-    
-    <key>NSCalendarsFullAccessUsageDescription</key>
-    <string>Mac灵动岛 needs full calendar access to show your upcoming events and allow quick interactions.</string>
-    
     <key>NSAppleEventsUsageDescription</key>
-    <string>Mac灵动岛 uses Apple Events to read the current track, lyrics and artwork from Music and Spotify, and to paste clipboard items into the frontmost app.</string>
+    <string>Mac灵动岛 uses Apple Events to read lyrics from Music, to paste clipboard items into the frontmost app, and to bring the terminal tab of a Claude Code session to the front.</string>
 
     <key>NSAppleMusicUsageDescription</key>
     <string>Mac灵动岛 needs access to Apple Music to display now playing information and control playback.</string>

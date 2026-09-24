@@ -24,6 +24,14 @@ final class AppState: ObservableObject {
     }
     @Published var isDraggingOver: Bool = false
 
+    /// Notch size of the display the island is on (.zero when it has no notch)
+    @Published var notchSize: CGSize = .zero
+    /// Whether the collapsed island shows the now-playing wings. Set by OverlayWindowController
+    /// after it has sized the panel, so the view never animates outside the panel.
+    @Published var showsLiveActivity: Bool = false
+    /// Current frame of the island panel, in screen coordinates
+    private(set) var islandFrame: CGRect = .zero
+
     // CUSTOMIZATION: Resolved from settingsStore
     var islandBackgroundColor: Color {
         settingsStore.resolveBackgroundColor()
@@ -82,14 +90,13 @@ final class AppState: ObservableObject {
 
     // ENUMS
     enum IslandSection: String, CaseIterable {
-        case music, clipboard, files, calendar, zone3
+        case music, clipboard, files, agents
         var displayName: String {
              switch self {
              case .music: return "Music"
              case .clipboard: return "Clipboard"
              case .files: return "Files"
-             case .calendar: return "Calendar"
-             case .zone3: return "Zone"
+             case .agents: return "Agents"
              }
         }
         var iconName: String {
@@ -97,8 +104,7 @@ final class AppState: ObservableObject {
              case .music: return "music.note"
              case .clipboard: return "doc.on.clipboard"
              case .files: return "folder"
-             case .calendar: return "calendar"
-             case .zone3: return "briefcase"
+             case .agents: return "terminal"
              }
         }
     }
@@ -178,6 +184,7 @@ final class AppState: ObservableObject {
     }
 
     func updateNotchRegion(_ region: CGRect) {
+        islandFrame = region
         DragDetectorManager.shared.updateNotchRegion(region)
     }
 }

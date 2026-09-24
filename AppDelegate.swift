@@ -35,9 +35,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - App Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Unit tests run inside this app; don't start global monitors, hotkeys,
-        // calendar access or the menu bar item while they run.
-        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
+        // Unit tests run inside this app; don't start global monitors, hotkeys
+        // or the menu bar item while they run.
+        guard !BuildConfig.isRunningUnitTests else { return }
 
         LOG("")
         LOG("══════════════════════════════════════════════════")
@@ -94,6 +94,7 @@ class AppIntegration {
     // MARK: - Managers
     private var clipboardManager: ClipboardManager?
     private var hotKeyManager: HotKeyManager?
+    private var claudeHookServer: ClaudeHookServer?
 
     private init() {}
 
@@ -127,8 +128,6 @@ class AppIntegration {
         }
 
         // Music playback observation is wired up by OverlayWindowController
-        CalendarManager.shared.start()
-
         clipboardManager = ClipboardManager(vault: appState.clipVault)
         clipboardManager?.start()
 
@@ -139,6 +138,25 @@ class AppIntegration {
         }
 
         let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")
+
+        // Claude Code sessions, reported by island-claude-hook
+        let hookInstaller = ClaudeHookInstaller.standard
+        hookInstaller.refreshIfInstalled()
+        claudeHookServer = ClaudeHookServer(socketURL: hookInstaller.socketURL) { event in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { AgentSessionStore.shared.apply(event) }
+            }
+        }
+        do {
+            try claudeHookServer?.start()
+        } catch {
+            logger.error("Claude Code hook server failed to start: \(String(describing: error))")
+        }
+        AgentSessionStore.shared.onStatusChange = { session, previous in
+            AgentAlertSound.play(for: session, previous: previous)
+        }
+        AgentSessionStore.shared.startPruning()
+
         logger.info("All managers started")
     }
 
@@ -146,6 +164,7 @@ class AppIntegration {
         MusicManager.shared.stop()
         clipboardManager?.stop()
         hotKeyManager?.stop()
+        claudeHookServer?.stop()
 
         // End analytics session
         AnalyticsManager.shared.endSession()

@@ -18,7 +18,6 @@
 "settings.tab.general" = "General";
 "settings.tab.appearance" = "Appearance";
 "settings.tab.media" = "Media";
-"settings.tab.calendar" = "Calendar";
 "settings.tab.clipboard" = "Clipboard";
 "settings.tab.shelf" = "Shelf";
 "settings.tab.shortcuts" = "Shortcuts";
@@ -149,8 +148,6 @@
 "onboarding.permissions.title" = "Required Permissions";
 "onboarding.permissions.accessibility" = "Accessibility";
 "onboarding.permissions.accessibility.desc" = "For global hotkeys and drag-drop";
-"onboarding.permissions.calendar" = "Calendar";
-"onboarding.permissions.calendar.desc" = "To show upcoming events";
 "onboarding.permissions.music" = "Apple Music";
 "onboarding.permissions.music.desc" = "To display now playing info";
 "onboarding.permissions.granted" = "Granted";

@@ -9,10 +9,13 @@ struct IslandNowPlayingState: Equatable {
     let artist: String
     let album: String
     let duration: TimeInterval
+    /// Elapsed time as of `positionTimestamp`
     let position: TimeInterval
+    let positionTimestamp: Date
+    /// Bundle identifier of the app that owns the session
     let sourceApp: String
     var artworkData: Data?
-    
+
     static let idle = Self(
         isPlaying: false,
         playbackRate: 0,
@@ -21,23 +24,10 @@ struct IslandNowPlayingState: Equatable {
         album: "",
         duration: 0,
         position: 0,
+        positionTimestamp: .distantPast,
         sourceApp: "",
         artworkData: nil
     )
-    
-    var hasContent: Bool { !title.isEmpty && !sourceApp.isEmpty }
-    
-    var progress: Double {
-        guard duration > 0 else { return 0 }
-        return min(1.0, max(0.0, position / duration))
-    }
-    
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        return lhs.isPlaying == rhs.isPlaying &&
-               lhs.playbackRate == rhs.playbackRate &&
-               lhs.title == rhs.title &&
-               lhs.artist == rhs.artist &&
-               lhs.sourceApp == rhs.sourceApp &&
-               abs(lhs.position - rhs.position) < 2.0
-    }
+
+    var hasContent: Bool { !title.isEmpty || !artist.isEmpty }
 }

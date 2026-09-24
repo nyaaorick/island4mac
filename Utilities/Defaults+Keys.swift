@@ -47,11 +47,6 @@ final class SettingsDefaults: ObservableObject {
     static let musicControlSlotLimit = SettingsKey(key: "musicControlSlotLimit", defaultValue: 5)
     static let sliderColor = SettingsKey(key: "sliderColor", defaultValue: "white")
 
-    // MARK: - Calendar
-    static let showCalendar = SettingsKey(key: "showCalendar", defaultValue: true)
-    static let upcomingEventLookAheadDuration = SettingsKey(key: "upcomingEventLookAheadDuration", defaultValue: 12)
-    static let showMeetingJoinButton = SettingsKey(key: "showMeetingJoinButton", defaultValue: true)
-
     // MARK: - Shelf
     static let boringShelf = SettingsKey(key: "boringShelf", defaultValue: true)
     
@@ -60,6 +55,10 @@ final class SettingsDefaults: ObservableObject {
     static let closeGestureEnabled = SettingsKey(key: "closeGestureEnabled", defaultValue: true)
     static let gestureSensitivity = SettingsKey(key: "gestureSensitivity", defaultValue: CGFloat(50.0))
     
+    // MARK: - Claude Code
+    static let showAgentLiveActivity = SettingsKey(key: "showAgentLiveActivity", defaultValue: true)
+    static let agentSoundsEnabled = SettingsKey(key: "agentSoundsEnabled", defaultValue: true)
+
     // MARK: - Display
     static let showOnAllDisplays = SettingsKey(key: "showOnAllDisplays", defaultValue: false)
     static let automaticallySwitchDisplay = SettingsKey(key: "automaticallySwitchDisplay", defaultValue: true)

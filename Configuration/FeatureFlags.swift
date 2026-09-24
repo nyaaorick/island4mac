@@ -29,7 +29,6 @@ class FeatureFlags {
         
         // System Features
         case batteryMonitoring = "battery_monitoring"
-        case calendarIntegration = "calendar_integration"
         case cameraIntegration = "camera_integration"
         case screenshotTools = "screenshot_tools"
         
@@ -49,9 +48,6 @@ class FeatureFlags {
                 return true
             // Integration features opt-in
             case .spotifyIntegration, .youtubeMusicIntegration:
-                return true
-            // Calendar requires permission
-            case .calendarIntegration:
                 return true
             // Advanced features opt-in
             case .mediaKeyInterception, .fullscreenDetection:
@@ -76,7 +72,6 @@ class FeatureFlags {
             case .customThemes: return "Custom Themes"
             case .animations: return "UI Animations"
             case .batteryMonitoring: return "Battery Monitoring"
-            case .calendarIntegration: return "Calendar Integration"
             case .cameraIntegration: return "Camera Integration"
             case .screenshotTools: return "Screenshot Tools"
             case .mediaKeyInterception: return "Media Key Control"
@@ -178,6 +173,5 @@ extension FeatureFlags {
     var isSpotifyEnabled: Bool { isEnabled(.spotifyIntegration) }
     var isYouTubeMusicEnabled: Bool { isEnabled(.youtubeMusicIntegration) }
     var isBatteryEnabled: Bool { isEnabled(.batteryMonitoring) }
-    var isCalendarEnabled: Bool { isEnabled(.calendarIntegration) }
     var areAnimationsEnabled: Bool { isEnabled(.animations) }
 }

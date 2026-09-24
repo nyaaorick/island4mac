@@ -15,9 +15,7 @@
 		511D73282F18D90300163A46 /* NSScreen+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D72F62F18D90300163A46 /* NSScreen+Extensions.swift */; };
 		511D73292F18D90300163A46 /* Color+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D72F12F18D90300163A46 /* Color+Extensions.swift */; };
 		511D732A2F18D90300163A46 /* ShelfStateViewModel+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73152F18D90300163A46 /* ShelfStateViewModel+Extensions.swift */; };
-		511D732C2F18D90300163A46 /* EventManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D72E62F18D90300163A46 /* EventManager.swift */; };
 		511D73332F18D90300163A46 /* BuildConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D72E82F18D90300163A46 /* BuildConfig.swift */; };
-		511D73362F18D90300163A46 /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D72E52F18D90300163A46 /* CalendarManager.swift */; };
 		511D73392F18D90300163A46 /* MusicManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73012F18D90300163A46 /* MusicManager.swift */; };
 		511D733A2F18D90300163A46 /* MediaControllerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73072F18D90300163A46 /* MediaControllerProtocol.swift */; };
 		511D733F2F18D90300163A46 /* ShelfStateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73142F18D90300163A46 /* ShelfStateViewModel.swift */; };
@@ -26,7 +24,6 @@
 		511D73482F18D90300163A46 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D730A2F18D90300163A46 /* SettingsView.swift */; };
 		511D735F2F18D92700163A46 /* AnalyticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D734C2F18D92700163A46 /* AnalyticsManager.swift */; };
 		511D736D2F18D92700163A46 /* SystemPreferencesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D735C2F18D92700163A46 /* SystemPreferencesManager.swift */; };
-		511D73AB2F18D94200163A46 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73782F18D94200163A46 /* CalendarView.swift */; };
 		511D73AD2F18D94200163A46 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73992F18D94200163A46 /* AboutView.swift */; };
 		511D73B82F18D94200163A46 /* ShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73A52F18D94200163A46 /* ShelfView.swift */; };
 		511D73CA2F18D94200163A46 /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D739A2F18D94200163A46 /* AdvancedSettingsView.swift */; };
@@ -39,7 +36,6 @@
 		511D73FD2F18D98400163A46 /* Defaults+Keys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73E22F18D98400163A46 /* Defaults+Keys.swift */; };
 		511D73FE2F18D98400163A46 /* VisualEffectsCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73F02F18D98400163A46 /* VisualEffectsCompositor.swift */; };
 		511D73FF2F18D98400163A46 /* AppInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73DA2F18D98400163A46 /* AppInfo.swift */; };
-		511D74002F18D98400163A46 /* AccessibilityHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73D62F18D98400163A46 /* AccessibilityHelper.swift */; };
 		511D74022F18D98400163A46 /* MemoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73E72F18D98400163A46 /* MemoryManager.swift */; };
 		511D74162F18D9FD00163A46 /* ShelfPersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D74122F18D9FD00163A46 /* ShelfPersistenceService.swift */; };
 		511D74182F18D9FD00163A46 /* TemporaryFileStorageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D74132F18D9FD00163A46 /* TemporaryFileStorageService.swift */; };
@@ -59,7 +55,6 @@
 		51E1CA512F231740009A87D2 /* LaunchAtLoginHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E1CA502F231740009A87D2 /* LaunchAtLoginHelper.swift */; };
 		51E1CA572F23181B009A87D2 /* SettingsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E1CA562F23181B009A87D2 /* SettingsViews.swift */; };
 		51E1CA602F23187F009A87D2 /* ShelfSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E1CA5D2F23187F009A87D2 /* ShelfSettingsView.swift */; };
-		51E1CA612F23187F009A87D2 /* CalendarSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E1CA5A2F23187F009A87D2 /* CalendarSettingsView.swift */; };
 		51E1CA622F23187F009A87D2 /* MediaSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E1CA5C2F23187F009A87D2 /* MediaSettingsView.swift */; };
 		51E1CA642F23187F009A87D2 /* ShortcutsSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E1CA5E2F23187F009A87D2 /* ShortcutsSettingsView.swift */; };
 		51E1CA652F23187F009A87D2 /* AppearanceSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E1CA582F23187F009A87D2 /* AppearanceSettingsView.swift */; };
@@ -76,12 +71,27 @@
 		51F1B11A2F0E49FF00B89019 /* OverlayVisibilityReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B1192F0E49FF00B89019 /* OverlayVisibilityReason.swift */; };
 		51F1B11C2F0E4A1400B89019 /* NowPlayingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B11B2F0E4A1400B89019 /* NowPlayingManager.swift */; };
 		51F1B11E2F0E4A2500B89019 /* NowPlayingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B11D2F0E4A2500B89019 /* NowPlayingState.swift */; };
-		AA000001ZONE3STATE00000001 /* Zone3State.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002ZONE3STATE00000001 /* Zone3State.swift */; };
-		AA000001ZONE3VIEWS00000001 /* Zone3Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002ZONE3VIEWS00000001 /* Zone3Views.swift */; };
 		B604001DB9274EEAA702BD55 /* Mac灵动岛App.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0ABEFA9F80404A97C74C13 /* Mac灵动岛App.swift */; };
 		D32477692E35F4767B8B70001 /* FileVaultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE53D77E3580A4ABAD740001 /* FileVaultStore.swift */; };
 		31D8F0872E01F10E96AE9741 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 12E7EC74DFA82BC2C76B22C4 /* Assets.xcassets */; };
 		35C45DEF006A10FE546DCB37 /* ClipboardHubStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */; };
+		F47AB87F21601EACC7D73B1D /* OverlayWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0247955385A9AC7057FE0B3B /* OverlayWindowTests.swift */; };
+		4D52410100000000000000B1 /* ScreenManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000B2 /* ScreenManagerTests.swift */; };
+		4D52410100000000000000A3 /* MediaRemoteAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A1 /* MediaRemoteAdapter.m */; };
+		4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241020000000000000004 /* AgentSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000003 /* AgentSessionStore.swift */; };
+		4D5241020000000000000006 /* ClaudeHookEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000005 /* ClaudeHookEvent.swift */; };
+		4D5241020000000000000008 /* ClaudeHookInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000007 /* ClaudeHookInstaller.swift */; };
+		4D524102000000000000000A /* ClaudeHookServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000009 /* ClaudeHookServer.swift */; };
+		4D524102000000000000000C /* TerminalFocuser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000000B /* TerminalFocuser.swift */; };
+		4D524102000000000000000E /* AgentViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000000D /* AgentViews.swift */; };
+		4D5241020000000000000010 /* AgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000000F /* AgentSettingsView.swift */; };
+		4D524102000000000000001E /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000001D /* main.c */; };
+		4D5241020000000000000016 /* island-claude-hook in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000012 /* island-claude-hook */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241030000000000000002 /* AgentSessionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241030000000000000001 /* AgentSessionStoreTests.swift */; };
+		4D5241030000000000000004 /* ClaudeHookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241030000000000000003 /* ClaudeHookTests.swift */; };
+		4D5241040000000000000002 /* ClaudeTranscript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241040000000000000001 /* ClaudeTranscript.swift */; };
+		4D5241040000000000000004 /* AgentAlertSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241040000000000000003 /* AgentAlertSound.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -92,14 +102,51 @@
 			remoteGlobalIDString = 51E49FAA2F0B8D41002AD746;
 			remoteInfo = "Mac灵动岛";
 		};
+		4D52410100000000000000AA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D52410100000000000000A6;
+			remoteInfo = MediaRemoteAdapter;
+		};
+		4D5241020000000000000018 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241020000000000000015;
+			remoteInfo = ClaudeHookBridge;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4D52410100000000000000A9 /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241020000000000000017 /* Embed Helpers */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				4D5241020000000000000016 /* island-claude-hook in Embed Helpers */,
+			);
+			name = "Embed Helpers";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		5104FC492F1A4B5D003F8273 /* OverlayWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowController.swift; sourceTree = "<group>"; };
 		5104FC4B2F1A4B5D003F8273 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		510BABFA2F222146001CA156 /* LyricsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsService.swift; sourceTree = "<group>"; };
-		511D72E52F18D90300163A46 /* CalendarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
-		511D72E62F18D90300163A46 /* EventManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventManager.swift; sourceTree = "<group>"; };
 		511D72E82F18D90300163A46 /* BuildConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildConfig.swift; sourceTree = "<group>"; };
 		511D72E92F18D90300163A46 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		511D72F12F18D90300163A46 /* Color+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Extensions.swift"; sourceTree = "<group>"; };
@@ -115,14 +162,12 @@
 		511D734C2F18D92700163A46 /* AnalyticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsManager.swift; sourceTree = "<group>"; };
 		511D735C2F18D92700163A46 /* SystemPreferencesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPreferencesManager.swift; sourceTree = "<group>"; };
 		511D73702F18D94200163A46 /* AudioSpectrumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSpectrumView.swift; sourceTree = "<group>"; };
-		511D73782F18D94200163A46 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
 		511D73812F18D94200163A46 /* MarqueeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueeText.swift; sourceTree = "<group>"; };
 		511D73902F18D94200163A46 /* ExpandedMusicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandedMusicView.swift; sourceTree = "<group>"; };
 		511D73992F18D94200163A46 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		511D739A2F18D94200163A46 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
 		511D739B2F18D94200163A46 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 		511D73A52F18D94200163A46 /* ShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfView.swift; sourceTree = "<group>"; };
-		511D73D62F18D98400163A46 /* AccessibilityHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityHelper.swift; sourceTree = "<group>"; };
 		511D73DA2F18D98400163A46 /* AppInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppInfo.swift; sourceTree = "<group>"; };
 		511D73DB2F18D98400163A46 /* AppleScriptHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleScriptHelper.swift; sourceTree = "<group>"; };
 		511D73E02F18D98400163A46 /* CrashReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
@@ -146,7 +191,6 @@
 		51E1CA502F231740009A87D2 /* LaunchAtLoginHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginHelper.swift; sourceTree = "<group>"; };
 		51E1CA562F23181B009A87D2 /* SettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViews.swift; sourceTree = "<group>"; };
 		51E1CA582F23187F009A87D2 /* AppearanceSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettingsView.swift; sourceTree = "<group>"; };
-		51E1CA5A2F23187F009A87D2 /* CalendarSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarSettingsView.swift; sourceTree = "<group>"; };
 		51E1CA5C2F23187F009A87D2 /* MediaSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSettingsView.swift; sourceTree = "<group>"; };
 		51E1CA5D2F23187F009A87D2 /* ShelfSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfSettingsView.swift; sourceTree = "<group>"; };
 		51E1CA5E2F23187F009A87D2 /* ShortcutsSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsSettingsView.swift; sourceTree = "<group>"; };
@@ -166,12 +210,27 @@
 		51F1B1192F0E49FF00B89019 /* OverlayVisibilityReason.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayVisibilityReason.swift; sourceTree = "<group>"; };
 		51F1B11B2F0E4A1400B89019 /* NowPlayingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingManager.swift; sourceTree = "<group>"; };
 		51F1B11D2F0E4A2500B89019 /* NowPlayingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingState.swift; sourceTree = "<group>"; };
-		AA000002ZONE3STATE00000001 /* Zone3State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone3State.swift; sourceTree = "<group>"; };
-		AA000002ZONE3VIEWS00000001 /* Zone3Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone3Views.swift; sourceTree = "<group>"; };
 		CD0ABEFA9F80404A97C74C13 /* Mac灵动岛App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Mac灵动岛App.swift"; sourceTree = "<group>"; };
 		12E7EC74DFA82BC2C76B22C4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		16699883D1FCA93359C8C3D6 /* Mac灵动岛Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Mac灵动岛Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHubStoreTests.swift; sourceTree = "<group>"; };
+		0247955385A9AC7057FE0B3B /* OverlayWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowTests.swift; sourceTree = "<group>"; };
+		4D52410100000000000000A1 /* MediaRemoteAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MediaRemoteAdapter.m; sourceTree = "<group>"; };
+		4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMediaRemoteAdapter.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D52410100000000000000B2 /* ScreenManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManagerTests.swift; sourceTree = "<group>"; };
+		4D5241020000000000000003 /* AgentSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSessionStore.swift; sourceTree = "<group>"; };
+		4D5241020000000000000005 /* ClaudeHookEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHookEvent.swift; sourceTree = "<group>"; };
+		4D5241020000000000000007 /* ClaudeHookInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHookInstaller.swift; sourceTree = "<group>"; };
+		4D5241020000000000000009 /* ClaudeHookServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHookServer.swift; sourceTree = "<group>"; };
+		4D524102000000000000000B /* TerminalFocuser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalFocuser.swift; sourceTree = "<group>"; };
+		4D524102000000000000000D /* AgentViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentViews.swift; sourceTree = "<group>"; };
+		4D524102000000000000000F /* AgentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettingsView.swift; sourceTree = "<group>"; };
+		4D5241020000000000000012 /* island-claude-hook */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "island-claude-hook"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D524102000000000000001D /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		4D5241030000000000000001 /* AgentSessionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSessionStoreTests.swift; sourceTree = "<group>"; };
+		4D5241030000000000000003 /* ClaudeHookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHookTests.swift; sourceTree = "<group>"; };
+		4D5241040000000000000001 /* ClaudeTranscript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeTranscript.swift; sourceTree = "<group>"; };
+		4D5241040000000000000003 /* AgentAlertSound.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentAlertSound.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -189,6 +248,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4D52410100000000000000A8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241020000000000000014 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -199,15 +272,6 @@
 				5104FC4B2F1A4B5D003F8273 /* StatusBarController.swift */,
 			);
 			path = Controllers;
-			sourceTree = "<group>";
-		};
-		511D72E72F18D90300163A46 /* Calendar */ = {
-			isa = PBXGroup;
-			children = (
-				511D72E52F18D90300163A46 /* CalendarManager.swift */,
-				511D72E62F18D90300163A46 /* EventManager.swift */,
-			);
-			path = Calendar;
 			sourceTree = "<group>";
 		};
 		511D72EA2F18D90300163A46 /* Configuration */ = {
@@ -272,14 +336,6 @@
 			path = Animations;
 			sourceTree = "<group>";
 		};
-		511D73792F18D94200163A46 /* Calendar */ = {
-			isa = PBXGroup;
-			children = (
-				511D73782F18D94200163A46 /* CalendarView.swift */,
-			);
-			path = Calendar;
-			sourceTree = "<group>";
-		};
 		511D73872F18D94200163A46 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -300,8 +356,8 @@
 		511D739C2F18D94200163A46 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				4D524102000000000000000F /* AgentSettingsView.swift */,
 				51E1CA582F23187F009A87D2 /* AppearanceSettingsView.swift */,
-				51E1CA5A2F23187F009A87D2 /* CalendarSettingsView.swift */,
 				51E1CA5C2F23187F009A87D2 /* MediaSettingsView.swift */,
 				51E1CA5D2F23187F009A87D2 /* ShelfSettingsView.swift */,
 				51E1CA5E2F23187F009A87D2 /* ShortcutsSettingsView.swift */,
@@ -342,10 +398,12 @@
 			children = (
 				51E1CAA02F245D83009A87D2 /* Animations */,
 				5104FC4C2F1A4B5D003F8273 /* Controllers */,
-				511D72E72F18D90300163A46 /* Calendar */,
 				511D72EA2F18D90300163A46 /* Configuration */,
 				511D72FB2F18D90300163A46 /* Extensions */,
 				511D73042F18D90300163A46 /* Music */,
+				4D5241020000000000000001 /* Agents */,
+				4D52410100000000000000A5 /* MediaRemoteAdapter */,
+				4D5241020000000000000011 /* ClaudeHookBridge */,
 				511D73082F18D90300163A46 /* Protocols */,
 				511D730B2F18D90300163A46 /* Settings */,
 				511D73162F18D90300163A46 /* ViewModels */,
@@ -368,6 +426,8 @@
 			children = (
 				51E49FAB2F0B8D41002AD746 /* Mac灵动岛.app */,
 				16699883D1FCA93359C8C3D6 /* Mac灵动岛Tests.xctest */,
+				4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */,
+				4D5241020000000000000012 /* island-claude-hook */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -399,14 +459,13 @@
 			children = (
 				51E1CAC82F24C517009A87D2 /* NotchHomeView.swift */,
 				511D73732F18D94200163A46 /* Animations */,
-				511D73792F18D94200163A46 /* Calendar */,
 				511D73872F18D94200163A46 /* Components */,
 				511D73952F18D94200163A46 /* Music */,
+				4D5241020000000000000002 /* Agents */,
 				511D739C2F18D94200163A46 /* Settings */,
 				511D73A62F18D94200163A46 /* Shelf */,
 				51D0246A2F16049400B1FF0F /* ClipboardCardView.swift */,
 				51D0246C2F16049400B1FF0F /* ClipboardHubView.swift */,
-				AA000002ZONE3VIEWS00000001 /* Zone3Views.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -414,7 +473,6 @@
 		51E49FD92F0B9E29002AD746 /* State */ = {
 			isa = PBXGroup;
 			children = (
-				AA000002ZONE3STATE00000001 /* Zone3State.swift */,
 				519CDAFC2F124DD70011DA8A /* IslandInteractionState.swift */,
 				51F1B1192F0E49FF00B89019 /* OverlayVisibilityReason.swift */,
 				51E49FCD2F0B913D002AD746 /* AppState.swift */,
@@ -426,7 +484,6 @@
 			isa = PBXGroup;
 			children = (
 				51E1CA502F231740009A87D2 /* LaunchAtLoginHelper.swift */,
-				511D73D62F18D98400163A46 /* AccessibilityHelper.swift */,
 				511D73DA2F18D98400163A46 /* AppInfo.swift */,
 				511D73DB2F18D98400163A46 /* AppleScriptHelper.swift */,
 				511D73E02F18D98400163A46 /* CrashReporter.swift */,
@@ -478,8 +535,50 @@
 			isa = PBXGroup;
 			children = (
 				C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */,
+				0247955385A9AC7057FE0B3B /* OverlayWindowTests.swift */,
+				4D52410100000000000000B2 /* ScreenManagerTests.swift */,
+				4D5241030000000000000003 /* ClaudeHookTests.swift */,
+				4D5241030000000000000001 /* AgentSessionStoreTests.swift */,
 			);
 			path = "Mac灵动岛Tests";
+			sourceTree = "<group>";
+		};
+		4D52410100000000000000A5 /* MediaRemoteAdapter */ = {
+			isa = PBXGroup;
+			children = (
+				4D52410100000000000000A1 /* MediaRemoteAdapter.m */,
+			);
+			path = MediaRemoteAdapter;
+			sourceTree = "<group>";
+		};
+		4D5241020000000000000001 /* Agents */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241040000000000000003 /* AgentAlertSound.swift */,
+				4D5241040000000000000001 /* ClaudeTranscript.swift */,
+				4D524102000000000000000B /* TerminalFocuser.swift */,
+				4D5241020000000000000009 /* ClaudeHookServer.swift */,
+				4D5241020000000000000007 /* ClaudeHookInstaller.swift */,
+				4D5241020000000000000005 /* ClaudeHookEvent.swift */,
+				4D5241020000000000000003 /* AgentSessionStore.swift */,
+			);
+			path = Agents;
+			sourceTree = "<group>";
+		};
+		4D5241020000000000000002 /* Agents */ = {
+			isa = PBXGroup;
+			children = (
+				4D524102000000000000000D /* AgentViews.swift */,
+			);
+			path = Agents;
+			sourceTree = "<group>";
+		};
+		4D5241020000000000000011 /* ClaudeHookBridge */ = {
+			isa = PBXGroup;
+			children = (
+				4D524102000000000000001D /* main.c */,
+			);
+			path = ClaudeHookBridge;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -492,10 +591,14 @@
 				51E49FA72F0B8D41002AD746 /* Sources */,
 				51E49FA82F0B8D41002AD746 /* Frameworks */,
 				51E49FA92F0B8D41002AD746 /* Resources */,
+				4D52410100000000000000A9 /* Embed Libraries */,
+				4D5241020000000000000017 /* Embed Helpers */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				4D52410100000000000000AB /* PBXTargetDependency */,
+				4D5241020000000000000019 /* PBXTargetDependency */,
 			);
 			name = "Mac灵动岛";
 			productName = "Mac灵动岛";
@@ -520,6 +623,38 @@
 			productReference = 16699883D1FCA93359C8C3D6 /* Mac灵动岛Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		4D52410100000000000000A6 /* MediaRemoteAdapter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D52410100000000000000AC /* Build configuration list for PBXNativeTarget "MediaRemoteAdapter" */;
+			buildPhases = (
+				4D52410100000000000000A7 /* Sources */,
+				4D52410100000000000000A8 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MediaRemoteAdapter;
+			productName = MediaRemoteAdapter;
+			productReference = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		4D5241020000000000000015 /* ClaudeHookBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D524102000000000000001A /* Build configuration list for PBXNativeTarget "ClaudeHookBridge" */;
+			buildPhases = (
+				4D5241020000000000000013 /* Sources */,
+				4D5241020000000000000014 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ClaudeHookBridge;
+			productName = "island-claude-hook";
+			productReference = 4D5241020000000000000012 /* island-claude-hook */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -536,6 +671,12 @@
 					};
 					51E49FAA2F0B8D41002AD746 = {
 						CreatedOnToolsVersion = 26.0.1;
+					};
+					4D52410100000000000000A6 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					4D5241020000000000000015 = {
+						CreatedOnToolsVersion = 27.0;
 					};
 				};
 			};
@@ -558,6 +699,8 @@
 			targets = (
 				51E49FAA2F0B8D41002AD746 /* Mac灵动岛 */,
 				2013CF6D78CAA4315DA29D50 /* Mac灵动岛Tests */,
+				4D52410100000000000000A6 /* MediaRemoteAdapter */,
+				4D5241020000000000000015 /* ClaudeHookBridge */,
 			);
 		};
 /* End PBXProject section */
@@ -586,12 +729,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4D5241040000000000000004 /* AgentAlertSound.swift in Sources */,
+				4D5241040000000000000002 /* ClaudeTranscript.swift in Sources */,
+				4D5241020000000000000010 /* AgentSettingsView.swift in Sources */,
+				4D524102000000000000000E /* AgentViews.swift in Sources */,
+				4D524102000000000000000C /* TerminalFocuser.swift in Sources */,
+				4D524102000000000000000A /* ClaudeHookServer.swift in Sources */,
+				4D5241020000000000000008 /* ClaudeHookInstaller.swift in Sources */,
+				4D5241020000000000000006 /* ClaudeHookEvent.swift in Sources */,
+				4D5241020000000000000004 /* AgentSessionStore.swift in Sources */,
 				B604001DB9274EEAA702BD55 /* Mac灵动岛App.swift in Sources */,
 				51F1B11E2F0E4A2500B89019 /* NowPlayingState.swift in Sources */,
 				51D024632F16046D00B1FF0F /* SearchEngine.swift in Sources */,
 				51D024662F16046D00B1FF0F /* ClipboardHubStore.swift in Sources */,
 				51E1CA602F23187F009A87D2 /* ShelfSettingsView.swift in Sources */,
-				51E1CA612F23187F009A87D2 /* CalendarSettingsView.swift in Sources */,
 				51E1CA622F23187F009A87D2 /* MediaSettingsView.swift in Sources */,
 				51E1CA642F23187F009A87D2 /* ShortcutsSettingsView.swift in Sources */,
 				51E1CA652F23187F009A87D2 /* AppearanceSettingsView.swift in Sources */,
@@ -604,15 +755,12 @@
 				511D73282F18D90300163A46 /* NSScreen+Extensions.swift in Sources */,
 				511D73292F18D90300163A46 /* Color+Extensions.swift in Sources */,
 				511D732A2F18D90300163A46 /* ShelfStateViewModel+Extensions.swift in Sources */,
-				511D732C2F18D90300163A46 /* EventManager.swift in Sources */,
 				511D73332F18D90300163A46 /* BuildConfig.swift in Sources */,
-				511D73362F18D90300163A46 /* CalendarManager.swift in Sources */,
 				511D73F42F18D98400163A46 /* AppleScriptHelper.swift in Sources */,
 				511D73F52F18D98400163A46 /* CrashReporter.swift in Sources */,
 				511D73FD2F18D98400163A46 /* Defaults+Keys.swift in Sources */,
 				511D73FE2F18D98400163A46 /* VisualEffectsCompositor.swift in Sources */,
 				511D73FF2F18D98400163A46 /* AppInfo.swift in Sources */,
-				511D74002F18D98400163A46 /* AccessibilityHelper.swift in Sources */,
 				511D74022F18D98400163A46 /* MemoryManager.swift in Sources */,
 				511D742A2F18DA0B00163A46 /* MusicControlButton.swift in Sources */,
 				511D742B2F18DA0B00163A46 /* ShelfItem+Extensions.swift in Sources */,
@@ -637,7 +785,6 @@
 				5163623F2F2871320014744B /* DragDetectorManager.swift in Sources */,
 				51F1B11A2F0E49FF00B89019 /* OverlayVisibilityReason.swift in Sources */,
 				51E49FD12F0B93E9002AD746 /* AppState.swift in Sources */,
-				511D73AB2F18D94200163A46 /* CalendarView.swift in Sources */,
 				511D73AD2F18D94200163A46 /* AboutView.swift in Sources */,
 				511D73B82F18D94200163A46 /* ShelfView.swift in Sources */,
 				511D73CA2F18D94200163A46 /* AdvancedSettingsView.swift in Sources */,
@@ -654,8 +801,6 @@
 				51E49FD02F0B93E3002AD746 /* ClipboardManager.swift in Sources */,
 				510BABFB2F222146001CA156 /* LyricsService.swift in Sources */,
 				D32477692E35F4767B8B70001 /* FileVaultStore.swift in Sources */,
-				AA000001ZONE3STATE00000001 /* Zone3State.swift in Sources */,
-				AA000001ZONE3VIEWS00000001 /* Zone3Views.swift in Sources */,
 				51D024742F16049400B1FF0F /* ClipboardCardView.swift in Sources */,
 				51D024752F16049400B1FF0F /* ClipboardHubView.swift in Sources */,
 			);
@@ -666,6 +811,26 @@
 			buildActionMask = 2147483647;
 			files = (
 				35C45DEF006A10FE546DCB37 /* ClipboardHubStoreTests.swift in Sources */,
+				F47AB87F21601EACC7D73B1D /* OverlayWindowTests.swift in Sources */,
+				4D52410100000000000000B1 /* ScreenManagerTests.swift in Sources */,
+				4D5241030000000000000004 /* ClaudeHookTests.swift in Sources */,
+				4D5241030000000000000002 /* AgentSessionStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D52410100000000000000A7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D52410100000000000000A3 /* MediaRemoteAdapter.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241020000000000000013 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D524102000000000000001E /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -676,6 +841,16 @@
 			isa = PBXTargetDependency;
 			target = 51E49FAA2F0B8D41002AD746 /* Mac灵动岛 */;
 			targetProxy = 3AC496CAE455ED04B550BBB2 /* PBXContainerItemProxy */;
+		};
+		4D52410100000000000000AB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D52410100000000000000A6 /* MediaRemoteAdapter */;
+			targetProxy = 4D52410100000000000000AA /* PBXContainerItemProxy */;
+		};
+		4D5241020000000000000019 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241020000000000000015 /* ClaudeHookBridge */;
+			targetProxy = 4D5241020000000000000018 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -746,7 +921,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -804,7 +979,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -822,7 +997,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = NF7KBQM4RH;
+				DEVELOPMENT_TEAM = 66233X8P8H;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -852,10 +1027,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Mac灵动岛/Mac灵动岛.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Distribution";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 66233X8P8H;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -885,9 +1061,9 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = NF7KBQM4RH;
+				DEVELOPMENT_TEAM = 66233X8P8H;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -903,15 +1079,65 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 66233X8P8H;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mac灵动岛.app/Contents/MacOS/Mac灵动岛";
+			};
+			name = Release;
+		};
+		4D52410100000000000000AD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		4D52410100000000000000AE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		4D524102000000000000001B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = "island-claude-hook";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		4D524102000000000000001C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = "island-claude-hook";
+				SKIP_INSTALL = YES;
 			};
 			name = Release;
 		};
@@ -941,6 +1167,24 @@
 			buildConfigurations = (
 				20DB8833730467E63D22FA03 /* Debug */,
 				4575B3060E10CC94493875FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D52410100000000000000AC /* Build configuration list for PBXNativeTarget "MediaRemoteAdapter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D52410100000000000000AD /* Debug */,
+				4D52410100000000000000AE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D524102000000000000001A /* Build configuration list for PBXNativeTarget "ClaudeHookBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524102000000000000001B /* Debug */,
+				4D524102000000000000001C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

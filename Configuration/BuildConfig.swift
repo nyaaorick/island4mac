@@ -55,6 +55,11 @@ struct BuildConfig {
     static var enablePerformanceMonitoring: Bool {
         return isDebugMode
     }
+
+    /// True while the app is hosting unit tests: skip anything that talks to other apps or asks for permissions
+    static var isRunningUnitTests: Bool {
+        return ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
     
     // MARK: - API Configuration
     
@@ -135,10 +140,6 @@ struct BuildConfig {
     
     static var clipboardPollInterval: TimeInterval {
         return 0.6
-    }
-    
-    static var calendarRefreshInterval: TimeInterval {
-        return 300.0 // 5 minutes
     }
     
     // MARK: - Debug

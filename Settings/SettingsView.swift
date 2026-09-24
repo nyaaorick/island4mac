@@ -65,11 +65,11 @@ struct MainSettingsView: View {
                     Label(L("settings.tab.media"), systemImage: "music.note")
                 }
             
-            CalendarSettingsView()
+            AgentSettingsView()
                 .tabItem {
-                    Label(L("settings.tab.calendar"), systemImage: "calendar")
+                    Label("Claude Code", systemImage: "terminal")
                 }
-            
+
             ClipboardSettingsWindow(hubStore: OverlayWindowController.shared.getAppState().clipVault)
                 .tabItem {
                     Label(L("settings.tab.clipboard"), systemImage: "doc.on.clipboard")

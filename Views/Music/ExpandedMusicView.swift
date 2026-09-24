@@ -12,12 +12,12 @@ struct ExpandedMusicView: View {
 
     var body: some View {
         ZStack {
-            HStack(alignment: .center, spacing: 20) {
+            HStack(alignment: .center, spacing: 18) {
                 // 💿 ALBUM ART
                 albumArtView
                 
                 // 📝 TRACK INFO & LYRICS & CONTROLS
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 8) {
                     // Title & Artist
                     VStack(alignment: .leading, spacing: 2) {
                         Text(musicManager.songTitle.isEmpty ? "Not Playing" : musicManager.songTitle)
@@ -34,10 +34,9 @@ struct ExpandedMusicView: View {
                     // 🎤 LYRICS VIEW (New)
                     if !musicManager.currentLyrics.isEmpty {
                         LyricsView(musicManager: musicManager)
-                            .frame(height: 50)
-                            .padding(.vertical, 4)
+                            .frame(height: 36)
                     } else {
-                        Spacer().frame(height: 20)
+                        Spacer().frame(height: 8)
                     }
                     
                     // ⏱ PROGRESS STRIP
@@ -48,51 +47,8 @@ struct ExpandedMusicView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .padding(20)
-            
-            // 🔒 PERMISSION OVERLAY
-            if musicManager.needsAccessibilityPermission {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.black.opacity(0.8))
-                        .blur(radius: 5)
-                    
-                    VStack(spacing: 8) {
-                        Image(systemName: "hand.raised.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(.yellow)
-                        
-                        Text("Accessibility Access Needed")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                        
-                        Text("Required to see song info")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                        
-                        Button("Grant Permission") {
-                            AccessibilityHelper.shared.openAccessibilityPreferences()
-                            // Also try prompting again
-                            AccessibilityHelper.shared.requestAccessibilityPermission()
-                            
-                            // Start polling for changes
-                            AccessibilityHelper.shared.pollForPermission { granted in
-                                if granted {
-                                    DispatchQueue.main.async {
-                                        // Update properties directly on the observed object
-                                        musicManager.needsAccessibilityPermission = false
-                                        musicManager.forceUpdate()
-                                    }
-                                }
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.yellow)
-                        .padding(.top, 4)
-                    }
-                }
-                .transition(.opacity)
-            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
         }
         .background(Color.clear)
         .onChange(of: musicManager.songTitle) { oldTitle, newTitle in
@@ -118,7 +74,7 @@ struct ExpandedMusicView: View {
     }
     
     private var progressStrip: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             GeometryReader { geo in
                 let duration = max(0, musicManager.songDuration)
                 let displayTime = isSeeking ? seekTime : musicManager.currentDisplayTime
@@ -159,7 +115,7 @@ struct ExpandedMusicView: View {
                     : nil
                 )
             }
-            .frame(height: 20)
+            .frame(height: 12)
 
             HStack {
                 Text(formatTime(isSeeking ? seekTime : musicManager.currentDisplayTime))
@@ -172,17 +128,17 @@ struct ExpandedMusicView: View {
     }
     
     private var mediaControls: some View {
-        HStack(spacing: 24) {
+        HStack(spacing: 20) {
             Spacer()
             controlButton(icon: "backward.fill") { musicManager.previousTrack() }
             
             Button(action: { musicManager.togglePlay() }) {
                 Circle()
                     .fill(Color.white.opacity(0.2))
-                    .frame(width: 44, height: 44)
+                    .frame(width: 38, height: 38)
                     .overlay(
                         Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 18, weight: .bold))
+                            .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                     )
             }
@@ -196,9 +152,9 @@ struct ExpandedMusicView: View {
     private func controlButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 16, weight: .bold))
+                .font(.system(size: 15, weight: .bold))
                 .foregroundColor(.white.opacity(0.8))
-                .frame(width: 32, height: 32)
+                .frame(width: 28, height: 28)
         }
         .buttonStyle(.plain)
     }
@@ -255,7 +211,7 @@ struct LyricsView: View {
                     Text(cleanLyrics(musicManager.currentLyrics))
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.white.opacity(0.8))
-                        .lineLimit(3)
+                        .lineLimit(2)
                         .lineSpacing(4)
                         .multilineTextAlignment(.leading)
                         .frame(width: geo.size.width, alignment: .topLeading)

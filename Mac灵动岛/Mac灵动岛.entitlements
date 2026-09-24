@@ -7,12 +7,8 @@
 	<!-- Not sandboxed; signed with Hardened Runtime  -->
 	<!-- ============================================ -->
 
-	<!-- Apple Events (AppleScript control of Music / Spotify, System Events paste) -->
+	<!-- Apple Events (lyrics from Music, System Events paste) -->
 	<key>com.apple.security.automation.apple-events</key>
-	<true/>
-
-	<!-- Calendar Access (Hardened Runtime resource access) -->
-	<key>com.apple.security.personal-information.calendars</key>
 	<true/>
 </dict>
 </plist>

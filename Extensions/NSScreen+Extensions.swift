@@ -8,16 +8,9 @@
 import AppKit
 
 extension NSScreen {
-    /// Get unique identifier for screen
-    var displayUUID: String? {
-        return deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? String
-            ?? String(describing: deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")])
-    }
-    
-    /// Find screen by UUID
-    static func screen(withUUID uuid: String?) -> NSScreen? {
-        guard let uuid = uuid else { return nil }
-        return NSScreen.screens.first { $0.displayUUID == uuid }
+    /// CoreGraphics display ID; stable while the display stays connected, unlike NSScreen instances
+    var displayID: CGDirectDisplayID? {
+        (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
     }
     
     /// Check if screen has a notch
@@ -34,5 +27,13 @@ extension NSScreen {
             return safeAreaInsets.top
         }
         return 0
+    }
+
+    /// Size of the camera housing (notch), or .zero if the screen has none
+    var notchSize: CGSize {
+        guard safeAreaInsets.top > 0,
+              let left = auxiliaryTopLeftArea,
+              let right = auxiliaryTopRightArea else { return .zero }
+        return CGSize(width: frame.width - left.width - right.width, height: safeAreaInsets.top)
     }
 }

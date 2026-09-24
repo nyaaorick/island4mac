@@ -20,7 +20,6 @@
 "settings.tab.media" = "媒体";
 "settings.tab.huds" = "HUD";
 "settings.tab.battery" = "电池";
-"settings.tab.calendar" = "日历";
 "settings.tab.clipboard" = "剪贴板";
 "settings.tab.shelf" = "架子";
 "settings.tab.shortcuts" = "快捷键";
@@ -65,8 +64,6 @@
 "settings.battery.header" = "电池状态";
 "settings.battery.enabled" = "在灵动岛内显示电池信息";
 
-"settings.calendar.header" = "日历与提醒";
-"settings.calendar.enabled" = "显示日程和计划";
 
 "settings.advanced.header" = "高级选项";
 "settings.advanced.overlay_scale" = "界面缩放倍率";
@@ -174,8 +171,6 @@
 "onboarding.permissions.title" = "所需权限";
 "onboarding.permissions.accessibility" = "辅助功能";
 "onboarding.permissions.accessibility.desc" = "用于全局快捷键和拖放功能";
-"onboarding.permissions.calendar" = "日历";
-"onboarding.permissions.calendar.desc" = "显示即将到来的事件";
 "onboarding.permissions.music" = "Apple Music";
 "onboarding.permissions.music.desc" = "显示正在播放的音乐";
 "onboarding.permissions.granted" = "已授权";
