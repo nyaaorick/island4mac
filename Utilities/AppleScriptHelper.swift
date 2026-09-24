@@ -6,19 +6,6 @@
 //
 
 import Foundation
-
-#if APP_STORE
-/// Stub implementation for App Store builds (AppleScript not available in sandbox)
-class AppleScriptHelper {
-    static func executeScript(_ script: String) -> String? { nil }
-    static func executeScriptReturningInt(_ script: String) -> Int? { nil }
-    static func executeScriptReturningDouble(_ script: String) -> Double? { nil }
-    static func executeScriptReturningBool(_ script: String) -> Bool? { nil }
-    @discardableResult
-    static func executeScriptVoid(_ script: String) -> Bool { false }
-    static func executeScriptReturningData(_ script: String) -> Data? { nil }
-}
-#else
 import AppKit
 
 /// Helper for executing AppleScript commands
@@ -87,4 +74,3 @@ class AppleScriptHelper {
         return nil
     }
 }
-#endif

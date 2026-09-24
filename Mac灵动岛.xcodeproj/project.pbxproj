@@ -70,10 +70,8 @@
 		51E49FD12F0B93E9002AD746 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E49FCD2F0B913D002AD746 /* AppState.swift */; };
 		51E49FD22F0B93F0002AD746 /* HotKeyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E49FC62F0B8FF2002AD746 /* HotKeyManager.swift */; };
 		51F1B0D52F0E0DB700B89019 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 51F1B0D22F0E0DB700B89019 /* Localizable.strings */; };
-		51F1B0D82F0E0DB700B89019 /* Localizable.strings (Chinese) in Resources */ = {isa = PBXBuildFile; fileRef = 51F1B0BE2F0E0DB700B89019 /* Localizable.strings (Chinese) */; };
 		51F1B0E22F0E0DB700B89019 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B0C52F0E0DB700B89019 /* Localization.swift */; };
 		51F1B0E42F0E0DB700B89019 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B0C62F0E0DB700B89019 /* Log.swift */; };
-		51F1B0EF2F0E143300B89019 /* Localizable.strings (English) in Resources */ = {isa = PBXBuildFile; fileRef = 51E49FDC2F0B9E72002AD746 /* Localizable.strings (English) */; };
 		51F1B0F42F0E159D00B89019 /* ScreenManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B0F32F0E159D00B89019 /* ScreenManager.swift */; };
 		51F1B11A2F0E49FF00B89019 /* OverlayVisibilityReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B1192F0E49FF00B89019 /* OverlayVisibilityReason.swift */; };
 		51F1B11C2F0E4A1400B89019 /* NowPlayingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B11B2F0E4A1400B89019 /* NowPlayingManager.swift */; };
@@ -82,7 +80,19 @@
 		AA000001ZONE3VIEWS00000001 /* Zone3Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002ZONE3VIEWS00000001 /* Zone3Views.swift */; };
 		B604001DB9274EEAA702BD55 /* Mac灵动岛App.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0ABEFA9F80404A97C74C13 /* Mac灵动岛App.swift */; };
 		D32477692E35F4767B8B70001 /* FileVaultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE53D77E3580A4ABAD740001 /* FileVaultStore.swift */; };
+		31D8F0872E01F10E96AE9741 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 12E7EC74DFA82BC2C76B22C4 /* Assets.xcassets */; };
+		35C45DEF006A10FE546DCB37 /* ClipboardHubStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3AC496CAE455ED04B550BBB2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 51E49FAA2F0B8D41002AD746;
+			remoteInfo = "Mac灵动岛";
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		5104FC492F1A4B5D003F8273 /* OverlayWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowController.swift; sourceTree = "<group>"; };
@@ -149,19 +159,13 @@
 		51E49FC62F0B8FF2002AD746 /* HotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
 		51E49FCD2F0B913D002AD746 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		51E49FCE2F0B9149002AD746 /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
-		51E49FDB2F0B9E63002AD746 /* Localizable.strings (Chinese) */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Localizable.strings (Chinese)"; sourceTree = "<group>"; };
-		51E49FDC2F0B9E72002AD746 /* Localizable.strings (English) */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Localizable.strings (English)"; sourceTree = "<group>"; };
-		51F1B0BA2F0E0DB700B89019 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Localizable.strings; sourceTree = "<group>"; };
 		51F1B0BD2F0E0DB700B89019 /* RELEASE_NOTES.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = RELEASE_NOTES.md; sourceTree = "<group>"; };
-		51F1B0BE2F0E0DB700B89019 /* Localizable.strings (Chinese) */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Localizable.strings (Chinese)"; sourceTree = "<group>"; };
-		51F1B0BF2F0E0DB700B89019 /* Localizable.strings (English) */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Localizable.strings (English)"; sourceTree = "<group>"; };
 		51F1B0C12F0E0DB700B89019 /* TEST_READINESS_SUMMARY.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TEST_READINESS_SUMMARY.md; sourceTree = "<group>"; };
 		51F1B0C22F0E0DB700B89019 /* UPDATE_METADATA_FORMAT.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UPDATE_METADATA_FORMAT.md; sourceTree = "<group>"; };
 		51F1B0C52F0E0DB700B89019 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		51F1B0C62F0E0DB700B89019 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		51F1B0D02F0E0DB700B89019 /* WARP.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = WARP.md; sourceTree = "<group>"; };
 		51F1B0D12F0E0DB700B89019 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = Localizable.strings; sourceTree = "<group>"; };
-		51F1B0ED2F0E141000B89019 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "../zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 		51F1B0EE2F0E142900B89019 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = ../en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51F1B0F32F0E159D00B89019 /* ScreenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManager.swift; sourceTree = "<group>"; };
 		51F1B1192F0E49FF00B89019 /* OverlayVisibilityReason.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayVisibilityReason.swift; sourceTree = "<group>"; };
@@ -170,10 +174,20 @@
 		AA000002ZONE3STATE00000001 /* Zone3State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone3State.swift; sourceTree = "<group>"; };
 		AA000002ZONE3VIEWS00000001 /* Zone3Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone3Views.swift; sourceTree = "<group>"; };
 		CD0ABEFA9F80404A97C74C13 /* Mac灵动岛App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Mac灵动岛App.swift"; sourceTree = "<group>"; };
+		12E7EC74DFA82BC2C76B22C4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		16699883D1FCA93359C8C3D6 /* Mac灵动岛Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Mac灵动岛Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHubStoreTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		51E49FA82F0B8D41002AD746 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9D559604FAB6932EE5648ED8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -343,21 +357,19 @@
 				511D73162F18D90300163A46 /* ViewModels */,
 				51F1B0E82F0E0EBE00B89019 /* Models */,
 				51F1B0EA2F0E0EBE00B89019 /* Services */,
-				51F1B0BC2F0E0DB700B89019 /* en.lproj */,
 				51F1B0BD2F0E0DB700B89019 /* RELEASE_NOTES.md */,
-				51F1B0C02F0E0DB700B89019 /* SupportingFiles */,
 				51F1B0C12F0E0DB700B89019 /* TEST_READINESS_SUMMARY.md */,
 				51F1B0C22F0E0DB700B89019 /* UPDATE_METADATA_FORMAT.md */,
 				51F1B0C92F0E0DB700B89019 /* Utilities */,
 				51F1B0D02F0E0DB700B89019 /* WARP.md */,
 				51F1B0D32F0E0DB700B89019 /* zh-Hans.lproj */,
-				51E49FDA2F0B9E4F002AD746 /* SupportingFiles */,
 				51E49FD92F0B9E29002AD746 /* State */,
 				51E49FC72F0B8FFB002AD746 /* Views */,
 				51E49FC32F0B8FC4002AD746 /* Managers */,
 				51E49FBE2F0B8F8E002AD746 /* AppDelegate.swift */,
 				51E49FAD2F0B8D41002AD746 /* Mac灵动岛 */,
 				51E49FAC2F0B8D41002AD746 /* Products */,
+				7404FFD9BC3C50E640B54D9E /* Mac灵动岛Tests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -365,6 +377,7 @@
 			isa = PBXGroup;
 			children = (
 				51E49FAB2F0B8D41002AD746 /* Mac灵动岛.app */,
+				16699883D1FCA93359C8C3D6 /* Mac灵动岛Tests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -373,6 +386,7 @@
 			isa = PBXGroup;
 			children = (
 				CD0ABEFA9F80404A97C74C13 /* Mac灵动岛App.swift */,
+				12E7EC74DFA82BC2C76B22C4 /* Assets.xcassets */,
 			);
 			path = "Mac灵动岛";
 			sourceTree = "<group>";
@@ -416,32 +430,6 @@
 				51E49FCD2F0B913D002AD746 /* AppState.swift */,
 			);
 			path = State;
-			sourceTree = "<group>";
-		};
-		51E49FDA2F0B9E4F002AD746 /* SupportingFiles */ = {
-			isa = PBXGroup;
-			children = (
-				51E49FDC2F0B9E72002AD746 /* Localizable.strings (English) */,
-				51E49FDB2F0B9E63002AD746 /* Localizable.strings (Chinese) */,
-			);
-			path = SupportingFiles;
-			sourceTree = "<group>";
-		};
-		51F1B0BC2F0E0DB700B89019 /* en.lproj */ = {
-			isa = PBXGroup;
-			children = (
-				51F1B0BB2F0E0DB700B89019 /* Localizable.strings */,
-			);
-			path = en.lproj;
-			sourceTree = "<group>";
-		};
-		51F1B0C02F0E0DB700B89019 /* SupportingFiles */ = {
-			isa = PBXGroup;
-			children = (
-				51F1B0BE2F0E0DB700B89019 /* Localizable.strings (Chinese) */,
-				51F1B0BF2F0E0DB700B89019 /* Localizable.strings (English) */,
-			);
-			path = SupportingFiles;
 			sourceTree = "<group>";
 		};
 		51F1B0C92F0E0DB700B89019 /* Utilities */ = {
@@ -496,6 +484,14 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
+		7404FFD9BC3C50E640B54D9E /* Mac灵动岛Tests */ = {
+			isa = PBXGroup;
+			children = (
+				C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */,
+			);
+			path = "Mac灵动岛Tests";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -516,6 +512,24 @@
 			productReference = 51E49FAB2F0B8D41002AD746 /* Mac灵动岛.app */;
 			productType = "com.apple.product-type.application";
 		};
+		2013CF6D78CAA4315DA29D50 /* Mac灵动岛Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 267CAFEC18DF207FD29D72F0 /* Build configuration list for PBXNativeTarget "Mac灵动岛Tests" */;
+			buildPhases = (
+				F51191A9A03FB5923DF89BC0 /* Sources */,
+				9D559604FAB6932EE5648ED8 /* Frameworks */,
+				07767327C1495053AC163223 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				020B16BB8ED51250DF6147D9 /* PBXTargetDependency */,
+			);
+			name = "Mac灵动岛Tests";
+			productName = "Mac灵动岛Tests";
+			productReference = 16699883D1FCA93359C8C3D6 /* Mac灵动岛Tests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -526,6 +540,10 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					2013CF6D78CAA4315DA29D50 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = 51E49FAA2F0B8D41002AD746;
+					};
 					51E49FAA2F0B8D41002AD746 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
@@ -549,6 +567,7 @@
 			projectRoot = "";
 			targets = (
 				51E49FAA2F0B8D41002AD746 /* Mac灵动岛 */,
+				2013CF6D78CAA4315DA29D50 /* Mac灵动岛Tests */,
 			);
 		};
 /* End PBXProject section */
@@ -558,9 +577,15 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				51F1B0EF2F0E143300B89019 /* Localizable.strings (English) in Resources */,
 				51F1B0D52F0E0DB700B89019 /* Localizable.strings in Resources */,
-				51F1B0D82F0E0DB700B89019 /* Localizable.strings (Chinese) in Resources */,
+				31D8F0872E01F10E96AE9741 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07767327C1495053AC163223 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -646,18 +671,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		F51191A9A03FB5923DF89BC0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				35C45DEF006A10FE546DCB37 /* ClipboardHubStoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXVariantGroup section */
-		51F1B0BB2F0E0DB700B89019 /* Localizable.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				51F1B0BA2F0E0DB700B89019 /* en */,
-				51F1B0ED2F0E141000B89019 /* zh-Hans */,
-			);
-			name = Localizable.strings;
-			sourceTree = "<group>";
+/* Begin PBXTargetDependency section */
+		020B16BB8ED51250DF6147D9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 51E49FAA2F0B8D41002AD746 /* Mac灵动岛 */;
+			targetProxy = 3AC496CAE455ED04B550BBB2 /* PBXContainerItemProxy */;
 		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
 		51F1B0D22F0E0DB700B89019 /* Localizable.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
@@ -801,7 +833,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = NF7KBQM4RH;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -834,7 +866,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -848,13 +880,48 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = NO;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "APP_STORE $(inherited)";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		20DB8833730467E63D22FA03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NF7KBQM4RH;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mac灵动岛.app/Contents/MacOS/Mac灵动岛";
+			};
+			name = Debug;
+		};
+		4575B3060E10CC94493875FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mac灵动岛.app/Contents/MacOS/Mac灵动岛";
 			};
 			name = Release;
 		};
@@ -875,6 +942,15 @@
 			buildConfigurations = (
 				51E49FB72F0B8D44002AD746 /* Debug */,
 				51E49FB82F0B8D44002AD746 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		267CAFEC18DF207FD29D72F0 /* Build configuration list for PBXNativeTarget "Mac灵动岛Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				20DB8833730467E63D22FA03 /* Debug */,
+				4575B3060E10CC94493875FE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

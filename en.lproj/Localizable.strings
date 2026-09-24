@@ -15,11 +15,23 @@
 
 /* ===== Settings Window ===== */
 "settings.title" = "Settings";
+"settings.tab.general" = "General";
+"settings.tab.appearance" = "Appearance";
+"settings.tab.media" = "Media";
+"settings.tab.calendar" = "Calendar";
+"settings.tab.clipboard" = "Clipboard";
+"settings.tab.shelf" = "Shelf";
+"settings.tab.shortcuts" = "Shortcuts";
+"settings.tab.advanced" = "Advanced";
+"settings.tab.about" = "About";
 "settings.startup.header" = "Startup";
 "settings.startup.launch_at_login" = "Launch at login";
 "settings.behavior.header" = "Behavior";
 "settings.behavior.show_on_hover" = "Show on hover";
 "settings.behavior.show_on_hover_help" = "Show overlay when mouse approaches it";
+"settings.behavior.hover_delay" = "Hover delay";
+"settings.behavior.haptic_feedback" = "Enable haptic feedback";
+"settings.behavior.haptic_feedback_help" = "Play a subtle haptic when the island opens or closes (if the hardware supports it)";
 "settings.display.header" = "Display";
 "settings.display.show_on" = "Show on";
 "settings.display.mode.main_only" = "Main Screen Only";
@@ -28,6 +40,10 @@
 "settings.appearance.header" = "Appearance";
 "settings.appearance.panel_width" = "Panel width";
 "settings.appearance.panel_width_unit" = "px";
+"settings.appearance.corner_radius" = "Corner radius scale";
+"settings.appearance.lighting_effect" = "Enable lighting effect";
+"settings.appearance.lighting_effect_help" = "Show a dynamic ambient glow behind album art and content";
+"settings.media.timeout_unit" = "s";
 "settings.appearance.reduce_motion" = "Reduce motion";
 "settings.appearance.reduce_motion_help" = "Minimize animations (in addition to system setting)";
 

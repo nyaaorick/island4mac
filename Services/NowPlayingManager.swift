@@ -7,7 +7,6 @@ import OSLog
 final class NowPlayingManager: ObservableObject {
     @Published var currentState: IslandNowPlayingState = .idle
 
-    #if !APP_STORE
     private let queue = DispatchQueue(label: "com.maclingdong島.mediaremote", qos: .userInteractive)
 
     private typealias MRMediaRemoteGetNowPlayingInfoFunction = @convention(c) (DispatchQueue, @escaping ([String: Any]?) -> Void) -> Void
@@ -18,32 +17,11 @@ final class NowPlayingManager: ObservableObject {
     private var MRMediaRemoteGetNowPlayingInfoFunc: MRMediaRemoteGetNowPlayingInfoFunction?
     private var MRMediaRemoteSendCommandFunc: MRMediaRemoteSendCommandFunction?
     private var MRMediaRemoteSetElapsedTimeFunc: MRMediaRemoteSetElapsedTimeFunction?
-    #endif
 
     init() {
-        #if !APP_STORE
         loadMediaRemote()
-        #endif
     }
 
-    #if APP_STORE
-    @objc func refresh() {
-        // System-wide Now Playing is not available in App Store builds.
-        if currentState != .idle {
-            currentState = .idle
-        }
-    }
-
-    func playPause() {}
-    func nextTrack() {}
-    func previousTrack() {}
-
-    func seek(to position: TimeInterval) {
-        _ = position
-    }
-
-    func revealSourceApp() {}
-    #else
     private func loadMediaRemote() {
         let bundlePath = "/System/Library/PrivateFrameworks/MediaRemote.framework"
         guard let bundle = CFBundleCreate(kCFAllocatorDefault, URL(fileURLWithPath: bundlePath) as CFURL) else { return }
@@ -171,5 +149,4 @@ final class NowPlayingManager: ObservableObject {
             // We'll stick to bundle identifier as per Apple's recommendation
         }
     }
-    #endif
 }

@@ -1,15 +1,6 @@
 import Cocoa
 import OSLog
 
-#if APP_STORE
-/// Stub implementation for App Store builds
-/// Global hotkey monitoring is not available in sandboxed apps
-final class HotKeyManager {
-    init(appState: AppState, overlayController: OverlayWindowController) {}
-    func start() {}
-    func stop() {}
-}
-#else
 /// Global hotkeys for overlay control.
 /// Primary:   Cmd + Shift + Space  (toggle overlay)
 /// Secondary: Cmd + Option + Space  (force close)
@@ -209,5 +200,4 @@ final class HotKeyManager {
         }
     }
 }
-#endif
 

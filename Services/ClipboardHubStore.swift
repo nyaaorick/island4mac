@@ -56,7 +56,13 @@ typealias IslandClipVault = ClipboardHubStore
 @MainActor
 final class ClipboardHubStore: ObservableObject {
     @Published var items: [IslandClipItem] = []
-    
+
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
     // UI Settings
     enum DisplayMode: String, Codable { case grid, reel }
     @Published var displayMode: DisplayMode = .grid
@@ -207,12 +213,12 @@ final class ClipboardHubStore: ObservableObject {
     
     private func saveToDisk() {
         if let data = try? JSONEncoder().encode(items) {
-            UserDefaults.standard.set(data, forKey: "mac_island_clipvault_v1")
+            defaults.set(data, forKey: "mac_island_clipvault_v1")
         }
     }
-    
+
     func loadFromDisk() {
-        if let data = UserDefaults.standard.data(forKey: "mac_island_clipvault_v1"),
+        if let data = defaults.data(forKey: "mac_island_clipvault_v1"),
            let decoded = try? JSONDecoder().decode([IslandClipItem].self, from: data) {
             items = decoded
         }

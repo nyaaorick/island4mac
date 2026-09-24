@@ -59,12 +59,9 @@
     <key>NSCalendarsFullAccessUsageDescription</key>
     <string>Mac灵动岛 needs full calendar access to show your upcoming events and allow quick interactions.</string>
     
-    <key>NSRemindersUsageDescription</key>
-    <string>Mac灵动岛 needs access to your reminders to display pending tasks in the Dynamic Island overlay.</string>
-    
-    <key>NSRemindersFullAccessUsageDescription</key>
-    <string>Mac灵动岛 needs full reminders access to show your tasks and allow quick completion.</string>
-    
+    <key>NSAppleEventsUsageDescription</key>
+    <string>Mac灵动岛 uses Apple Events to read the current track, lyrics and artwork from Music and Spotify, and to paste clipboard items into the frontmost app.</string>
+
     <key>NSAppleMusicUsageDescription</key>
     <string>Mac灵动岛 needs access to Apple Music to display now playing information and control playback.</string>
     

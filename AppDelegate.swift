@@ -35,6 +35,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - App Lifecycle
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Unit tests run inside this app; don't start global monitors, hotkeys,
+        // calendar access or the menu bar item while they run.
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil else { return }
+
         LOG("")
         LOG("══════════════════════════════════════════════════")
         LOG("🚀 applicationDidFinishLaunching STARTING")

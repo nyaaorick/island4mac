@@ -3,36 +3,16 @@
 <plist version="1.0">
 <dict>
 	<!-- ============================================ -->
-	<!-- Mac灵动岛 - App Store Entitlements            -->
-	<!-- Sandboxed version for App Store submission  -->
+	<!-- Mac灵动岛 - Developer ID Entitlements         -->
+	<!-- Not sandboxed; signed with Hardened Runtime  -->
 	<!-- ============================================ -->
-	
-	<!-- App Sandbox (REQUIRED for App Store) -->
-	<key>com.apple.security.app-sandbox</key>
+
+	<!-- Apple Events (AppleScript control of Music / Spotify, System Events paste) -->
+	<key>com.apple.security.automation.apple-events</key>
 	<true/>
-	
-	<!-- Network Access (for album art, lyrics API) -->
-	<key>com.apple.security.network.client</key>
-	<true/>
-	
-	<!-- Calendar Access -->
+
+	<!-- Calendar Access (Hardened Runtime resource access) -->
 	<key>com.apple.security.personal-information.calendars</key>
-	<true/>
-	
-	<!-- Reminders Access -->
-	<key>com.apple.security.personal-information.reminders</key>
-	<true/>
-	
-	<!-- File Access (for drag & drop shelf) -->
-	<key>com.apple.security.files.user-selected.read-only</key>
-	<true/>
-	<key>com.apple.security.files.user-selected.read-write</key>
-	<true/>
-	<key>com.apple.security.files.downloads.read-write</key>
-	<true/>
-	
-	<!-- Apple Music / Media Library (for now playing info) -->
-	<key>com.apple.security.assets.music.read-only</key>
 	<true/>
 </dict>
 </plist>

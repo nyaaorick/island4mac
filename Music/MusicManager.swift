@@ -313,7 +313,6 @@ class MusicManager: ObservableObject {
     
     /// 从 Apple Music 获取歌词
     private func fetchLyricsFromAppleMusic() async -> String? {
-        #if !APP_STORE
         let script = """
         tell application "Music"
             try
@@ -323,10 +322,6 @@ class MusicManager: ObservableObject {
         end tell
         """
         return AppleScriptHelper.executeScript(script)
-        #else
-        // AppleScript not available in App Store builds
-        return nil
-        #endif
     }
     
     /// 从在线 API 获取歌词
@@ -520,7 +515,6 @@ class MusicManager: ObservableObject {
     
     /// 通过多种方式获取专辑封面（备用方案）
     private func fetchAlbumArtViaAppleScript() async {
-        #if !APP_STORE
         // 遍历所有支持的播放器
         for player in MusicPlayerConfig.supportedPlayers {
             guard isAppRunning(bundleIdentifier: player.bundleIdentifier) else {
@@ -584,8 +578,7 @@ class MusicManager: ObservableObject {
                 }
             }
         }
-        #endif
-        
+
         // 都失败了，使用默认图标
         await MainActor.run {
             self.albumArt = NSImage(systemSymbolName: "music.note", accessibilityDescription: nil)!
@@ -832,7 +825,6 @@ class MusicManager: ObservableObject {
                 print("🎶 [MusicManager] 检测到 \(player.name) 正在运行（无 MediaRemote 数据）")
                 #endif
                 
-                #if !APP_STORE
                 // 尝试通过 AppleScript 获取信息
                 if let script = player.artworkScript,
                    let data = AppleScriptHelper.executeScriptReturningData(script),
@@ -872,8 +864,7 @@ class MusicManager: ObservableObject {
                         #endif
                     }
                 }
-                #endif
-                
+
                 // 使用应用图标作为封面
                 if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: player.bundleIdentifier) {
                     let icon = NSWorkspace.shared.icon(forFile: appURL.path)
