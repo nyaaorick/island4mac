@@ -21,6 +21,7 @@
 "settings.tab.huds" = "HUD";
 "settings.tab.battery" = "电池";
 "settings.tab.calendar" = "日历";
+"settings.tab.clipboard" = "剪贴板";
 "settings.tab.shelf" = "架子";
 "settings.tab.shortcuts" = "快捷键";
 "settings.tab.advanced" = "高级";

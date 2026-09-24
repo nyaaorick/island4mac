@@ -57,7 +57,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusBarController = StatusBarController(
             appState: appState,
             overlayController: overlayController,
-            safeModeManager: integration.safeModeManager,
             timerManager: integration.timerManager
         )
         LOG("✅ StatusBarController initialized")
@@ -106,7 +105,6 @@ class AppIntegration {
     private(set) var musicManager: MusicPlayerManager!
     private(set) var batteryManager: BatteryActivityManager!
     private(set) var calendarManager: CalendarManager!
-    private(set) var safeModeManager: SafeModeManager!
     private(set) var timerManager: TimerManager!
     private var clipboardManager: ClipboardManager?
     private var hotKeyManager: HotKeyManager?
@@ -156,11 +154,9 @@ class AppIntegration {
         
         // Set shared instances for legacy access
         Task { @MainActor in
-            SafeModeManager.configure(appState: appState, hoverManager: nil)
             TimerManager.configure(appState: appState)
         }
-        
-        safeModeManager = SafeModeManager.shared
+
         timerManager = TimerManager.shared
         
         dragDropManager = InteractiveDragDropManager.shared

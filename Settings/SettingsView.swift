@@ -79,7 +79,12 @@ struct MainSettingsView: View {
                 .tabItem {
                     Label(L("settings.tab.huds"), systemImage: "speaker.wave.2")
                 }
-            
+
+            ClipboardSettingsWindow(hubStore: OverlayWindowController.shared.getAppState().clipVault)
+                .tabItem {
+                    Label(L("settings.tab.clipboard"), systemImage: "doc.on.clipboard")
+                }
+
             ShelfSettingsView()
                 .tabItem {
                     Label(L("settings.tab.shelf"), systemImage: "shippingbox")

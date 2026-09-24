@@ -13,7 +13,7 @@ final class HotKeyManager {
 /// Global hotkeys for overlay control.
 /// Primary:   Cmd + Shift + Space  (toggle overlay)
 /// Secondary: Cmd + Option + Space  (force close)
-/// Clipboard: Cmd + Option + V      (focused recall)
+/// Clipboard: Cmd + Option + V      (open clipboard tab)
 /// Lock:      Cmd + Option + L      (toggle position lock)
 /// Move Mode: Cmd + Option + M      (toggle free move mode)
 ///
@@ -23,7 +23,7 @@ final class HotKeyManager {
 
     private let appState: AppState
     private let overlayController: OverlayWindowController
-    private let logger = os.Logger(subsystem: AppLogger.subsystem, category: "HotKeyManager")
+    private let logger = os.Logger(subsystem: Log.subsystem, category: "HotKeyManager")
 
     private var primaryMonitor: Any?
     private var secondaryMonitor: Any?
@@ -180,8 +180,8 @@ final class HotKeyManager {
     private func handleClipboardHotkey() {
         // ✅ MainActor 隔离修复
         Task { @MainActor in
-            // Clipboard hotkey: always show Focused Recall mode
-            self.appState.clipboardHistory.showPickerExplicit(mode: .focusedRecall)
+            // Clipboard hotkey: open the island on the clipboard tab
+            self.appState.currentSection = .clipboard
             self.appState.activateOverlay(reason: .clipboardHistory)
             self.overlayController.show()
         }

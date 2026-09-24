@@ -19,7 +19,7 @@ struct Mac_Dynamic_IslandApp: App {
         // 因为我们是做灵动岛（纯代码控制窗口），所以这里不要放 WindowGroup
         // 放一个空的 Settings 即可，避免系统自动创建一个空白的主窗口
         Settings {
-            SettingsWindow()
+            MainSettingsView()
                 .environmentObject(appState)
         }
     }

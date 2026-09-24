@@ -399,8 +399,6 @@ struct ExpandedIslandRegion: View {
                         CalendarView()
                     case .zone3:
                         Zone3ContentView(onClose: { appState.deactivateOverlay() })
-                            .environmentObject(appState.fileVault)
-                            .environmentObject(appState.clipboardHistory)
                     }
                 }
             }

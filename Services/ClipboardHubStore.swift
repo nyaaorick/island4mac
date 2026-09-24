@@ -35,50 +35,9 @@ struct IslandClipItem: Identifiable, Codable, Equatable {
         return lhs.id == rhs.id
     }
     
-    // COMPATIBILITY WITH V2
     var isPinned: Bool { false } // TODO: Add persistence for pinning
-    var contentType: ClipboardItemV2.ContentType {
-        switch type {
-        case .text: return .text
-        case .image: return .image
-        case .url: return .url
-        case .code: return .code
-        }
-    }
-    var previewText: String { content }
-    func sourceAppIcon() -> NSImage { sourceIcon }
     var relativeTimeString: String { relativeTime }
-    var sizeInfo: String { 
-        if type == .image {
-            return ByteCountFormatter.string(fromByteCount: Int64(imageData?.count ?? 0), countStyle: .file)
-        }
-        return "\(content.count) chars"
-    }
-    var text: String? { type == .text ? content : nil }
-    var urlString: String? { type == .url ? content : nil }
-    var fileDisplayName: String? { nil }
-    var colorHex: String? { nil }
-    var fileBookmark: Data? { nil }
-    var fileSizeBytes: Int? { nil }
-    var displayAppName: String { sourceAppName ?? "Unknown" }
-    
-    init(from historyItem: ClipboardHistoryStore.ClipboardItem) {
-        self.id = historyItem.id
-        self.content = historyItem.content
-        self.timestamp = historyItem.timestamp
-        self.sourceBundleID = historyItem.sourceBundleIdentifier
-        self.sourceAppName = historyItem.sourceAppName
-        self.imageData = historyItem.imageData
-        
-        switch historyItem.type {
-        case .text: self.type = .text
-        case .image: self.type = .image
-        case .url: self.type = .url
-        case .code: self.type = .code
-        case .color: self.type = .text // Fallback
-        }
-    }
-    
+
     init(id: UUID = UUID(), content: String, type: ItemType, timestamp: Date = Date(), sourceBundleID: String?, sourceAppName: String?, imageData: Data?) {
         self.id = id
         self.content = content
@@ -116,8 +75,6 @@ final class ClipboardHubStore: ObservableObject {
     
     // Statistics
     var totalItemCount: Int { items.count }
-    var pinnedItems: [IslandClipItem] { items.filter { $0.isPinned } }
-    var textItemCount: Int { items.filter { $0.type == .text }.count }
     var imageItemCount: Int { items.filter { $0.type == .image }.count }
     var fileItemCount: Int { fileVaultCount() }
     
@@ -158,27 +115,10 @@ final class ClipboardHubStore: ObservableObject {
     // Original Logic
     // private let maxItemsLimit = 20 // Using maxItems instead
     
-    // Optimized Add
-    func addItem(_ item: ClipboardItemV2) {
-        let mappedType: IslandClipItem.ItemType
-        switch item.contentType {
-        case .image: mappedType = .image
-        case .url: mappedType = .url
-        case .code: mappedType = .code
-        default: mappedType = .text
-        }
-        
-        addItem(
-            content: item.text ?? item.urlString ?? item.fileDisplayName ?? "",
-            type: mappedType,
-            sourceBundleID: item.sourceAppBundleID,
-            sourceAppName: item.sourceAppName,
-            imageData: item.imageData
-        )
-    }
-    
     func addItem(content: String, type: IslandClipItem.ItemType, sourceBundleID: String?, sourceAppName: String?, imageData: Data?) {
-        if let last = items.first, last.content == content && last.type == type { return }
+        // Skip consecutive duplicates. Images all share the "[Image]" placeholder
+        // content, so their bytes must be compared as well.
+        if let last = items.first, last.content == content, last.type == type, last.imageData == imageData { return }
         
         let newItem = IslandClipItem(
             id: UUID(),

@@ -12,15 +12,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     
     private var appState: AppState  // Strong reference
     private var overlayController: OverlayWindowController  // Strong reference
-    private var safeModeManager: SafeModeManager?
     private var timerManager: TimerManager?
-    
+
     // MARK: - Initialization
-    
-    init(appState: AppState, overlayController: OverlayWindowController, safeModeManager: SafeModeManager? = nil, timerManager: TimerManager? = nil) {
+
+    init(appState: AppState, overlayController: OverlayWindowController, timerManager: TimerManager? = nil) {
         self.appState = appState
         self.overlayController = overlayController
-        self.safeModeManager = safeModeManager
         self.timerManager = timerManager
         
         super.init()  // REQUIRED for NSObject subclass before using self
