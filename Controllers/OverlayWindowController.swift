@@ -131,6 +131,8 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
         }
 
         let rootView = NotchHomeView()
+            // App 在后台时，点岛的第一下会激活窗口；默认这一下不交给按钮和点按手势，要点两次才有反应
+            .allowsWindowActivationEvents()
             .environmentObject(appState)
             .environmentObject(appState.clipboardHub)
             .environmentObject(nowPlayingManager!)
@@ -166,12 +168,11 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
     }
 
     private func setupObservers() {
-        // @Published 在 willSet 时发出：直接用新值，并且同步调整面板，
-        // 保证 SwiftUI 渲染展开（或切到更大的分区）的第一帧时面板已经够大。订阅时的首个值跳过，初始摆放由 init 负责
-        appState.$overlayMode
-            .combineLatest(appState.$currentSection)
+        // 新值存好后（didSet）同步调整面板，保证 SwiftUI 渲染展开（或切到更大的分区）的第一帧时面板已经够大。
+        // 不能用 @Published 的发布者：它在 willSet 发出，此时改面板会让 SwiftUI 按旧值布局，新值要等下一个事件才显示出来
+        appState.islandSizeDidChange
+            .compactMap { [weak appState] in appState.map { ($0.overlayMode, $0.currentSection) } }
             .removeDuplicates { $0 == $1 }
-            .dropFirst()
             .sink { [weak self] mode, section in
                 self?.updateWindowFrame(for: mode, section: section)
             }

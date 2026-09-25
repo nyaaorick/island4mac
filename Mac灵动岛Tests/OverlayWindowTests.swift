@@ -139,7 +139,8 @@ final class OverlayWindowTests: XCTestCase {
         state.currentSection = .clipboard
         // Already grown when SwiftUI renders the first frame of the larger tab
         let clipboard = panel.frame
-        XCTAssertGreaterThan(clipboard.width, music.width, "the music tab is narrower than the clipboard tab")
+        XCTAssertGreaterThan(clipboard.height, music.height, "the music tab is shorter than the clipboard tab")
+        XCTAssertEqual(clipboard.width, music.width, accuracy: 0.5, "every tab is as wide, so the tab bar never moves")
         XCTAssertEqual(clipboard.maxY, music.maxY, accuracy: 0.5, "the island hangs from the top edge")
         XCTAssertEqual(clipboard.midX, music.midX, accuracy: 0.5, "the island stays centered")
 

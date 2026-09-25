@@ -17,11 +17,14 @@ final class AppState: ObservableObject {
     @Published var visibilityReason: OverlayVisibilityReason = .none
     @Published var interactionState: IslandInteractionState = .idle
     @Published var overlayMode: OverlayMode = .compact {
-        didSet { resetAutoCloseTimer() }
+        didSet { resetAutoCloseTimer(); islandSizeDidChange.send() }
     }
     @Published var currentSection: IslandSection = .music {
-        didSet { resetAutoCloseTimer() }
+        didSet { resetAutoCloseTimer(); islandSizeDidChange.send() }
     }
+    /// Sent once a new overlayMode or currentSection is stored. @Published sends before the value is stored,
+    /// and resizing the panel then makes SwiftUI lay out with the old value and miss the new one
+    let islandSizeDidChange = PassthroughSubject<Void, Never>()
     @Published var isDraggingOver: Bool = false
 
     /// Notch size of the display the island is on (.zero when it has no notch)

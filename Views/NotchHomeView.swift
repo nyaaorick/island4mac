@@ -482,10 +482,12 @@ struct ExpandedIslandRegion: View {
         VStack(spacing: 0) {
             // Header: Tabs
             HStack(spacing: 12) {
-                ForEach(AppState.IslandSection.allCases, id: \.self) { section in
-                    tabItem(for: section)
+                HStack(spacing: 4) {
+                    ForEach(AppState.IslandSection.allCases, id: \.self) { section in
+                        tabItem(for: section)
+                    }
                 }
-                
+
                 Spacer()
 
                 if appState.currentSection == .agents {
@@ -539,17 +541,15 @@ struct ExpandedIslandRegion: View {
         let isSelected = appState.currentSection == section
         let isHovered = hoveredSection == section
         
+        // Every tab keeps its label and weight, so selecting one never resizes the tabs or pushes them around
         return HStack(spacing: 6) {
             Image(systemName: section.iconName)
-                .font(.system(size: 11, weight: isSelected ? .bold : .medium))
-            
-            if isSelected {
-                Text(section.displayName)
-                    .font(.system(size: 11, weight: .bold))
-            }
+                .font(.system(size: 11, weight: .semibold))
+            Text(section.displayName)
+                .font(.system(size: 11, weight: .semibold))
         }
         .padding(.vertical, 6)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .background(
             Capsule()
                 .fill(isSelected ? Color.white.opacity(0.15) : (isHovered ? Color.white.opacity(0.08) : Color.clear))
@@ -580,25 +580,28 @@ enum NotchMetrics {
     /// Tabs row and divider at the top of the open island
     static let tabBarHeight: CGFloat = 53
 
-    /// Open island below the camera housing: the tab bar plus a content area sized to what each tab shows
+    /// Width of the open island. The same for every tab, so switching tabs never slides the tab bar
+    /// out from under the pointer
+    static let expandedWidth: CGFloat = 640
+
+    /// Open island below the camera housing: the tab bar plus a content area as tall as what each tab shows
     static func expandedSize(for section: AppState.IslandSection) -> CGSize {
-        let width: CGFloat
         let contentHeight: CGFloat
         switch section {
         case .music:
             // Artwork beside title, lyrics, progress and controls
-            (width, contentHeight) = (480, 190)
+            contentHeight = 190
         case .clipboard:
             // One row of 160pt cards
-            (width, contentHeight) = (640, 210)
+            contentHeight = 210
         case .files:
             // Shelf header over a scrolling grid
-            (width, contentHeight) = (640, 260)
+            contentHeight = 260
         case .agents:
             // A couple of session rows with their task lists; the list scrolls
-            (width, contentHeight) = (640, 270)
+            contentHeight = 270
         }
-        return CGSize(width: width, height: tabBarHeight + contentHeight)
+        return CGSize(width: expandedWidth, height: tabBarHeight + contentHeight)
     }
     /// Collapsed pill on displays without a notch
     static let nonNotchWidth: CGFloat = 185
