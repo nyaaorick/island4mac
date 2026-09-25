@@ -405,11 +405,32 @@ final class AgentHookBridgeTests: XCTestCase {
         XCTAssertEqual((updatedInput["questions"] as? [[String: Any]])?.count, 1, "the questions go back as they came")
     }
 
-    func testAPermissionTheIslandCantAnswerLetsTheHookGoAtOnce() throws {
+    func testAPermissionAllowedInTheIslandBecomesTheHooksOutput() throws {
+        let socket = try makeSocketURL()
+        let arrived = expectation(description: "permission arrived")
+        let server = AgentHookServer(socketURL: socket) { event, reply in
+            XCTAssertEqual(event.permission?.detail, "make")
+            reply?.send(AgentHookEvent.allowOutput(permissionSuggestions: nil)!)
+            arrived.fulfill()
+        }
+        try server.start()
+        defer { server.stop() }
+
+        let input = #"{"session_id":"abc","hook_event_name":"PermissionRequest","tool_name":"Bash","tool_input":{"command":"make"}}"#
+        let result = try runHelper(socket: socket, agent: "claude", wait: true, input: input)
+        wait(for: [arrived], timeout: 5)
+
+        let output = try XCTUnwrap(JSONSerialization.jsonObject(with: result.output) as? [String: Any])
+        let decision = (output["hookSpecificOutput"] as? [String: Any])?["decision"] as? [String: Any]
+        XCTAssertEqual(decision?["behavior"] as? String, "allow")
+    }
+
+    func testAHookTheIslandLetsGoPrintsNothing() throws {
         let socket = try makeSocketURL()
         let arrived = expectation(description: "event arrived")
         let server = AgentHookServer(socketURL: socket) { _, reply in
-            XCTAssertNil(reply, "only questions keep the hook waiting")
+            // Left to the terminal
+            reply?.close()
             arrived.fulfill()
         }
         try server.start()

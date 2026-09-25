@@ -1,8 +1,8 @@
 import Foundation
 import OSLog
 
-/// The open connection of a hook that waits for the island's reply: Claude Code's PermissionRequest
-/// hook, asking one of Claude's questions. Closing it without a reply leaves the question to the terminal.
+/// The open connection of a hook that waits for the island's reply: Claude Code's PermissionRequest hook,
+/// asking one of Claude's questions or for a tool call. Closing it without a reply leaves it to the terminal.
 nonisolated final class AgentHookReply: @unchecked Sendable {
     private let lock = NSLock()
     private var fd: Int32
@@ -54,7 +54,7 @@ nonisolated final class AgentHookServer: @unchecked Sendable {
     }
 
     let socketURL: URL
-    /// Given the connection to reply on when the hook waits for an answer to Claude's question
+    /// Given the connection to reply on when the hook waits for the island to answer or allow
     private let onEvent: @Sendable (AgentHookEvent, AgentHookReply?) -> Void
     private let queue = DispatchQueue(label: "AgentHookServer")
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AgentHook")
@@ -133,8 +133,8 @@ nonisolated final class AgentHookServer: @unchecked Sendable {
                 if Self.titleEvents.contains(event.kind) {
                     event.sessionTitle = Self.title(of: event)
                 }
-                // Keep the connection only while there's a question the island can answer
-                if event.canReply, event.kind == .permissionRequest, event.questions != nil {
+                // Keep the connection only while there's something the island can answer
+                if event.canReply, event.kind == .permissionRequest, event.questions != nil || event.permission != nil {
                     onEvent(event, AgentHookReply(fd: client))
                 } else {
                     close(client)

@@ -65,8 +65,8 @@ final class AppState: ObservableObject {
         let timeout = settingsStore.get(SettingsDefaults.autoCloseTimeout)
         autoCloseTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
-                // An agent's question stays open until you've dealt with it
-                guard self?.visibilityReason != .agentQuestion else { return }
+                // An agent's question or permission prompt stays open until you've dealt with it
+                guard self?.visibilityReason != .agentPrompt else { return }
                 self?.deactivateOverlay()
             }
         }

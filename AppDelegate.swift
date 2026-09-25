@@ -154,9 +154,9 @@ class AppIntegration {
         AgentSessionStore.shared.onStatusChange = { session, previous in
             AgentAlertSound.play(for: session, previous: previous)
         }
-        // Claude asks you something: open the island on the question, so you can answer it there
-        AgentSessionStore.shared.onQuestion = { _ in
-            OverlayWindowController.shared.showAgentQuestion()
+        // Claude asks you a question or for a permission: open the island on it, so you can answer there
+        AgentSessionStore.shared.onPrompt = { _ in
+            OverlayWindowController.shared.showAgentPrompt()
         }
         AgentSessionStore.shared.startPruning()
 

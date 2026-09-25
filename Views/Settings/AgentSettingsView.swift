@@ -17,9 +17,9 @@ struct AgentSettingsView: View {
                 )
 
                 ToggleSettingsRow(
-                    key: SettingsDefaults.agentQuestionsOpenIsland,
-                    title: "有问题时自动展开",
-                    help: "Claude 让你回答问题或做选择时，自动展开灵动岛，可以直接在岛上作答（也仍可在终端里回答）"
+                    key: SettingsDefaults.agentPromptsOpenIsland,
+                    title: "需要你确认或回答时自动展开",
+                    help: "Claude 请求权限、让你回答问题或做选择时，自动展开灵动岛，可以直接在岛上处理（也仍可在终端里操作）"
                 )
 
                 ToggleSettingsRow(

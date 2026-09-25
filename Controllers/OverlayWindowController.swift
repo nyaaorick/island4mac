@@ -83,20 +83,20 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
 
     func getAppState() -> AppState { return appState }
 
-    /// Opens the island on the Agents tab, where you can answer an agent's question
-    func showAgentQuestion() {
-        guard settingsStore.get(SettingsDefaults.agentQuestionsOpenIsland) else { return }
+    /// Opens the island on the Agents tab, where you can answer an agent's question or permission prompt
+    func showAgentPrompt() {
+        guard settingsStore.get(SettingsDefaults.agentPromptsOpenIsland) else { return }
         // Don't pull the open island away from a tab you're using
         if appState.overlayMode == .expanded && appState.islandFrame.contains(NSEvent.mouseLocation) { return }
         appState.currentSection = .agents
         withAnimation(boringOpenAnimation) {
-            appState.activateOverlay(reason: .agentQuestion)
+            appState.activateOverlay(reason: .agentPrompt)
         }
     }
 
-    /// Closes the island a question opened once no question is left, unless the pointer is on it
-    private func closeAfterAgentQuestions() {
-        guard appState.overlayMode == .expanded, appState.visibilityReason == .agentQuestion,
+    /// Closes the island a prompt opened once no prompt is left, unless the pointer is on it
+    private func closeAfterAgentPrompts() {
+        guard appState.overlayMode == .expanded, appState.visibilityReason == .agentPrompt,
               !appState.islandFrame.contains(NSEvent.mouseLocation) else { return }
         withAnimation(boringCloseAnimation) {
             appState.deactivateOverlay()
@@ -245,13 +245,13 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
             }
             .store(in: &cancellables)
 
-        // Agent 的问题答完（在岛上或终端里）后，把因它展开的岛收回去
-        AgentSessionStore.shared.$pendingQuestions
+        // Agent 的问题或权限确认处理完（在岛上或终端里）后，把因它展开的岛收回去
+        AgentSessionStore.shared.$pendingPrompts
             .map(\.isEmpty)
             .removeDuplicates()
             .dropFirst()
             .sink { [weak self] noneLeft in
-                if noneLeft { self?.closeAfterAgentQuestions() }
+                if noneLeft { self?.closeAfterAgentPrompts() }
             }
             .store(in: &cancellables)
 

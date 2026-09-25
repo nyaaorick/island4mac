@@ -61,6 +61,17 @@ nonisolated struct AgentQuestion: Equatable, Sendable, Identifiable {
     var id: String { text }
 }
 
+/// A tool call Claude Code asks you to allow
+nonisolated struct AgentPermission: Equatable, Sendable {
+    var toolName: String
+    /// The tool plus its target, e.g. "Bash · Run the tests"
+    var summary: String
+    /// What exactly it would do: the full command, file path or URL
+    var detail: String?
+    /// What "always allow" adds, e.g. "Bash(npm test:*) in this project"; nil when Claude Code offers nothing
+    var alwaysAllowDescription: String?
+}
+
 /// One hook event as island-claude-hook forwards it: a JSON line describing which agent sent it and
 /// where the session runs, then the hook's own JSON input. Claude Code (https://code.claude.com/docs/en/hooks),
 /// Codex and ZCode all send Claude Code's input format, each with a subset of its events.
@@ -116,7 +127,12 @@ nonisolated struct AgentHookEvent: Sendable {
     var trigger: String?
     /// AskUserQuestion: what Claude is asking
     var questions: [AgentQuestion]?
-    /// AskUserQuestion: the tool's input as sent, to hand back with your answers
+    /// PermissionRequest for any other tool: what you're asked to allow
+    var permission: AgentPermission?
+    /// PermissionRequest: the rules Claude Code suggests for "don't ask again", to hand back as they came
+    var permissionSuggestionsJSON: Data?
+    /// The tool's input as sent, with sorted keys: handed back with your answers, and compared with
+    /// later events to tell which call they're about
     var toolInputJSON: Data?
     /// The hook waits for the island's reply, so the island can answer for you
     var canReply = false
@@ -166,15 +182,29 @@ nonisolated struct AgentHookEvent: Sendable {
 
         // Codex sends some tools' input (a patch, a command) as a bare string
         let toolInput = input["tool_input"] as? [String: Any] ?? (input["tool_input"] as? String).map { ["command": $0] } ?? [:]
+        if input["tool_input"] != nil {
+            toolInputJSON = try? JSONSerialization.data(withJSONObject: toolInput, options: .sortedKeys)
+        }
         if let toolName {
             toolSummary = Self.summary(ofTool: toolName, input: toolInput)
             switch toolName {
             case "TodoWrite": todos = Self.tasks(fromTodos: toolInput["todos"])
             case "update_plan": todos = Self.tasks(fromPlan: toolInput["plan"])
-            case Self.askUserQuestionTool:
-                questions = Self.questions(from: toolInput["questions"])
-                toolInputJSON = try? JSONSerialization.data(withJSONObject: toolInput)
+            case Self.askUserQuestionTool: questions = Self.questions(from: toolInput["questions"])
             default: break
+            }
+        }
+
+        if kind == .permissionRequest, let toolName, toolName != Self.askUserQuestionTool {
+            let suggestions = input["permission_suggestions"] as? [[String: Any]] ?? []
+            permission = AgentPermission(
+                toolName: toolName,
+                summary: toolActivity ?? toolName,
+                detail: Self.detail(ofTool: toolName, input: toolInput),
+                alwaysAllowDescription: Self.alwaysAllowDescription(of: suggestions)
+            )
+            if !suggestions.isEmpty {
+                permissionSuggestionsJSON = try? JSONSerialization.data(withJSONObject: suggestions)
             }
         }
 
@@ -194,11 +224,30 @@ nonisolated struct AgentHookEvent: Sendable {
     static func answerOutput(toolInput: Data?, answers: [String: String]) -> Data? {
         var input = toolInput.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
         input["answers"] = answers
+        return decisionOutput(["behavior": "allow", "updatedInput": input])
+    }
+
+    /// Allows the tool call. Given Claude Code's suggestions, also adds them, like its "don't ask again".
+    static func allowOutput(permissionSuggestions: Data?) -> Data? {
+        var decision: [String: Any] = ["behavior": "allow"]
+        if let suggestions = permissionSuggestions.flatMap({ try? JSONSerialization.jsonObject(with: $0) as? [[String: Any]] }) {
+            decision["updatedPermissions"] = suggestions
+        }
+        return decisionOutput(decision)
+    }
+
+    /// Turns the tool call down. With a note, Claude carries on with it; without one, the turn stops,
+    /// as when you press Esc in the terminal.
+    static func denyOutput(note: String?) -> Data? {
+        if let note = note?.trimmingCharacters(in: .whitespacesAndNewlines), !note.isEmpty {
+            return decisionOutput(["behavior": "deny", "message": "The user denied this from the island and said: \(note)"])
+        }
+        return decisionOutput(["behavior": "deny", "message": "The user denied this from the island.", "interrupt": true])
+    }
+
+    private static func decisionOutput(_ decision: [String: Any]) -> Data? {
         let output: [String: Any] = [
-            "hookSpecificOutput": [
-                "hookEventName": Kind.permissionRequest.rawValue,
-                "decision": ["behavior": "allow", "updatedInput": input],
-            ],
+            "hookSpecificOutput": ["hookEventName": Kind.permissionRequest.rawValue, "decision": decision],
         ]
         return try? JSONSerialization.data(withJSONObject: output)
     }
@@ -232,6 +281,60 @@ nonisolated struct AgentHookEvent: Sendable {
         default:
             return nil
         }
+    }
+
+    /// Everything a permission prompt needs to show about the call, where the summary leaves things out
+    private static func detail(ofTool tool: String, input: [String: Any]) -> String? {
+        let detail: String?
+        switch tool {
+        case "Bash", "shell":
+            detail = commandLine(input["command"])
+        case "Read", "Edit", "Write", "MultiEdit", "NotebookEdit":
+            detail = ["file_path", "notebook_path", "path"].lazy.compactMap { input[$0] as? String }.first
+                .map { ($0 as NSString).abbreviatingWithTildeInPath }
+        case "WebFetch":
+            detail = input["url"] as? String
+        case "WebSearch":
+            detail = input["query"] as? String
+        default:
+            // MCP and other tools: their arguments
+            detail = input.isEmpty ? nil : (try? JSONSerialization.data(withJSONObject: input, options: [.sortedKeys, .withoutEscapingSlashes]))
+                .flatMap { String(data: $0, encoding: .utf8) }
+        }
+        guard let detail = detail?.trimmingCharacters(in: .whitespacesAndNewlines), !detail.isEmpty else { return nil }
+        return detail.count > 2000 ? String(detail.prefix(2000)) + "…" : detail
+    }
+
+    /// Says what Claude Code's permission suggestions would add, e.g. "Bash(npm test:*) in this project"
+    static func alwaysAllowDescription(of suggestions: [[String: Any]]) -> String? {
+        let parts = suggestions.compactMap { suggestion -> String? in
+            let place: String? = switch suggestion["destination"] as? String {
+            case "session": "this session"
+            case "localSettings", "projectSettings": "this project"
+            case "userSettings": "all projects"
+            default: nil
+            }
+            let what: String?
+            switch suggestion["type"] as? String {
+            case "addRules", "replaceRules":
+                guard suggestion["behavior"] as? String == "allow" else { return nil }
+                let rules = (suggestion["rules"] as? [[String: Any]] ?? []).compactMap { rule -> String? in
+                    guard let tool = rule["toolName"] as? String else { return nil }
+                    return (rule["ruleContent"] as? String).map { "\(tool)(\($0))" } ?? tool
+                }
+                what = rules.isEmpty ? nil : rules.joined(separator: ", ")
+            case "setMode":
+                what = suggestion["mode"] as? String == "acceptEdits" ? "all edits" : nil
+            case "addDirectories":
+                let directories = (suggestion["directories"] as? [String] ?? []).map { ($0 as NSString).abbreviatingWithTildeInPath }
+                what = directories.isEmpty ? nil : "access to " + directories.joined(separator: ", ")
+            default:
+                what = nil
+            }
+            guard let what else { return nil }
+            return place.map { "\(what) in \($0)" } ?? what
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: "; ")
     }
 
     /// A command given as a string, or as an argument vector such as ["bash", "-lc", "make"]

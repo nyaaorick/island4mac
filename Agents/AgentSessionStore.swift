@@ -203,15 +203,29 @@ struct AgentSession: Identifiable, Equatable {
     }
 }
 
-/// A question an agent is waiting for you to answer (Claude Code's AskUserQuestion)
-struct AgentPendingQuestion: Identifiable, Equatable {
+/// Something an agent is waiting on you for: one of Claude's questions, or a tool call to allow
+struct AgentPrompt: Identifiable, Equatable {
+    enum Kind: Equatable {
+        /// AskUserQuestion
+        case question([AgentQuestion])
+        case permission(AgentPermission)
+    }
+
     let id = UUID()
     let sessionID: String
     let agent: AgentKind
-    let questions: [AgentQuestion]
+    let kind: Kind
     let askedAt: Date
-    /// The hook is waiting for the island's reply; otherwise the question can only be answered in the terminal
+    /// The hook is waiting for the island's reply; otherwise only the terminal can answer
     let canAnswer: Bool
+    let toolName: String?
+    /// Tells which tool call a later event is about
+    let toolInputJSON: Data?
+
+    var isQuestion: Bool {
+        if case .question = kind { return true }
+        return false
+    }
 }
 
 /// Agent sessions reported through island-claude-hook
@@ -220,11 +234,17 @@ final class AgentSessionStore: ObservableObject {
     static let shared = AgentSessionStore()
 
     /// Oldest first
-    @Published private(set) var pendingQuestions: [AgentPendingQuestion] = []
-    /// The waiting hooks of the questions the island can answer, with the tool input to hand back
-    private var replies: [UUID: (reply: AgentHookReply, toolInput: Data?)] = [:]
-    /// Called when an agent asks you a question, e.g. to open the island on it
-    var onQuestion: ((AgentPendingQuestion) -> Void)?
+    @Published private(set) var pendingPrompts: [AgentPrompt] = []
+    /// The waiting hooks of the prompts the island can answer, with what to hand back to them
+    private var replies: [UUID: PendingReply] = [:]
+    /// Called when an agent asks you something, e.g. to open the island on it
+    var onPrompt: ((AgentPrompt) -> Void)?
+
+    private struct PendingReply {
+        let reply: AgentHookReply
+        let toolInput: Data?
+        let permissionSuggestions: Data?
+    }
 
     /// Most urgent first
     @Published private(set) var sessions: [AgentSession] = []
@@ -250,7 +270,7 @@ final class AgentSessionStore: ObservableObject {
         SettingsDefaults.shared.get(SettingsDefaults.showAgentLiveActivity) && liveSession != nil
     }
 
-    /// `reply` is the waiting hook's connection, when the island can answer the event's question
+    /// `reply` is the waiting hook's connection, when the island can answer the event's prompt
     func apply(_ event: AgentHookEvent, reply: AgentHookReply? = nil, now: Date = Date()) {
         var updated = sessions
         var changed: (session: AgentSession, previous: AgentSession.Status?)?
@@ -273,72 +293,109 @@ final class AgentSessionStore: ObservableObject {
             changed = (session, nil)
         }
         publish(updated, now: now)
-        let question = updateQuestions(for: event, reply: reply)
+        let prompt = updatePrompts(for: event, reply: reply)
         if let changed { onStatusChange?(changed.session, changed.previous) }
-        if let question { onQuestion?(question) }
+        if let prompt { onPrompt?(prompt) }
     }
 
-    /// Sends your answers (question text → answer) to the agent waiting on the question
-    func answer(_ questionID: UUID, with answers: [String: String]) {
-        if let pending = replies.removeValue(forKey: questionID) {
-            if let output = AgentHookEvent.answerOutput(toolInput: pending.toolInput, answers: answers) {
+    /// Sends your answers (question text → answer) to Claude, waiting on its question
+    func answer(_ promptID: UUID, with answers: [String: String]) {
+        respond(to: promptID, with: AgentHookEvent.answerOutput(toolInput: replies[promptID]?.toolInput, answers: answers))
+    }
+
+    /// Allows the tool call; `always` also adds the rules Claude Code suggested, like its "don't ask again"
+    func allow(_ promptID: UUID, always: Bool = false) {
+        let suggestions = always ? replies[promptID]?.permissionSuggestions : nil
+        respond(to: promptID, with: AgentHookEvent.allowOutput(permissionSuggestions: suggestions))
+    }
+
+    /// Turns the tool call down. With a note, Claude carries on with it; without one, the turn stops.
+    func deny(_ promptID: UUID, note: String? = nil) {
+        guard let prompt = pendingPrompts.first(where: { $0.id == promptID }), prompt.canAnswer else { return }
+        respond(to: promptID, with: AgentHookEvent.denyOutput(note: note))
+        if note?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
+            // Claude Code stops the turn without telling its hooks, so the session would look busy
+            apply(AgentHookEvent(kind: .interrupt, sessionID: prompt.sessionID, agent: prompt.agent, time: max(Date(), prompt.askedAt)))
+        }
+    }
+
+    /// Leaves it to the agent's own prompt in the terminal
+    func dismissPrompt(_ promptID: UUID) {
+        removePrompts { $0.id == promptID }
+    }
+
+    private func respond(to promptID: UUID, with output: Data?) {
+        if let pending = replies.removeValue(forKey: promptID) {
+            if let output {
                 pending.reply.send(output)
             } else {
                 pending.reply.close()
             }
         }
-        pendingQuestions.removeAll { $0.id == questionID }
+        pendingPrompts.removeAll { $0.id == promptID }
     }
 
-    /// Leaves the question to the agent's own prompt in the terminal
-    func dismissQuestion(_ questionID: UUID) {
-        removeQuestions { $0.id == questionID }
-    }
-
-    private func updateQuestions(for event: AgentHookEvent, reply: AgentHookReply?) -> AgentPendingQuestion? {
-        if event.kind == .permissionRequest, event.toolName == AgentHookEvent.askUserQuestionTool, let questions = event.questions {
-            // A session asks one question at a time; a new one means the last is settled
-            removeQuestions { $0.sessionID == event.sessionID }
-            let question = AgentPendingQuestion(
+    private func updatePrompts(for event: AgentHookEvent, reply: AgentHookReply?) -> AgentPrompt? {
+        if event.kind == .permissionRequest, let kind = Self.promptKind(of: event) {
+            if case .question = kind {
+                // Claude asks one question at a time; a new one means the last is settled
+                removePrompts { $0.sessionID == event.sessionID && $0.isQuestion }
+            }
+            let prompt = AgentPrompt(
                 sessionID: event.sessionID,
                 agent: event.agent,
-                questions: questions,
+                kind: kind,
                 askedAt: event.time,
-                canAnswer: reply != nil
+                canAnswer: reply != nil,
+                toolName: event.toolName,
+                toolInputJSON: event.toolInputJSON
             )
-            if let reply { replies[question.id] = (reply, event.toolInputJSON) }
-            pendingQuestions.append(question)
-            return question
+            if let reply {
+                replies[prompt.id] = PendingReply(reply: reply, toolInput: event.toolInputJSON, permissionSuggestions: event.permissionSuggestionsJSON)
+            }
+            pendingPrompts.append(prompt)
+            return prompt
         }
-        // Never leave a hook waiting on a question the island doesn't show
+        // Never leave a hook waiting on something the island doesn't show
         reply?.close()
-        if Self.settlesQuestion(event) {
-            // Hooks can run in the background, so an event from before the question can arrive after it
-            removeQuestions { $0.sessionID == event.sessionID && $0.askedAt <= event.time }
-        }
+        settlePrompts(after: event)
         return nil
     }
 
-    /// The question was answered or abandoned: in the terminal, or by the turn ending
-    private static func settlesQuestion(_ event: AgentHookEvent) -> Bool {
+    private static func promptKind(of event: AgentHookEvent) -> AgentPrompt.Kind? {
+        if event.toolName == AgentHookEvent.askUserQuestionTool {
+            return event.questions.map(AgentPrompt.Kind.question)
+        }
+        return event.permission.map(AgentPrompt.Kind.permission)
+    }
+
+    /// Drops what was answered or abandoned elsewhere: in the terminal, or by the turn ending
+    private func settlePrompts(after event: AgentHookEvent) {
+        // Hooks can run in the background, so an event from before a prompt can arrive after it
+        let isEarlier = { (prompt: AgentPrompt) in prompt.sessionID == event.sessionID && prompt.askedAt <= event.time }
         switch event.kind {
         case .postToolUse, .postToolUseFailure, .permissionDenied:
-            return event.toolName == AgentHookEvent.askUserQuestionTool
+            // The call went ahead or was turned down. A question comes back with the answers added to its
+            // input, so it goes by the tool; a permission by the call's exact input, as several can wait at once.
+            removePrompts { prompt in
+                guard isEarlier(prompt), prompt.toolName == event.toolName else { return false }
+                return prompt.isQuestion || prompt.toolInputJSON == event.toolInputJSON
+            }
         case .userPromptSubmit, .stop, .stopFailure, .sessionStart, .sessionEnd, .interrupt:
-            return true
+            removePrompts(where: isEarlier)
         default:
-            return false
+            break
         }
     }
 
-    /// Lets go of the questions' waiting hooks, leaving them to the terminal
-    private func removeQuestions(where shouldRemove: (AgentPendingQuestion) -> Bool) {
-        let removed = pendingQuestions.filter(shouldRemove)
+    /// Lets go of the prompts' waiting hooks, leaving them to the terminal
+    private func removePrompts(where shouldRemove: (AgentPrompt) -> Bool) {
+        let removed = pendingPrompts.filter(shouldRemove)
         guard !removed.isEmpty else { return }
-        for question in removed {
-            replies.removeValue(forKey: question.id)?.reply.close()
+        for prompt in removed {
+            replies.removeValue(forKey: prompt.id)?.reply.close()
         }
-        pendingQuestions.removeAll(where: shouldRemove)
+        pendingPrompts.removeAll(where: shouldRemove)
     }
 
     /// Takes a session off the list; it comes back if its agent reports on it again
@@ -374,9 +431,9 @@ final class AgentSessionStore: ObservableObject {
             let (left, right) = (Self.urgency(of: lhs), Self.urgency(of: rhs))
             return left != right ? left < right : lhs.updatedAt > rhs.updatedAt
         }
-        // A question goes with its session (archived, ended, or its agent gone)
+        // A prompt goes with its session (archived, ended, or its agent gone)
         let sessionIDs = Set(sessions.map(\.id))
-        removeQuestions { !sessionIDs.contains($0.sessionID) }
+        removePrompts { !sessionIDs.contains($0.sessionID) }
         refreshLiveSession(now: now)
     }
 

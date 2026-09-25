@@ -304,8 +304,8 @@ final class AgentSessionStoreTests: XCTestCase {
 
     func testAQuestionWaitsForYourAnswerInTheIsland() throws {
         let store = AgentSessionStore()
-        var opened: [AgentPendingQuestion] = []
-        store.onQuestion = { opened.append($0) }
+        var opened: [AgentPrompt] = []
+        store.onPrompt = { opened.append($0) }
         let (reply, hookEnd) = try makeReply()
 
         deliver(event(.preToolUse, at: 1) { $0.toolName = AgentHookEvent.askUserQuestionTool }, to: store)
@@ -316,13 +316,14 @@ final class AgentSessionStoreTests: XCTestCase {
         XCTAssertTrue(session.isAsking)
         XCTAssertEqual(session.message, "Which layout?")
         XCTAssertEqual(session.statusText, "Has a question")
-        let question = try XCTUnwrap(store.pendingQuestions.first)
+        let question = try XCTUnwrap(store.pendingPrompts.first)
         XCTAssertTrue(question.canAnswer)
+        XCTAssertTrue(question.isQuestion)
         XCTAssertEqual(opened.map(\.id), [question.id], "the island opens on it")
 
         store.answer(question.id, with: ["Which layout?": "Grid"])
 
-        XCTAssertTrue(store.pendingQuestions.isEmpty)
+        XCTAssertTrue(store.pendingPrompts.isEmpty)
         let output = try XCTUnwrap(JSONSerialization.jsonObject(with: hookEnd.readDataToEndOfFile()) as? [String: Any])
         let decision = (output["hookSpecificOutput"] as? [String: Any])?["decision"] as? [String: Any]
         XCTAssertEqual((decision?["updatedInput"] as? [String: Any])?["answers"] as? [String: String], ["Which layout?": "Grid"])
@@ -339,11 +340,11 @@ final class AgentSessionStoreTests: XCTestCase {
 
         // The async PreToolUse from before the question can arrive after it
         deliver(event(.preToolUse, at: 1) { $0.toolName = AgentHookEvent.askUserQuestionTool }, to: store, arrivingAt: 3)
-        XCTAssertEqual(store.pendingQuestions.count, 1, "an older event doesn't settle it")
+        XCTAssertEqual(store.pendingPrompts.count, 1, "an older event doesn't settle it")
 
         deliver(event(.postToolUse, at: 20) { $0.toolName = AgentHookEvent.askUserQuestionTool }, to: store)
 
-        XCTAssertTrue(store.pendingQuestions.isEmpty)
+        XCTAssertTrue(store.pendingPrompts.isEmpty)
         XCTAssertTrue(hookEnd.readDataToEndOfFile().isEmpty, "closed without an answer: Claude Code keeps what you chose in the terminal")
     }
 
@@ -353,9 +354,9 @@ final class AgentSessionStoreTests: XCTestCase {
         askEvent.canReply = false
         deliver(askEvent, to: store)
 
-        XCTAssertEqual(store.pendingQuestions.first?.canAnswer, false)
+        XCTAssertEqual(store.pendingPrompts.first?.canAnswer, false)
         store.archive("s1")
-        XCTAssertTrue(store.pendingQuestions.isEmpty, "a question goes with its session")
+        XCTAssertTrue(store.pendingPrompts.isEmpty, "a question goes with its session")
     }
 
     func testParsesAskUserQuestion() throws {
@@ -381,5 +382,109 @@ final class AgentSessionStoreTests: XCTestCase {
         let updatedInput = ((json["hookSpecificOutput"] as? [String: Any])?["decision"] as? [String: Any])?["updatedInput"] as? [String: Any]
         XCTAssertEqual(updatedInput?["answers"] as? [String: String], ["Which features?": "Search, Tags"])
         XCTAssertEqual((updatedInput?["questions"] as? [[String: Any]])?.count, 2)
+    }
+
+    // MARK: - Permissions
+
+    private func permissionEvent(_ command: String, at offset: TimeInterval) throws -> AgentHookEvent {
+        let header = #"{"time":"\#(1_800_000_000 + offset)","agent":"claude","can_reply":"1"}"#
+        let input = """
+            {"session_id":"s1","hook_event_name":"PermissionRequest","cwd":"/Users/me/code/island","tool_name":"Bash",
+             "tool_input":{"command":"\(command)","description":"Run it"},
+             "permission_suggestions":[{"type":"addRules","rules":[{"toolName":"Bash","ruleContent":"\(command):*"}],
+                                        "behavior":"allow","destination":"localSettings"}]}
+            """
+        return try XCTUnwrap(AgentHookEvent(forwarded: Data((header + "\n" + input).utf8)))
+    }
+
+    private func decision(from hookEnd: FileHandle) throws -> [String: Any] {
+        let output = try XCTUnwrap(JSONSerialization.jsonObject(with: hookEnd.readDataToEndOfFile()) as? [String: Any])
+        return try XCTUnwrap((output["hookSpecificOutput"] as? [String: Any])?["decision"] as? [String: Any])
+    }
+
+    func testParsesAPermissionRequest() throws {
+        let event = try permissionEvent("npm test", at: 0)
+        let permission = try XCTUnwrap(event.permission)
+        XCTAssertEqual(permission.toolName, "Bash")
+        XCTAssertEqual(permission.summary, "Bash · Run it")
+        XCTAssertEqual(permission.detail, "npm test")
+        XCTAssertEqual(permission.alwaysAllowDescription, "Bash(npm test:*) in this project")
+        XCTAssertNotNil(event.permissionSuggestionsJSON)
+
+        XCTAssertEqual(AgentHookEvent.alwaysAllowDescription(of: [
+            ["type": "setMode", "mode": "acceptEdits", "destination": "session"],
+            ["type": "addDirectories", "directories": ["/tmp/out"], "destination": "session"],
+        ]), "all edits in this session; access to /tmp/out in this session")
+        XCTAssertNil(AgentHookEvent.alwaysAllowDescription(of: []))
+    }
+
+    func testAllowingInTheIsland() throws {
+        let store = AgentSessionStore()
+        let (reply, hookEnd) = try makeReply()
+        store.apply(try permissionEvent("npm test", at: 1), reply: reply, now: start.addingTimeInterval(1))
+        let prompt = try XCTUnwrap(store.pendingPrompts.first)
+        XCTAssertFalse(prompt.isQuestion)
+        XCTAssertEqual(store.sessions.first?.status, .needsPermission)
+
+        store.allow(prompt.id)
+
+        let decision = try decision(from: hookEnd)
+        XCTAssertEqual(decision["behavior"] as? String, "allow")
+        XCTAssertNil(decision["updatedPermissions"], "allowed once")
+        XCTAssertTrue(store.pendingPrompts.isEmpty)
+    }
+
+    func testAlwaysAllowHandsBackClaudesSuggestions() throws {
+        let store = AgentSessionStore()
+        let (reply, hookEnd) = try makeReply()
+        store.apply(try permissionEvent("npm test", at: 1), reply: reply, now: start.addingTimeInterval(1))
+
+        store.allow(try XCTUnwrap(store.pendingPrompts.first).id, always: true)
+
+        let rules = try XCTUnwrap(try decision(from: hookEnd)["updatedPermissions"] as? [[String: Any]])
+        XCTAssertEqual(rules.first?["destination"] as? String, "localSettings")
+        XCTAssertEqual((rules.first?["rules"] as? [[String: Any]])?.first?["ruleContent"] as? String, "npm test:*")
+    }
+
+    func testDenyingStopsTheTurnUnlessYouSayWhatToDoInstead() throws {
+        let store = AgentSessionStore()
+        let (reply, hookEnd) = try makeReply()
+        store.apply(try permissionEvent("rm -rf build", at: 1), reply: reply, now: start.addingTimeInterval(1))
+        store.deny(try XCTUnwrap(store.pendingPrompts.first).id)
+
+        let stopped = try decision(from: hookEnd)
+        XCTAssertEqual(stopped["behavior"] as? String, "deny")
+        XCTAssertEqual(stopped["interrupt"] as? Bool, true, "like Esc in the terminal")
+        XCTAssertEqual(store.sessions.first?.status, .idle, "Claude Code doesn't report the stopped turn")
+
+        let (secondReply, secondEnd) = try makeReply()
+        store.apply(try permissionEvent("rm -rf build", at: 30), reply: secondReply, now: start.addingTimeInterval(30))
+        store.deny(try XCTUnwrap(store.pendingPrompts.first).id, note: "Clean with make clean instead")
+
+        let withNote = try decision(from: secondEnd)
+        XCTAssertEqual(withNote["behavior"] as? String, "deny")
+        XCTAssertNil(withNote["interrupt"])
+        XCTAssertTrue((withNote["message"] as? String)?.contains("Clean with make clean instead") == true)
+    }
+
+    func testEachWaitingPermissionIsSettledByItsOwnCall() throws {
+        let store = AgentSessionStore()
+        let (firstReply, firstEnd) = try makeReply()
+        let (secondReply, _) = try makeReply()
+        let first = try permissionEvent("npm test", at: 1)
+        store.apply(first, reply: firstReply, now: start.addingTimeInterval(1))
+        store.apply(try permissionEvent("npm run lint", at: 2), reply: secondReply, now: start.addingTimeInterval(2))
+        XCTAssertEqual(store.pendingPrompts.count, 2, "parallel tool calls wait together")
+
+        // You allowed the first one in the terminal
+        deliver(event(.postToolUse, at: 5) { $0.toolName = "Bash"; $0.toolInputJSON = first.toolInputJSON }, to: store)
+
+        XCTAssertEqual(store.pendingPrompts.count, 1)
+        guard case .permission(let remaining)? = store.pendingPrompts.first?.kind else { return XCTFail("the second call still waits") }
+        XCTAssertEqual(remaining.detail, "npm run lint")
+        XCTAssertTrue(firstEnd.readDataToEndOfFile().isEmpty, "its hook is let go without a decision")
+
+        deliver(event(.stop, at: 9), to: store)
+        XCTAssertTrue(store.pendingPrompts.isEmpty, "the turn is over")
     }
 }

@@ -5,7 +5,7 @@ A macOS menu bar app that turns the area around the MacBook notch into an intera
 ## Features
 
 - **Now playing**: track, artwork, playback controls and synced lyrics, both in the collapsed island and in the Music tab. It shows whatever the system Now Playing shows in Control Center (Apple Music, Spotify, browser audio and video, video players), read through the MediaRemote framework. Apple Music lyrics come from AppleScript, and lyrics are also looked up on NetEase Cloud Music and LRCLIB.
-- **Coding agents** (Claude Code, Codex, ZCode): while a session works, waits for your permission or has just finished, the collapsed island shows its status and progress (tasks done, or elapsed time) beside the notch. The Agents tab lists every session with its agent, what it's doing, its task progress and a button that brings its Terminal or iTerm2 tab (or the agent's app) to the front. When Claude asks you a question (AskUserQuestion), the island opens on it and you can pick an answer right there, or still answer in the terminal. Connect each agent in Settings → Agents; see "How agents are connected" below.
+- **Coding agents** (Claude Code, Codex, ZCode): while a session works, waits for your permission or has just finished, the collapsed island shows its status and progress (tasks done, or elapsed time) beside the notch. The Agents tab lists every session with its agent, what it's doing, its task progress and a button that brings its Terminal or iTerm2 tab (or the agent's app) to the front. When Claude asks you a question (AskUserQuestion) or asks to use a tool, the island opens on it. You can answer, allow, always allow or deny right there, or still answer in the terminal. Connect each agent in Settings → Agents; see "How agents are connected" below.
 - **Clipboard**: text, links, code and images you copy are kept (50 items for 24 hours by default), can be searched and filtered, and can be pasted back into the frontmost app.
 - **Files shelf**: drag files onto the notch to park them. The shelf keeps security-scoped bookmarks and shows thumbnails and Quick Look previews.
 - **Menu bar item** to show or hide the island, open Settings and quit.
@@ -105,7 +105,14 @@ Claude Code, Codex and ZCode all run command hooks with Claude Code's JSON input
 
 The command runs `island-claude-hook`, copied to `~/Library/Application Support/com.macdynamicisland.app/`, with the agent's name as an argument. The helper forwards the event JSON, plus the agent and the terminal the session runs in, to the app over a Unix socket only your user can open. It prints nothing and always exits 0, so the agent carries on normally when the island isn't running. Disconnecting removes only these entries.
 
-Claude Code's `PermissionRequest` hook is the exception: it runs in the foreground (`island-claude-hook … claude wait`, with a 24-hour timeout) so the island can answer Claude's questions. Claude Code shows its own prompt at the same time and takes whichever answer comes first. For an AskUserQuestion call, the island keeps the connection open until you answer in the island, and then replies with a `PermissionRequest` decision that allows the call with your `answers` filled in. For anything else, or once the question is answered in the terminal, it closes the connection without a reply, so the hook changes nothing.
+Claude Code's `PermissionRequest` hook is the exception: it runs in the foreground (`island-claude-hook … claude wait`, with a 24-hour timeout) so the island can answer Claude's questions. Claude Code shows its own prompt at the same time and takes whichever answer comes first. The island keeps the connection open while its card is up, and replies with a `PermissionRequest` decision:
+
+- A question: allow the AskUserQuestion call with your `answers` filled in.
+- Allow: allow the call.
+- Always allow: allow it and pass Claude Code's `permission_suggestions` back as `updatedPermissions`, like "don't ask again" in the terminal.
+- Deny: deny with `interrupt`, which stops the turn like Esc. If you write a note first, Claude carries on with the note instead.
+
+Once the call is answered in the terminal (the island matches its `PostToolUse` by tool input) or the turn ends, the island closes the connection without a reply, so the hook changes nothing.
 
 ## Known limitations
 

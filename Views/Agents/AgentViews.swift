@@ -214,9 +214,15 @@ struct AgentsView: View {
         } else {
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 6) {
-                    // What an agent is waiting for you to answer comes first
-                    ForEach(store.pendingQuestions) { question in
-                        AgentQuestionCard(question: question, session: store.sessions.first { $0.id == question.sessionID })
+                    // What an agent is waiting on you for comes first
+                    ForEach(store.pendingPrompts) { prompt in
+                        let session = store.sessions.first { $0.id == prompt.sessionID }
+                        switch prompt.kind {
+                        case .question(let questions):
+                            AgentQuestionCard(prompt: prompt, questions: questions, session: session)
+                        case .permission(let permission):
+                            AgentPermissionCard(prompt: prompt, permission: permission, session: session)
+                        }
                     }
                     ForEach(store.sessions) { session in
                         AgentSessionRow(session: session)
@@ -372,10 +378,147 @@ private struct AgentSessionRow: View {
     }
 }
 
+/// Top of a prompt card: who's asking, a way to leave it to the terminal, and what you can do here
+private struct AgentPromptHeader: View {
+    let prompt: AgentPrompt
+    let session: AgentSession?
+    let symbol: String
+    let title: String
+    let hint: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 8) {
+                Image(systemName: symbol)
+                    .foregroundStyle(.yellow)
+                Text("\(session?.projectName ?? prompt.agent.displayName) · \(title)")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Button {
+                    AgentSessionStore.shared.dismissPrompt(prompt.id)
+                    if let session { TerminalFocuser.focus(session.terminal) }
+                } label: {
+                    Text("Answer in terminal")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                .buttonStyle(.plain)
+                .help("Leave this to the terminal and bring it to the front")
+            }
+            Text(prompt.canAnswer ? hint : "Answer this one in the terminal: the session started before the island could answer for it")
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.45))
+        }
+    }
+}
+
+private extension View {
+    func agentPromptCard() -> some View {
+        padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.yellow.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.yellow.opacity(0.35), lineWidth: 1)
+                    )
+            )
+    }
+}
+
+/// A tool call Claude Code wants to make, allowed or denied right in the island
+private struct AgentPermissionCard: View {
+    let prompt: AgentPrompt
+    let permission: AgentPermission
+    let session: AgentSession?
+    /// What Claude should do instead; denying with it lets Claude carry on
+    @State private var note = ""
+
+    private var hasNote: Bool { !note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            AgentPromptHeader(
+                prompt: prompt,
+                session: session,
+                symbol: "hand.raised.fill",
+                title: "\(prompt.agent.shortName) wants to use \(permission.toolName)",
+                hint: "Allow or deny here, or answer in the terminal"
+            )
+
+            Text(permission.summary)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
+                .lineLimit(2)
+
+            if let detail = permission.detail, detail != permission.summary {
+                Text(detail)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .lineLimit(6)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.black.opacity(0.35)))
+            }
+
+            if prompt.canAnswer {
+                TextField("Or tell Claude what to do instead…", text: $note)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 11))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.06)))
+                    .onSubmit { if hasNote { respond { $0.deny(prompt.id, note: note) } } }
+
+                HStack(spacing: 8) {
+                    Button(hasNote ? "Deny with note" : "Deny") {
+                        respond { $0.deny(prompt.id, note: note) }
+                    }
+                    .help(hasNote ? "Deny, and Claude carries on with your note" : "Deny and stop Claude, like Esc in the terminal")
+
+                    if let always = permission.alwaysAllowDescription {
+                        Button("Always allow") {
+                            respond { $0.allow(prompt.id, always: true) }
+                        }
+                        .help("Allow, and don't ask again for \(always)")
+                    }
+
+                    Spacer()
+
+                    Button("Allow") {
+                        respond { $0.allow(prompt.id) }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.yellow)
+                    .foregroundStyle(.black)
+                    .keyboardShortcut(.defaultAction)
+                }
+                .controlSize(.small)
+
+                if let always = permission.alwaysAllowDescription {
+                    Text("Always allow adds \(always)")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .lineLimit(2)
+                }
+            }
+        }
+        .agentPromptCard()
+    }
+
+    private func respond(_ action: (AgentSessionStore) -> Void) {
+        withAnimation(boringInteractiveSpring) { action(AgentSessionStore.shared) }
+    }
+}
+
 /// A question an agent is waiting on, answered right in the island. With a single question that takes one
 /// choice, picking an option answers it; otherwise you pick, then submit.
 private struct AgentQuestionCard: View {
-    let question: AgentPendingQuestion
+    let prompt: AgentPrompt
+    let questions: [AgentQuestion]
     let session: AgentSession?
     /// Question text → the labels you picked
     @State private var picked: [String: Set<String>] = [:]
@@ -383,18 +526,24 @@ private struct AgentQuestionCard: View {
     @State private var typed: [String: String] = [:]
 
     private var answersOnTap: Bool {
-        question.questions.count == 1 && !question.questions[0].allowsMultipleSelection && !question.questions[0].options.isEmpty
+        questions.count == 1 && !questions[0].allowsMultipleSelection && !questions[0].options.isEmpty
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            header
+            AgentPromptHeader(
+                prompt: prompt,
+                session: session,
+                symbol: "questionmark.bubble.fill",
+                title: "\(prompt.agent.shortName) is asking you",
+                hint: answersOnTap ? "Pick an answer here, or answer in the terminal" : "Answer here and submit, or answer in the terminal"
+            )
 
-            ForEach(question.questions) { item in
+            ForEach(questions) { item in
                 questionView(item)
             }
 
-            if question.canAnswer && !answersOnTap {
+            if prompt.canAnswer && !answersOnTap {
                 HStack {
                     Spacer()
                     Button("Submit") { submit() }
@@ -406,44 +555,7 @@ private struct AgentQuestionCard: View {
                 }
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.yellow.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.yellow.opacity(0.35), lineWidth: 1)
-                )
-        )
-    }
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            HStack(spacing: 8) {
-                Image(systemName: "questionmark.bubble.fill")
-                    .foregroundStyle(.yellow)
-                Text("\(session?.projectName ?? question.agent.displayName) · \(question.agent.shortName) is asking you")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                Spacer(minLength: 8)
-                Button {
-                    AgentSessionStore.shared.dismissQuestion(question.id)
-                    if let session { TerminalFocuser.focus(session.terminal) }
-                } label: {
-                    Text("Answer in terminal")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-                .buttonStyle(.plain)
-                .help("Leave this question to the terminal and bring it to the front")
-            }
-            Text(question.canAnswer
-                 ? (answersOnTap ? "Pick an answer here, or answer in the terminal" : "Answer here and submit, or answer in the terminal")
-                 : "Answer this one in the terminal: the session started before the island could answer for it")
-                .font(.system(size: 10))
-                .foregroundStyle(.white.opacity(0.45))
-        }
+        .agentPromptCard()
     }
 
     private func questionView(_ item: AgentQuestion) -> some View {
@@ -473,7 +585,7 @@ private struct AgentQuestionCard: View {
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
                 .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.06)))
-                .disabled(!question.canAnswer)
+                .disabled(!prompt.canAnswer)
                 .onSubmit { if answers != nil { submit() } }
         }
     }
@@ -512,7 +624,7 @@ private struct AgentQuestionCard: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(!question.canAnswer)
+        .disabled(!prompt.canAnswer)
     }
 
     private func pick(_ label: String, in item: AgentQuestion) {
@@ -539,7 +651,7 @@ private struct AgentQuestionCard: View {
     /// Every question's answer, or nil while one is unanswered
     private var answers: [String: String]? {
         var answers: [String: String] = [:]
-        for item in question.questions {
+        for item in questions {
             let own = (typed[item.text] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
             let chosen = item.options.map(\.label).filter { picked[item.text, default: []].contains($0) }
             let parts = item.allowsMultipleSelection ? chosen + (own.isEmpty ? [] : [own]) : [own.isEmpty ? chosen.first : own].compactMap { $0 }
@@ -550,9 +662,9 @@ private struct AgentQuestionCard: View {
     }
 
     private func submit() {
-        guard question.canAnswer, let answers else { return }
+        guard prompt.canAnswer, let answers else { return }
         withAnimation(boringInteractiveSpring) {
-            AgentSessionStore.shared.answer(question.id, with: answers)
+            AgentSessionStore.shared.answer(prompt.id, with: answers)
         }
     }
 }

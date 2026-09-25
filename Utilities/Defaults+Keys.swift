@@ -58,7 +58,7 @@ final class SettingsDefaults: ObservableObject {
     // MARK: - Claude Code
     static let showAgentLiveActivity = SettingsKey(key: "showAgentLiveActivity", defaultValue: true)
     static let agentSoundsEnabled = SettingsKey(key: "agentSoundsEnabled", defaultValue: true)
-    static let agentQuestionsOpenIsland = SettingsKey(key: "agentQuestionsOpenIsland", defaultValue: true)
+    static let agentPromptsOpenIsland = SettingsKey(key: "agentPromptsOpenIsland", defaultValue: true)
 
     // MARK: - Display
     static let showOnAllDisplays = SettingsKey(key: "showOnAllDisplays", defaultValue: false)
