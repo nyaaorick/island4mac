@@ -38,13 +38,14 @@ final class OverlayPanel: NSPanel {
 }
 
 // MARK: - OverlayWindowController
+/// Keeps the islands: the main one on the display you chose (or under the mouse, with "automatically switch display"),
+/// and with "all screens" on, one more on every other display. Everything outside that asks for "the" island
+/// (hotkeys, the clipboard, Settings) gets the main one.
 @MainActor
-final class OverlayWindowController: NSResponder, NSWindowDelegate {
+final class OverlayWindowController: NSObject {
 
     static let shared = OverlayWindowController()
 
-    private var panel: OverlayPanel!
-    private var hostingView: NSView!
     private let appState = AppState()
     private let settingsStore = SettingsDefaults.shared
     private var cancellables = Set<AnyCancellable>()
@@ -54,53 +55,59 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
     private var globalMouseMonitor: Any?
     private var localMouseMonitor: Any?
 
-    // MARK: - Frame Management
-    // 所有动效都由 SwiftUI 弹簧驱动：SwiftUI 画布尺寸固定、在屏幕上的位置固定，
-    // 面板只是它的取景框。展开前面板先瞬间变大，收起时等弹簧停稳再瞬间缩回，
-    // 所以 AppKit 既不做动画，也不会在动画中途触发 SwiftUI 重新布局。
-    private var pendingShrink: DispatchWorkItem?
-    private var pendingShrinkTarget: NSRect?
-    private var windowUpdateScheduled = false
+    private var mainIsland: IslandWindow!
+    /// With "all screens" on: an island on each display other than the main island's
+    private var otherIslands: [CGDirectDisplayID: IslandWindow] = [:]
+    private var islands: [IslandWindow] { [mainIsland] + otherIslands.values }
+
+    private var islandSyncScheduled = false
     private var lastMouseCheckTime: Date = .distantPast
-    /// 岛当前所在的显示器
-    private var currentDisplayID: CGDirectDisplayID?
     /// 正在播放（暂停超过 1 秒才算停）
     private var musicIsPlaying = false
-    /// 收起弹簧（response 0.45，临界阻尼）在这个时间内停稳
-    private let settleDelay: TimeInterval = 0.6
 
     private override init() {
         super.init()
         setupManagers() // INITIALIZE MUSIC STREAM
-        setupPanel()
+        mainIsland = IslandWindow(appState: appState, nowPlayingManager: nowPlayingManager) { [weak self] in
+            self?.mainIslandScreen()
+        }
         setupObservers()
         // 首次摆放推迟到下一轮 runloop：init 发生在 App 的 @StateObject 初始化里，也就是 SwiftUI 更新途中，
         // 此时改动 hosting view 或 appState 会触发 “setting value during update” 崩溃
-        scheduleWindowUpdate()
+        scheduleIslandSync()
     }
-
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func getAppState() -> AppState { return appState }
+    /// The main island's panel, the one hotkeys and the clipboard open
+    var mainPanel: NSWindow { mainIsland.panel }
 
-    /// Opens the island on the Agents tab, where you can answer an agent's question or permission prompt
+    /// Opens the island on the Agents tab, where you can answer an agent's question or permission prompt:
+    /// the island on the display you're working on
     func showAgentPrompt() {
         guard settingsStore.get(SettingsDefaults.agentPromptsOpenIsland) else { return }
+        let state = islandUnderMouse()?.appState ?? appState
         // Don't pull the open island away from a tab you're using
-        if appState.overlayMode == .expanded && appState.islandFrame.contains(NSEvent.mouseLocation) { return }
-        appState.currentSection = .agents
+        if state.overlayMode == .expanded && state.islandFrame.contains(NSEvent.mouseLocation) { return }
+        state.currentSection = .agents
         withAnimation(boringOpenAnimation) {
-            appState.activateOverlay(reason: .agentPrompt)
+            state.activateOverlay(reason: .agentPrompt)
         }
     }
 
-    /// Closes the island a prompt opened once no prompt is left, unless the pointer is on it
+    /// Closes the islands a prompt opened once no prompt is left, unless the pointer is on them
     private func closeAfterAgentPrompts() {
-        guard appState.overlayMode == .expanded, appState.visibilityReason == .agentPrompt,
-              !appState.islandFrame.contains(NSEvent.mouseLocation) else { return }
-        withAnimation(boringCloseAnimation) {
-            appState.deactivateOverlay()
+        for state in islands.map(\.appState) {
+            guard state.overlayMode == .expanded, state.visibilityReason == .agentPrompt,
+                  !state.islandFrame.contains(NSEvent.mouseLocation) else { continue }
+            withAnimation(boringCloseAnimation) {
+                state.deactivateOverlay()
+            }
         }
+    }
+
+    private func islandUnderMouse() -> IslandWindow? {
+        guard let display = ScreenManager.activeScreenContainingMouse()?.displayID else { return nil }
+        return islands.first { $0.currentDisplayID == display }
     }
 
     private func setupManagers() {
@@ -116,84 +123,11 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
         }
     }
 
-    private func setupPanel() {
-        panel = OverlayPanel(
-            contentRect: .zero,
-            styleMask: [.borderless],  // ✅ 移除 .nonactivatingPanel
-            backing: .buffered,
-            defer: false
-        )
-
-        // 先告诉视图当前屏幕的刘海尺寸，避免首帧按无刘海布局
-        if let screen = preferredScreen() {
-            appState.notchSize = screen.notchSize
-            currentDisplayID = screen.displayID
-        }
-
-        let rootView = NotchHomeView()
-            // App 在后台时，点岛的第一下会激活窗口；默认这一下不交给按钮和点按手势，要点两次才有反应
-            .allowsWindowActivationEvents()
-            .environmentObject(appState)
-            .environmentObject(appState.clipboardHub)
-            .environmentObject(nowPlayingManager!)
-            .ignoresSafeArea()
-
-        let hostingView = NSHostingView(rootView: rootView)
-        hostingView.wantsLayer = true
-        hostingView.layer?.backgroundColor = NSColor.clear.cgColor
-
-        // ✅ 确保 NSHostingView 及其 layer 不产生阴影
-        hostingView.shadow = nil
-        hostingView.layer?.shadowOpacity = 0
-        hostingView.layer?.shadowRadius = 0
-        hostingView.layer?.shadowOffset = .zero
-
-        // ✅ 关键：画布尺寸固定，不让 SwiftUI 内容反过来约束窗口，也就不会有 AutoLayout ↔︎ setFrame 递归
-        hostingView.sizingOptions = []
-        hostingView.translatesAutoresizingMaskIntoConstraints = true
-        // 面板可能左右不对称地变大变小，画布由 layoutCanvas 按屏幕位置摆放，不随面板自动伸缩
-        hostingView.autoresizingMask = []
-        // 挂进窗口之前就定好尺寸：此时容器宽高为 0，画布贴顶居中
-        let canvas = NotchMetrics.canvasSize(notch: appState.notchSize)
-        hostingView.frame = NSRect(x: -canvas.width / 2, y: -canvas.height, width: canvas.width, height: canvas.height)
-
-        let container = NSView(frame: .zero)
-        container.wantsLayer = true
-        container.layer?.backgroundColor = NSColor.clear.cgColor
-        container.addSubview(hostingView)
-
-        self.hostingView = hostingView
-        panel.contentView = container
-        panel.delegate = self
-    }
-
     private func setupObservers() {
-        // 新值存好后（didSet）同步调整面板，保证 SwiftUI 渲染展开（或切到更大的分区）的第一帧时面板已经够大。
-        // 不能用 @Published 的发布者：它在 willSet 发出，此时改面板会让 SwiftUI 按旧值布局，新值要等下一个事件才显示出来
-        appState.islandSizeDidChange
-            .compactMap { [weak appState] in appState.map { ($0.overlayMode, $0.currentSection) } }
-            .removeDuplicates { $0 == $1 }
-            .sink { [weak self] mode, section in
-                self?.updateWindowFrame(for: mode, section: section)
-            }
-            .store(in: &cancellables)
-
-        appState.$isOverlayVisible
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] visible in
-                guard let self else { return }
-                if visible {
-                    self.panel.orderFront(nil)
-                } else {
-                    self.panel.orderOut(nil)
-                }
-            }
-            .store(in: &cancellables)
-
-        // Settings changes can affect sizing (e.g. nonNotchHeight)
+        // Settings changes can affect sizing (e.g. nonNotchHeight) and which displays get an island
         settingsStore.objectWillChange
             .sink { [weak self] _ in
-                self?.scheduleWindowUpdate()
+                self?.scheduleIslandSync()
             }
             .store(in: &cancellables)
 
@@ -208,15 +142,9 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
             .switchToLatest()
             .removeDuplicates()
             .sink { [weak self] playing in
-                self?.musicIsPlaying = playing
-                self?.scheduleWindowUpdate()
-            }
-            .store(in: &cancellables)
-
-        appState.$isPeekingNotch
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.scheduleWindowUpdate()
+                guard let self else { return }
+                self.musicIsPlaying = playing
+                self.islands.forEach { $0.musicIsPlaying = playing }
             }
             .store(in: &cancellables)
 
@@ -227,7 +155,7 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
             .map { title, artist in !(title.isEmpty && artist.isEmpty) }
             .removeDuplicates()
             .sink { [weak self] _ in
-                self?.scheduleWindowUpdate()
+                self?.updateAllIslands()
             }
             .store(in: &cancellables)
 
@@ -236,13 +164,21 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
             .map { $0 != nil }
             .removeDuplicates()
             .sink { [weak self] _ in
-                self?.scheduleWindowUpdate()
+                self?.updateAllIslands()
             }
             .store(in: &cancellables)
 
+        // 前台 App 的菜单或状态栏图标变了，两翼重新按刘海两边留下的空位伸出
+        MenuBarSpace.shared.didChange
+            .sink { [weak self] _ in
+                self?.updateAllIslands()
+            }
+            .store(in: &cancellables)
+
+        // 接上或拔掉显示器
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .sink { [weak self] _ in
-                self?.scheduleWindowUpdate()
+                self?.scheduleIslandSync()
             }
             .store(in: &cancellables)
 
@@ -273,176 +209,88 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
     }
 
     private func followMouseToScreen() {
-        guard settingsStore.get(SettingsDefaults.automaticallySwitchDisplay) else { return }
+        guard followsMouse else { return }
         let now = Date()
         guard now.timeIntervalSince(lastMouseCheckTime) > 0.1 else { return }
         lastMouseCheckTime = now
 
-        if let screen = ScreenManager.activeScreenContainingMouse(), screen.displayID != currentDisplayID {
-            scheduleWindowUpdate()
+        if let screen = ScreenManager.activeScreenContainingMouse(), screen.displayID != mainIsland.currentDisplayID {
+            mainIsland.scheduleWindowUpdate()
         }
     }
 
-    func reposition() {
-        updateWindowFrame(for: appState.overlayMode, section: appState.currentSection)
+    // MARK: - Displays
+
+    /// With an island on every display there's nothing to follow
+    private var followsMouse: Bool {
+        settingsStore.get(SettingsDefaults.automaticallySwitchDisplay) && !settingsStore.get(SettingsDefaults.showOnAllDisplays)
     }
 
-    // MARK: - Panel Frame
-
-    /// 合并 willSet 阶段发出的变化，等新值生效后再算一次
-    private func scheduleWindowUpdate() {
-        guard !windowUpdateScheduled else { return }
-        windowUpdateScheduled = true
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.windowUpdateScheduled = false
-            self.updateWindowFrame(for: self.appState.overlayMode, section: self.appState.currentSection)
-        }
-    }
-
-    /// 变大立即生效，给岛留出动画空间；变小等岛的弹簧停稳后再执行
-    private func updateWindowFrame(for mode: AppState.OverlayMode, section: AppState.IslandSection) {
-        guard let screen = targetScreen(for: mode) else { return }
-        currentDisplayID = screen.displayID
-        let notchSize = screen.notchSize
-        if appState.notchSize != notchSize {
-            appState.notchSize = notchSize
-            layoutCanvas()
-        }
-        let showsMusic = MusicManager.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch)
-        let showsLiveActivity = showsMusic || AgentSessionStore.shared.showsCompactLiveActivity
-        let target = windowFrame(for: mode, section: section, showsLiveActivity: showsLiveActivity, screen: screen)
-
-        // 目标没变：别打断已经排好的缩小，否则频繁的更新会让面板一直缩不回去
-        if let pending = pendingShrinkTarget, framesAreEffectivelyEqual(pending, target) {
-            return
-        }
-        pendingShrink?.cancel()
-        pendingShrink = nil
-        pendingShrinkTarget = nil
-
-        // 同一块屏幕上：先覆盖岛现在和将要占的全部区域
-        let current = panel.frame
-        let immediate = current.intersects(screen.frame) ? current.union(target) : target
-        setPanelFrame(immediate)
-
-        // 面板已经够大，再让视图伸出播放两翼
-        if appState.showsLiveActivity != showsLiveActivity {
-            appState.showsLiveActivity = showsLiveActivity
-        }
-
-        guard !framesAreEffectivelyEqual(immediate, target) else { return }
-        let shrink = DispatchWorkItem { [weak self] in
-            guard let self else { return }
-            self.pendingShrink = nil
-            self.pendingShrinkTarget = nil
-            self.setPanelFrame(target)
-            // 收起期间鼠标可能已经换了屏幕，现在停稳了再跟过去
-            self.scheduleWindowUpdate()
-        }
-        pendingShrink = shrink
-        pendingShrinkTarget = target
-        DispatchQueue.main.asyncAfter(deadline: .now() + settleDelay, execute: shrink)
-    }
-
-    private func setPanelFrame(_ frame: NSRect) {
-        if !framesAreEffectivelyEqual(frame, panel.frame) {
-            // 不强制立即重绘：画布在屏幕上的位置不变，下一次正常刷新即可
-            panel.setFrame(frame, display: false)
-            layoutCanvas()
-        }
-        appState.updateNotchRegion(frame)
-    }
-
-    /// 画布：展开后的岛加上弹簧回弹余量，贴住面板顶边，水平方向正对刘海（屏幕中线）；
-    /// 收起的岛只往左伸，面板左右不对称，所以不能按面板居中
-    private func layoutCanvas() {
-        guard let container = panel.contentView else { return }
-        let size = NotchMetrics.canvasSize(notch: appState.notchSize)
-        let bounds = container.bounds
-        let screenMidX = currentScreen?.frame.midX ?? panel.frame.midX
-        let frame = NSRect(
-            x: screenMidX - panel.frame.minX - size.width / 2,
-            y: bounds.height - size.height,
-            width: size.width,
-            height: size.height
-        )
-        if !framesAreEffectivelyEqual(frame, hostingView.frame) {
-            hostingView.frame = frame
-        }
-    }
-
-    private func framesAreEffectivelyEqual(_ a: NSRect, _ b: NSRect) -> Bool {
-        // 允许 0.5pt 的浮动，避免浮点抖动导致重复 setFrame
-        abs(a.origin.x - b.origin.x) < 0.5 &&
-        abs(a.origin.y - b.origin.y) < 0.5 &&
-        abs(a.size.width - b.size.width) < 0.5 &&
-        abs(a.size.height - b.size.height) < 0.5
-    }
-
-    private var currentScreen: NSScreen? {
-        NSScreen.screens.first { $0.displayID == currentDisplayID }
-    }
-
-    /// 展开中、已展开或正在收起时留在当前屏幕，免得动画跳到另一块屏幕上
-    private func targetScreen(for mode: AppState.OverlayMode) -> NSScreen? {
-        let isOpenOrClosing = mode == .expanded || appState.overlayMode == .expanded || pendingShrink != nil
-        if isOpenOrClosing, let screen = currentScreen {
-            return screen
-        }
-        return preferredScreen()
-    }
-
-    /// 开着“自动切换显示器”时跟随鼠标所在的屏幕，否则固定在有刘海的内建屏幕（没有就用主屏）
-    private func preferredScreen() -> NSScreen? {
+    /// 开着“自动切换显示器”时跟随鼠标所在的屏幕，否则放在设置里选的屏幕；没选或它没接上时放在有刘海的内建屏幕（没有就用主屏）
+    private func mainIslandScreen() -> NSScreen? {
         let screens = NSScreen.screens
+        let chosenUUID = settingsStore.get(SettingsDefaults.preferredDisplayUUID)
         let display = ScreenManager.islandDisplay(
-            followsMouse: settingsStore.get(SettingsDefaults.automaticallySwitchDisplay),
+            followsMouse: followsMouse,
             mouseDisplay: ScreenManager.activeScreenContainingMouse()?.displayID,
-            currentDisplay: currentScreen?.displayID,
+            currentDisplay: mainIsland?.currentDisplayID,
+            chosenDisplay: chosenUUID.isEmpty ? nil : screens.first { $0.displayUUID == chosenUUID }?.displayID,
             builtInDisplay: screens.first(where: \.hasNotch)?.displayID,
             mainDisplay: NSScreen.main?.displayID
         )
         return screens.first { $0.displayID == display } ?? NSScreen.main
     }
 
-    /// 面板位置：紧贴屏幕顶边、水平居中；有刘海时岛的上半部分正好藏在刘海里
-    private func windowFrame(for mode: AppState.OverlayMode, section: AppState.IslandSection, showsLiveActivity: Bool, screen: NSScreen) -> NSRect {
-        var size = NotchMetrics.islandSize(
-            expanded: mode == .expanded,
-            section: section,
-            notch: screen.notchSize,
-            showsLiveActivity: showsLiveActivity,
-            nonNotchHeight: settingsStore.get(SettingsDefaults.nonNotchHeight)
-        )
-        if mode == .expanded {
-            // 留出展开弹簧回弹的余量，避免回弹被面板边缘截掉
-            size.width += 2 * NotchMetrics.overshootMargin
-            size.height += NotchMetrics.overshootMargin
+    /// 设置和显示器变化在 willSet 时通知，等新值生效后再重新安排各块屏幕上的岛
+    private func scheduleIslandSync() {
+        guard !islandSyncScheduled else { return }
+        islandSyncScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.islandSyncScheduled = false
+            self.syncOtherIslands()
+            self.updateAllIslands()
         }
-
-        // ✅ 使用 screen.frame 而不是 visibleFrame：screen.frame 包含刘海和菜单栏区域
-        let fullFrame = screen.frame
-        // 收起时的实时活动只在刘海左边，面板也只往左伸，不挡右边的菜单栏图标
-        let offset = NotchMetrics.islandOffset(expanded: mode == .expanded, notch: screen.notchSize, showsLiveActivity: showsLiveActivity)
-        return NSRect(
-            x: fullFrame.midX + offset - size.width / 2,
-            y: fullFrame.maxY - size.height,
-            width: size.width,
-            height: size.height
-        )
     }
 
-    func show() { appState.isOverlayVisible = true }
-    func hide() { appState.isOverlayVisible = false }
+    /// 打开“所有屏幕”时，主岛以外的每块屏幕各放一个岛；关掉或屏幕拔掉时收走
+    private func syncOtherIslands() {
+        let wanted = Set(ScreenManager.otherIslandDisplays(
+            allScreens: settingsStore.get(SettingsDefaults.showOnAllDisplays),
+            displays: NSScreen.screens.compactMap(\.displayID),
+            primary: mainIslandScreen()?.displayID
+        ))
+        for (display, island) in otherIslands where !wanted.contains(display) {
+            island.close()
+            otherIslands[display] = nil
+        }
+        for display in wanted where otherIslands[display] == nil {
+            let island = IslandWindow(appState: AppState(sharingWith: appState), nowPlayingManager: nowPlayingManager) {
+                NSScreen.screens.first { $0.displayID == display }
+            }
+            island.musicIsPlaying = musicIsPlaying
+            otherIslands[display] = island
+        }
+    }
+
+    private func updateAllIslands() {
+        islands.forEach { $0.scheduleWindowUpdate() }
+    }
+
+    func reposition() {
+        islands.forEach { $0.reposition() }
+    }
+
+    func show() { islands.forEach { $0.appState.isOverlayVisible = true } }
+    func hide() { islands.forEach { $0.appState.isOverlayVisible = false } }
 
     func showTemporarily(duration: TimeInterval = 1.5) {
         show()
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(duration))
             guard let self else { return }
-            if self.appState.overlayMode == .compact {
-                self.hide()
+            for island in self.islands where island.appState.overlayMode == .compact {
+                island.appState.isOverlayVisible = false
             }
         }
     }

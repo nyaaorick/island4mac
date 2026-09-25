@@ -12,6 +12,12 @@ extension NSScreen {
     var displayID: CGDirectDisplayID? {
         (deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value
     }
+
+    /// Identifies the display across reconnects and restarts, unlike displayID; what Settings remembers
+    var displayUUID: String? {
+        guard let displayID, let uuid = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue() else { return nil }
+        return CFUUIDCreateString(nil, uuid) as String
+    }
     
     /// Check if screen has a notch
     var hasNotch: Bool {

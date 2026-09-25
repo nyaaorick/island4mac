@@ -31,7 +31,7 @@ struct NotchHomeView: View {
 
     /// Collapsed content sits left of the notch only, so the island's center moves left with it
     private var islandOffset: CGFloat {
-        NotchMetrics.islandOffset(expanded: isExpanded, notch: notch, showsLiveActivity: appState.showsLiveActivity)
+        NotchMetrics.islandOffset(expanded: isExpanded, notch: notch, wings: appState.liveActivityWings)
     }
 
     /// The size OverlayWindowController gives the panel, so the settled island fills it exactly
@@ -40,7 +40,7 @@ struct NotchHomeView: View {
             expanded: isExpanded,
             section: appState.currentSection,
             notch: notch,
-            showsLiveActivity: appState.showsLiveActivity,
+            wings: appState.liveActivityWings,
             nonNotchHeight: settings.get(SettingsDefaults.nonNotchHeight)
         )
     }
@@ -110,7 +110,7 @@ struct NotchHomeView: View {
         .animation(isExpanded ? openAnimation : closeAnimation, value: isExpanded)
         // Each tab has its own open size
         .animation(reduceMotion ? nil : animationSpring, value: appState.currentSection)
-        .animation(reduceMotion ? nil : animationSpring, value: appState.showsLiveActivity)
+        .animation(reduceMotion ? nil : animationSpring, value: appState.liveActivityWings)
     }
 
     /// Opens the island; when an agent session is showing beside the notch, on the Agents tab
@@ -217,9 +217,9 @@ struct CompactIslandRegion: View {
             }
             .padding(.horizontal, 14)
         } else if appState.showsLiveActivity, let session = agentSession {
-            AgentNotchLiveActivityView(session: session, notch: notch, activeCount: agents.activeSessionCount)
+            AgentNotchLiveActivityView(session: session, notch: notch, wings: appState.liveActivityWings, activeCount: agents.activeSessionCount)
         } else if appState.showsLiveActivity && MusicManager.shared.showsCompactLiveActivity {
-            NotchLiveActivityView(notch: notch, animation: animation)
+            NotchLiveActivityView(notch: notch, wings: appState.liveActivityWings, animation: animation)
         } else {
             // Nothing playing: stay hidden inside the notch
             Color.clear
@@ -229,12 +229,46 @@ struct CompactIslandRegion: View {
 
 // MARK: - Notch Live Activity (Album Art | Notch | Spectrum)
 
-/// Collapsed now-playing on a notched display: album art and spectrum left of the notch
+/// Collapsed content around the notch: the primary item in the left wing and the secondary one in the right.
+/// With room on one side only, the primary item goes there, and the secondary one beside it if the left has room for both.
+struct NotchWingsLayout<Primary: View, Secondary: View>: View {
+    let notch: CGSize
+    let wings: IslandWings
+    /// Content of a wing, given the wing's width
+    @ViewBuilder let primary: (_ width: CGFloat) -> Primary
+    @ViewBuilder let secondary: (_ width: CGFloat) -> Secondary
+
+    var body: some View {
+        HStack(spacing: 0) {
+            if wings.trailing == 0, wings.leading >= 2 * NotchMetrics.minWingWidth {
+                let half = wings.leading / 2
+                primary(half).frame(width: half)
+                secondary(half).frame(width: half)
+            } else if wings.leading > 0 {
+                primary(wings.leading).frame(width: wings.leading)
+            }
+
+            // Hidden behind the camera housing
+            Color.clear
+                .frame(width: notch.width)
+
+            if wings.trailing > 0 {
+                Group {
+                    if wings.leading > 0 { secondary(wings.trailing) } else { primary(wings.trailing) }
+                }
+                .frame(width: wings.trailing)
+            }
+        }
+    }
+}
+
+/// Collapsed now-playing on a notched display: album art and spectrum beside the notch
 private struct NotchLiveActivityView: View {
     @ObservedObject private var musicManager = MusicManager.shared
     @ObservedObject private var settings = SettingsDefaults.shared
 
     let notch: CGSize
+    let wings: IslandWings
     let animation: Namespace.ID
 
     private var accent: Color {
@@ -245,41 +279,37 @@ private struct NotchLiveActivityView: View {
     }
 
     var body: some View {
-        let wing = NotchMetrics.wingWidth(for: notch)
-        let artSize = max(16, notch.height - 12)
-
-        HStack(spacing: 0) {
+        NotchWingsLayout(notch: notch, wings: wings) { width in
+            // A narrow wing keeps a little air around the artwork
+            let artSize = min(max(16, notch.height - 12), width - 2)
             Image(nsImage: musicManager.albumArt)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .matchedGeometryEffect(id: "album_art", in: animation)
                 .frame(width: artSize, height: artSize)
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-                .frame(width: wing)
+        } secondary: { _ in
+            spectrum
+        }
+    }
 
-            Group {
-                if settings.get(SettingsDefaults.useMusicVisualizer) {
-                    Rectangle()
-                        .fill((settings.get(SettingsDefaults.playerColorTinting) ? accent : .white).opacity(0.85))
-                        .frame(width: 18, height: 12)
-                        .matchedGeometryEffect(id: "spectrum", in: animation)
-                        .mask {
-                            AudioSpectrumView(isPlaying: $musicManager.isPlaying)
-                                .frame(width: 16, height: 12)
-                        }
-                        .accessibilityHidden(true)
-                } else {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(musicManager.isPlaying ? .green : Color.white.opacity(0.35))
-                        .symbolEffect(.bounce, options: .repeating, value: musicManager.isPlaying)
+    @ViewBuilder
+    private var spectrum: some View {
+        if settings.get(SettingsDefaults.useMusicVisualizer) {
+            Rectangle()
+                .fill((settings.get(SettingsDefaults.playerColorTinting) ? accent : .white).opacity(0.85))
+                .frame(width: 18, height: 12)
+                .matchedGeometryEffect(id: "spectrum", in: animation)
+                .mask {
+                    AudioSpectrumView(isPlaying: $musicManager.isPlaying)
+                        .frame(width: 16, height: 12)
                 }
-            }
-            .frame(width: wing)
-
-            // Hidden behind the camera housing; nothing to its right, where the menu bar icons are
-            Color.clear
-                .frame(width: notch.width)
+                .accessibilityHidden(true)
+        } else {
+            Image(systemName: "waveform")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(musicManager.isPlaying ? .green : Color.white.opacity(0.35))
+                .symbolEffect(.bounce, options: .repeating, value: musicManager.isPlaying)
         }
     }
 }
@@ -608,25 +638,40 @@ enum NotchMetrics {
     /// Room around the open island so the open spring's overshoot isn't cut off by the panel
     static let overshootMargin: CGFloat = 10
 
-    /// Width of each slot of collapsed content (artwork, spectrum, status, progress)
+    /// Widest a wing of collapsed content gets (artwork, spectrum, status, progress)
     static func wingWidth(for notch: CGSize) -> CGFloat {
         notch.height + 6
     }
 
-    /// Collapsed content, two slots wide, all left of the notch so the menu bar icons
-    /// to its right stay visible and clickable
-    static func liveActivityWidth(for notch: CGSize) -> CGFloat {
-        2 * wingWidth(for: notch)
+    /// Narrowest wing worth showing: the artwork or the agent's status glyph, with a little air
+    static let minWingWidth: CGFloat = 16
+    /// Air kept between a wing and the nearest menu or status icon. Their frames already include padding,
+    /// and the island's flared top corners only reach past its body above the icons
+    static let wingMargin: CGFloat = 2
+
+    /// Wings that fit into the room the menus and status icons leave beside the notch. The primary item
+    /// (artwork, agent status) goes left and the secondary one (spectrum, progress) right; with no room on the
+    /// right both go left, as they do while that room is unknown. Nothing is ever laid over a menu or an icon.
+    static func liveActivityWings(leadingRoom: CGFloat?, trailingRoom: CGFloat?, notch: CGSize) -> IslandWings {
+        let wing = wingWidth(for: notch)
+        let left = (leadingRoom ?? .infinity) - wingMargin
+        let right = (trailingRoom ?? 0) - wingMargin
+        if right >= minWingWidth {
+            let leading = left >= minWingWidth ? min(wing, left).rounded(.down) : 0
+            return IslandWings(leading: leading, trailing: min(wing, right).rounded(.down))
+        }
+        if left >= 2 * wing { return IslandWings(leading: 2 * wing, trailing: 0) }
+        return IslandWings(leading: left >= minWingWidth ? min(wing, left).rounded(.down) : 0, trailing: 0)
     }
 
-    /// Horizontal offset of the island's center from the notch's: collapsed, it only grows to the left
-    static func islandOffset(expanded: Bool, notch: CGSize, showsLiveActivity: Bool) -> CGFloat {
-        guard !expanded, notch != .zero, showsLiveActivity else { return 0 }
-        return -liveActivityWidth(for: notch) / 2
+    /// Horizontal offset of the island's center from the notch's, when its wings differ in width
+    static func islandOffset(expanded: Bool, notch: CGSize, wings: IslandWings) -> CGFloat {
+        guard !expanded, notch != .zero else { return 0 }
+        return (wings.trailing - wings.leading) / 2
     }
 
     /// Settled size of the island; the panel matches it (plus `overshootMargin` when open)
-    static func islandSize(expanded: Bool, section: AppState.IslandSection, notch: CGSize, showsLiveActivity: Bool, nonNotchHeight: CGFloat) -> CGSize {
+    static func islandSize(expanded: Bool, section: AppState.IslandSection, notch: CGSize, wings: IslandWings, nonNotchHeight: CGFloat) -> CGSize {
         if expanded {
             // Content starts below the camera housing
             let open = expandedSize(for: section)
@@ -636,11 +681,8 @@ enum NotchMetrics {
         guard notch != .zero else {
             return CGSize(width: nonNotchWidth, height: nonNotchHeight)
         }
-        // Collapsed: the notch itself, plus the live activity to its left
-        var width = notch.width + 2 * compactTopRadius
-        if showsLiveActivity {
-            width += liveActivityWidth(for: notch)
-        }
+        // Collapsed: the notch itself, plus the live activity beside it
+        let width = notch.width + 2 * compactTopRadius + wings.leading + wings.trailing
         return CGSize(width: width, height: notch.height)
     }
 
@@ -652,6 +694,15 @@ enum NotchMetrics {
             height: (openSizes.map(\.height).max() ?? 0) + notch.height + overshootMargin
         )
     }
+}
+
+/// Width of the collapsed island's content left and right of the notch
+struct IslandWings: Equatable {
+    var leading: CGFloat = 0
+    var trailing: CGFloat = 0
+
+    static let none = IslandWings()
+    var isEmpty: Bool { leading == 0 && trailing == 0 }
 }
 
 /// Notch outline: flat top edge, outward-curving top corners and rounded bottom corners.

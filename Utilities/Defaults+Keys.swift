@@ -62,6 +62,8 @@ final class SettingsDefaults: ObservableObject {
 
     // MARK: - Display
     static let showOnAllDisplays = SettingsKey(key: "showOnAllDisplays", defaultValue: false)
+    /// UUID of the display chosen for the island (NSScreen.displayUUID); empty: the built-in display
+    static let preferredDisplayUUID = SettingsKey(key: "preferredDisplayUUID", defaultValue: "")
     static let automaticallySwitchDisplay = SettingsKey(key: "automaticallySwitchDisplay", defaultValue: true)
     static let expandedDragDetection = SettingsKey(key: "expandedDragDetection", defaultValue: true)
 

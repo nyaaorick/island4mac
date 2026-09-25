@@ -14,19 +14,25 @@ enum ScreenManager {
     }
 
     /// The display the island belongs on. Following the mouse, that's the display under the cursor
-    /// (or the one it's already on when the cursor is on none); otherwise the built-in display with
-    /// the notch, or the main display when there is none (lid closed).
+    /// (or the one it's already on when the cursor is on none); otherwise the display chosen in Settings
+    /// while it's connected, else the built-in display with the notch, or the main display when there is none (lid closed).
     static func islandDisplay(
         followsMouse: Bool,
         mouseDisplay: CGDirectDisplayID?,
         currentDisplay: CGDirectDisplayID?,
+        chosenDisplay: CGDirectDisplayID?,
         builtInDisplay: CGDirectDisplayID?,
         mainDisplay: CGDirectDisplayID?
     ) -> CGDirectDisplayID? {
         if followsMouse, let display = mouseDisplay ?? currentDisplay {
             return display
         }
-        return builtInDisplay ?? mainDisplay
+        return chosenDisplay ?? builtInDisplay ?? mainDisplay
+    }
+
+    /// Displays that get an island of their own besides the one on `primary`: every other display with "all screens" on
+    static func otherIslandDisplays(allScreens: Bool, displays: [CGDirectDisplayID], primary: CGDirectDisplayID?) -> [CGDirectDisplayID] {
+        allScreens ? displays.filter { $0 != primary } : []
     }
 
     /// Detect the screen containing the frontmost application

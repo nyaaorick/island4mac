@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		5104FC4E2F1A4B5D003F8273 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5104FC4B2F1A4B5D003F8273 /* StatusBarController.swift */; };
 		5104FC4F2F1A4B5D003F8273 /* OverlayWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5104FC492F1A4B5D003F8273 /* OverlayWindowController.swift */; };
+		4D5241020000000000000033 /* IslandWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000032 /* IslandWindow.swift */; };
 		510BABFB2F222146001CA156 /* LyricsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 510BABFA2F222146001CA156 /* LyricsService.swift */; };
 		511D73212F18D90300163A46 /* ClipboardSettingsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73092F18D90300163A46 /* ClipboardSettingsWindow.swift */; };
 		511D73242F18D90300163A46 /* NSItemProvider+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D72F42F18D90300163A46 /* NSItemProvider+Extensions.swift */; };
@@ -46,6 +47,7 @@
 		511D742E2F18DA0B00163A46 /* PlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D74272F18DA0B00163A46 /* PlaybackState.swift */; };
 		511D74312F18DA0B00163A46 /* ShelfItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D74282F18DA0B00163A46 /* ShelfItem.swift */; };
 		5163623F2F2871320014744B /* DragDetectorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5163623E2F2871320014744B /* DragDetectorManager.swift */; };
+		4D5241020000000000000031 /* MenuBarSpace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000030 /* MenuBarSpace.swift */; };
 		519CDAFD2F124DD70011DA8A /* IslandInteractionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519CDAFC2F124DD70011DA8A /* IslandInteractionState.swift */; };
 		519FCFBD2F1F683D00E6EE33 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E49FBE2F0B8F8E002AD746 /* AppDelegate.swift */; };
 		51D024632F16046D00B1FF0F /* SearchEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51D024602F16046D00B1FF0F /* SearchEngine.swift */; };
@@ -146,6 +148,7 @@
 
 /* Begin PBXFileReference section */
 		5104FC492F1A4B5D003F8273 /* OverlayWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowController.swift; sourceTree = "<group>"; };
+		4D5241020000000000000032 /* IslandWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandWindow.swift; sourceTree = "<group>"; };
 		5104FC4B2F1A4B5D003F8273 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		510BABFA2F222146001CA156 /* LyricsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsService.swift; sourceTree = "<group>"; };
 		511D72E82F18D90300163A46 /* BuildConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildConfig.swift; sourceTree = "<group>"; };
@@ -184,6 +187,7 @@
 		511D74282F18DA0B00163A46 /* ShelfItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfItem.swift; sourceTree = "<group>"; };
 		511D74292F18DA0B00163A46 /* ShelfItem+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShelfItem+Extensions.swift"; sourceTree = "<group>"; };
 		5163623E2F2871320014744B /* DragDetectorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragDetectorManager.swift; sourceTree = "<group>"; };
+		4D5241020000000000000030 /* MenuBarSpace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarSpace.swift; sourceTree = "<group>"; };
 		519CDAFC2F124DD70011DA8A /* IslandInteractionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandInteractionState.swift; sourceTree = "<group>"; };
 		51D0245A2F16046D00B1FF0F /* ClipboardHubStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHubStore.swift; sourceTree = "<group>"; };
 		51D024602F16046D00B1FF0F /* SearchEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchEngine.swift; sourceTree = "<group>"; };
@@ -271,6 +275,7 @@
 			isa = PBXGroup;
 			children = (
 				5104FC492F1A4B5D003F8273 /* OverlayWindowController.swift */,
+				4D5241020000000000000032 /* IslandWindow.swift */,
 				5104FC4B2F1A4B5D003F8273 /* StatusBarController.swift */,
 			);
 			path = Controllers;
@@ -447,6 +452,7 @@
 			isa = PBXGroup;
 			children = (
 				5163623E2F2871320014744B /* DragDetectorManager.swift */,
+				4D5241020000000000000030 /* MenuBarSpace.swift */,
 				511D734C2F18D92700163A46 /* AnalyticsManager.swift */,
 				511D735C2F18D92700163A46 /* SystemPreferencesManager.swift */,
 				51F1B0F32F0E159D00B89019 /* ScreenManager.swift */,
@@ -782,11 +788,13 @@
 				51E1CA512F231740009A87D2 /* LaunchAtLoginHelper.swift in Sources */,
 				5104FC4E2F1A4B5D003F8273 /* StatusBarController.swift in Sources */,
 				5104FC4F2F1A4B5D003F8273 /* OverlayWindowController.swift in Sources */,
+				4D5241020000000000000033 /* IslandWindow.swift in Sources */,
 				511D73482F18D90300163A46 /* SettingsView.swift in Sources */,
 				51F1B0E22F0E0DB700B89019 /* Localization.swift in Sources */,
 				51F1B0E42F0E0DB700B89019 /* Log.swift in Sources */,
 				51E1CAA12F245D83009A87D2 /* BoringAnimationPhysics.swift in Sources */,
 				5163623F2F2871320014744B /* DragDetectorManager.swift in Sources */,
+				4D5241020000000000000031 /* MenuBarSpace.swift in Sources */,
 				51F1B11A2F0E49FF00B89019 /* OverlayVisibilityReason.swift in Sources */,
 				51E49FD12F0B93E9002AD746 /* AppState.swift in Sources */,
 				511D73AD2F18D94200163A46 /* AboutView.swift in Sources */,

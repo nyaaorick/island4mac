@@ -14,8 +14,33 @@ final class OverlayWindowTests: XCTestCase {
         RunLoop.main.run(until: Date(timeIntervalSinceNow: seconds))
     }
 
+    /// The main island's panel: with "all screens" on there's one on every display
     private func islandPanel() throws -> NSWindow {
-        try XCTUnwrap(NSApp.windows.first { $0 is OverlayPanel }, "the test host should have created the island panel")
+        OverlayWindowController.shared.mainPanel
+    }
+
+    private var visibleIslandPanels: [NSWindow] {
+        NSApp.windows.filter { $0 is OverlayPanel && $0.isVisible }
+    }
+
+    func testAllScreensPutsAnIslandOnEveryDisplay() {
+        let settings = SettingsDefaults.shared
+        // The tests run inside the app, on its real settings
+        let saved = settings.get(SettingsDefaults.showOnAllDisplays)
+        defer {
+            settings.set(SettingsDefaults.showOnAllDisplays, value: saved)
+            runMainLoop(for: 0.2)
+        }
+
+        settings.set(SettingsDefaults.showOnAllDisplays, value: true)
+        runMainLoop(for: 0.3)
+        let displays = Set(visibleIslandPanels.compactMap { $0.screen?.displayID })
+        XCTAssertEqual(visibleIslandPanels.count, NSScreen.screens.count)
+        XCTAssertEqual(displays.count, NSScreen.screens.count, "one island on each display")
+
+        settings.set(SettingsDefaults.showOnAllDisplays, value: false)
+        runMainLoop(for: 0.3)
+        XCTAssertEqual(visibleIslandPanels.count, 1, "back to the one island")
     }
 
     /// Screen rect of the SwiftUI canvas, the panel's only subview
@@ -95,6 +120,82 @@ final class OverlayWindowTests: XCTestCase {
         AgentSessionStore.shared.archive("grows-left")
         runMainLoop(for: settleTime)
         assertEqual(panel.frame, compact, "the panel shrinks back once the activity is gone")
+    }
+
+    func testWingsFitIntoTheRoomBesideTheNotch() {
+        let notch = CGSize(width: 180, height: 32)
+        let wing = NotchMetrics.wingWidth(for: notch)
+        let margin = NotchMetrics.wingMargin
+        func wings(_ left: CGFloat?, _ right: CGFloat?) -> IslandWings {
+            NotchMetrics.liveActivityWings(leadingRoom: left, trailingRoom: right, notch: notch)
+        }
+        XCTAssertEqual(wings(nil, nil), IslandWings(leading: 2 * wing, trailing: 0),
+                       "room unknown: both items left of the notch, clear of the status icons")
+        XCTAssertEqual(wings(300, 300), IslandWings(leading: wing, trailing: wing), "room on both sides: one item each")
+        XCTAssertEqual(wings(300, 28.5), IslandWings(leading: wing, trailing: 26), "a narrow gap before the status icons")
+        XCTAssertEqual(wings(10, 20), IslandWings(leading: 0, trailing: 18), "Xcode: menus both sides, a sliver right of the notch")
+        XCTAssertEqual(wings(10, 300), IslandWings(leading: 0, trailing: wing), "menus up to the notch: the status goes right")
+        XCTAssertEqual(wings(300, 10), IslandWings(leading: 2 * wing, trailing: 0), "icons up to the notch: both go left")
+        XCTAssertEqual(wings(wing + margin, 10), IslandWings(leading: wing, trailing: 0))
+        XCTAssertEqual(wings(10, 10), .none, "no room anywhere: it stays inside the notch")
+
+        let room = MenuBarSpace.room(beside: 645...825, obstacles: [0...40, 40...300, 594...618, 853...871, 877...913],
+                                     displayWidth: 1470)
+        XCTAssertEqual(room.leading, 27)
+        XCTAssertEqual(room.trailing, 28)
+        XCTAssertEqual(MenuBarSpace.room(beside: 645...825, obstacles: [40...620, 830...900], displayWidth: 1470).trailing, 5,
+                       "menus that continue right of the notch count there")
+        XCTAssertEqual(MenuBarSpace.room(beside: 645...825, obstacles: [], displayWidth: 1470).trailing, 645)
+
+        // Folded-away icons stack on the chevron (853); the ones showing only touch their neighbours
+        XCTAssertEqual(MenuBarSpace.visible([839...863, 839...863, 853...871, 877...913, 911...947]),
+                       [853...871, 877...913, 911...947])
+    }
+
+    func testLiveActivityFitsIntoTheRoomBesideTheNotch() throws {
+        let state = OverlayWindowController.shared.getAppState()
+        let panel = try islandPanel()
+        let notch = state.notchSize
+        guard notch != .zero, let screen = panel.screen else { throw XCTSkip("needs a display with a notch") }
+        let menuBar = MenuBarSpace.shared
+        let wing = NotchMetrics.wingWidth(for: notch)
+        let margin = NotchMetrics.wingMargin
+        let notchMinX = (screen.frame.width - notch.width) / 2
+        let notchMaxX = notchMinX + notch.width
+        // A status icon in this display's menu bar, `gap` points right of the notch (global top-left coordinates)
+        let primaryHeight = NSScreen.screens.first?.frame.maxY ?? screen.frame.maxY
+        func statusIcon(gap: CGFloat) -> CGRect {
+            CGRect(x: screen.frame.minX + notchMaxX + gap, y: primaryHeight - screen.frame.maxY + 4, width: 24, height: 24)
+        }
+        collapseAndSettle(state)
+        let compact = panel.frame
+
+        AgentSessionStore.shared.apply(AgentHookEvent(kind: .userPromptSubmit, sessionID: "menus"))
+        runMainLoop(for: 0.2)
+        XCTAssertEqual(compact.minX - panel.frame.minX, 2 * wing, accuracy: 0.5, "room unknown: both items left of the notch")
+        XCTAssertEqual(panel.frame.maxX, compact.maxX, accuracy: 0.5)
+
+        menuBar.statusItemFrames = [statusIcon(gap: 28.5)]
+        runMainLoop(for: settleTime)
+        XCTAssertEqual(state.liveActivityWings, IslandWings(leading: wing, trailing: (28.5 - margin).rounded(.down)))
+        XCTAssertEqual(compact.minX - panel.frame.minX, wing, accuracy: 0.5, "one item left of the notch")
+        XCTAssertEqual(panel.frame.maxX - compact.maxX, (28.5 - margin).rounded(.down), accuracy: 0.5,
+                       "and one right of it, up to the first status icon")
+
+        menuBar.menuSpans = [0...40, 40...(notchMinX - 10)]
+        runMainLoop(for: settleTime)
+        XCTAssertEqual(state.liveActivityWings, IslandWings(leading: 0, trailing: (28.5 - margin).rounded(.down)),
+                       "menus up to the notch: only the right wing")
+
+        menuBar.statusItemFrames = [statusIcon(gap: 10)]
+        runMainLoop(for: settleTime)
+        assertEqual(panel.frame, compact, "no room on either side: it stays inside the notch")
+
+        menuBar.menuSpans = nil
+        menuBar.statusItemFrames = nil
+        AgentSessionStore.shared.archive("menus")
+        runMainLoop(for: settleTime)
+        assertEqual(panel.frame, compact, "and it folds away once the session is gone")
     }
 
     func testPausedMusicShowsOnlyWhileThePointerIsOnTheNotch() throws {

@@ -3,7 +3,8 @@ import SwiftUI
 struct GeneralSettingsView: View {
     @EnvironmentObject private var appState: AppState
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
-    @State private var selectedScreenUUID = "Unknown"
+    @State private var chosenDisplay = SettingsDefaults.shared.get(SettingsDefaults.preferredDisplayUUID)
+    @State private var displays = ConnectedDisplay.all
     
     // Sizing state
     @State private var notchHeightMode: Int = SettingsDefaults.shared.get(SettingsDefaults.notchHeight)
@@ -71,18 +72,33 @@ struct GeneralSettingsView: View {
                     help: "在每个连接的屏幕上都显示灵动岛"
                 )
                 
-                Picker(L("settings.display.show_on"), selection: $selectedScreenUUID) {
-                    Text("默认显示器").tag("Unknown")
-                    if let screen = NSScreen.main {
-                        Text(screen.localizedName).tag(screen.localizedName)
+                Picker(L("settings.display.show_on"), selection: $chosenDisplay) {
+                    Text("默认显示器").tag("")
+                    ForEach(displays) { display in
+                        Text(display.name).tag(display.uuid)
+                    }
+                    if !chosenDisplay.isEmpty && !displays.contains(where: { $0.uuid == chosenDisplay }) {
+                        Text("未连接的显示器").tag(chosenDisplay)
                     }
                 }
-                
+                .help("默认显示器是带刘海的内建屏幕；选的屏幕没接上时也回到它。打开“所有屏幕”时，快捷键和剪贴板打开这块屏幕上的岛")
+                // 跟随鼠标时岛不固定在哪块屏幕
+                .disabled(SettingsDefaults.shared.get(SettingsDefaults.automaticallySwitchDisplay)
+                          && !SettingsDefaults.shared.get(SettingsDefaults.showOnAllDisplays))
+                .onChange(of: chosenDisplay) { _, uuid in
+                    SettingsDefaults.shared.set(SettingsDefaults.preferredDisplayUUID, value: uuid)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)) { _ in
+                    displays = ConnectedDisplay.all
+                }
+
                 ToggleSettingsRow(
                     key: SettingsDefaults.automaticallySwitchDisplay,
                     title: "自动切换显示器",
-                    help: "根据当前活跃窗口自动移动灵动岛"
+                    help: "灵动岛跟着鼠标移到它所在的屏幕"
                 )
+                // 每块屏幕都有岛时不用跟随
+                .disabled(SettingsDefaults.shared.get(SettingsDefaults.showOnAllDisplays))
             }
             
             // 3. Notch Behavior
@@ -171,5 +187,18 @@ struct GeneralSettingsView: View {
         }
         .formStyle(.grouped)
         .padding()
+    }
+}
+
+/// A display offered in the "show island on" picker
+private struct ConnectedDisplay: Identifiable {
+    let uuid: String
+    let name: String
+    var id: String { uuid }
+
+    static var all: [ConnectedDisplay] {
+        NSScreen.screens.compactMap { screen in
+            screen.displayUUID.map { ConnectedDisplay(uuid: $0, name: screen.localizedName) }
+        }
     }
 }
