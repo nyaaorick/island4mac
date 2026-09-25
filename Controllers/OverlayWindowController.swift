@@ -64,6 +64,8 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
     private var lastMouseCheckTime: Date = .distantPast
     /// 岛当前所在的显示器
     private var currentDisplayID: CGDirectDisplayID?
+    /// 正在播放（暂停超过 1 秒才算停）
+    private var musicIsPlaying = false
     /// 收起弹簧（response 0.45，临界阻尼）在这个时间内停稳
     private let settleDelay: TimeInterval = 0.6
 
@@ -80,6 +82,26 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     func getAppState() -> AppState { return appState }
+
+    /// Opens the island on the Agents tab, where you can answer an agent's question
+    func showAgentQuestion() {
+        guard settingsStore.get(SettingsDefaults.agentQuestionsOpenIsland) else { return }
+        // Don't pull the open island away from a tab you're using
+        if appState.overlayMode == .expanded && appState.islandFrame.contains(NSEvent.mouseLocation) { return }
+        appState.currentSection = .agents
+        withAnimation(boringOpenAnimation) {
+            appState.activateOverlay(reason: .agentQuestion)
+        }
+    }
+
+    /// Closes the island a question opened once no question is left, unless the pointer is on it
+    private func closeAfterAgentQuestions() {
+        guard appState.overlayMode == .expanded, appState.visibilityReason == .agentQuestion,
+              !appState.islandFrame.contains(NSEvent.mouseLocation) else { return }
+        withAnimation(boringCloseAnimation) {
+            appState.deactivateOverlay()
+        }
+    }
 
     private func setupManagers() {
         // Initialize NowPlaying Stream
@@ -127,8 +149,8 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
         // ✅ 关键：画布尺寸固定，不让 SwiftUI 内容反过来约束窗口，也就不会有 AutoLayout ↔︎ setFrame 递归
         hostingView.sizingOptions = []
         hostingView.translatesAutoresizingMaskIntoConstraints = true
-        // 面板变大变小时，画布保持贴住顶边、水平居中
-        hostingView.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
+        // 面板可能左右不对称地变大变小，画布由 layoutCanvas 按屏幕位置摆放，不随面板自动伸缩
+        hostingView.autoresizingMask = []
         // 挂进窗口之前就定好尺寸：此时容器宽高为 0，画布贴顶居中
         let canvas = NotchMetrics.canvasSize(notch: appState.notchSize)
         hostingView.frame = NSRect(x: -canvas.width / 2, y: -canvas.height, width: canvas.width, height: canvas.height)
@@ -174,8 +196,31 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
             }
             .store(in: &cancellables)
 
-        // 开始/停止播放时，收起状态的岛要在刘海两侧伸出或收回
-        // 播放信息会被周期性地重复赋值，只关心“有没有在播”是否变化
+        // 暂停就收起播放两翼（停 1 秒再收，切歌时的短暂停顿不算），鼠标移到刘海上时再露出来
+        MusicManager.shared.$isPlaying
+            .removeDuplicates()
+            .map { playing -> AnyPublisher<Bool, Never> in
+                playing
+                    ? Just(true).eraseToAnyPublisher()
+                    : Just(false).delay(for: .seconds(1), scheduler: DispatchQueue.main).eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .removeDuplicates()
+            .sink { [weak self] playing in
+                self?.musicIsPlaying = playing
+                self?.scheduleWindowUpdate()
+            }
+            .store(in: &cancellables)
+
+        appState.$isPeekingNotch
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.scheduleWindowUpdate()
+            }
+            .store(in: &cancellables)
+
+        // 有无播放内容变化时，收起状态的岛要伸出或收回
+        // 播放信息会被周期性地重复赋值，只关心“有没有内容”是否变化
         MusicManager.shared.$songTitle
             .combineLatest(MusicManager.shared.$artistName)
             .map { title, artist in !(title.isEmpty && artist.isEmpty) }
@@ -197,6 +242,16 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .sink { [weak self] _ in
                 self?.scheduleWindowUpdate()
+            }
+            .store(in: &cancellables)
+
+        // Agent 的问题答完（在岛上或终端里）后，把因它展开的岛收回去
+        AgentSessionStore.shared.$pendingQuestions
+            .map(\.isEmpty)
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] noneLeft in
+                if noneLeft { self?.closeAfterAgentQuestions() }
             }
             .store(in: &cancellables)
 
@@ -253,7 +308,8 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
             appState.notchSize = notchSize
             layoutCanvas()
         }
-        let showsLiveActivity = MusicManager.shared.showsCompactLiveActivity || AgentSessionStore.shared.showsCompactLiveActivity
+        let showsMusic = MusicManager.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch)
+        let showsLiveActivity = showsMusic || AgentSessionStore.shared.showsCompactLiveActivity
         let target = windowFrame(for: mode, section: section, showsLiveActivity: showsLiveActivity, screen: screen)
 
         // 目标没变：别打断已经排好的缩小，否则频繁的更新会让面板一直缩不回去
@@ -297,13 +353,15 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
         appState.updateNotchRegion(frame)
     }
 
-    /// 画布：展开后的岛加上弹簧回弹余量，固定贴在面板顶部正中
+    /// 画布：展开后的岛加上弹簧回弹余量，贴住面板顶边，水平方向正对刘海（屏幕中线）；
+    /// 收起的岛只往左伸，面板左右不对称，所以不能按面板居中
     private func layoutCanvas() {
         guard let container = panel.contentView else { return }
         let size = NotchMetrics.canvasSize(notch: appState.notchSize)
         let bounds = container.bounds
+        let screenMidX = currentScreen?.frame.midX ?? panel.frame.midX
         let frame = NSRect(
-            x: (bounds.width - size.width) / 2,
+            x: screenMidX - panel.frame.minX - size.width / 2,
             y: bounds.height - size.height,
             width: size.width,
             height: size.height
@@ -364,8 +422,10 @@ final class OverlayWindowController: NSResponder, NSWindowDelegate {
 
         // ✅ 使用 screen.frame 而不是 visibleFrame：screen.frame 包含刘海和菜单栏区域
         let fullFrame = screen.frame
+        // 收起时的实时活动只在刘海左边，面板也只往左伸，不挡右边的菜单栏图标
+        let offset = NotchMetrics.islandOffset(expanded: mode == .expanded, notch: screen.notchSize, showsLiveActivity: showsLiveActivity)
         return NSRect(
-            x: fullFrame.midX - size.width / 2,
+            x: fullFrame.midX + offset - size.width / 2,
             y: fullFrame.maxY - size.height,
             width: size.width,
             height: size.height

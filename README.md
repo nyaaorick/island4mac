@@ -1,11 +1,11 @@
 # Mac灵动岛 (Mac Dynamic Island)
 
-A macOS menu bar app that turns the area around the MacBook notch into an interactive "Dynamic Island": now playing with lyrics, Claude Code progress, clipboard history and a drag-and-drop file shelf. It is based on [boring.notch](https://github.com/TheBoredTeam/boring.notch).
+A macOS menu bar app that turns the area around the MacBook notch into an interactive "Dynamic Island": now playing with lyrics, coding agent progress (Claude Code, Codex, ZCode), clipboard history and a drag-and-drop file shelf. It is based on [boring.notch](https://github.com/TheBoredTeam/boring.notch).
 
 ## Features
 
 - **Now playing**: track, artwork, playback controls and synced lyrics, both in the collapsed island and in the Music tab. It shows whatever the system Now Playing shows in Control Center (Apple Music, Spotify, browser audio and video, video players), read through the MediaRemote framework. Apple Music lyrics come from AppleScript, and lyrics are also looked up on NetEase Cloud Music and LRCLIB.
-- **Claude Code**: while a session works, waits for your permission or has just finished, the collapsed island shows its status left of the notch and its progress (tasks done, or elapsed time) to the right. The Agents tab lists every session with what it's doing, its task progress and a button that brings its Terminal or iTerm2 tab to the front. Connect it in Settings → Claude Code; see "How Claude Code is connected" below.
+- **Coding agents** (Claude Code, Codex, ZCode): while a session works, waits for your permission or has just finished, the collapsed island shows its status and progress (tasks done, or elapsed time) beside the notch. The Agents tab lists every session with its agent, what it's doing, its task progress and a button that brings its Terminal or iTerm2 tab (or the agent's app) to the front. When Claude asks you a question (AskUserQuestion), the island opens on it and you can pick an answer right there, or still answer in the terminal. Connect each agent in Settings → Agents; see "How agents are connected" below.
 - **Clipboard**: text, links, code and images you copy are kept (50 items for 24 hours by default), can be searched and filtered, and can be pasted back into the frontmost app.
 - **Files shelf**: drag files onto the notch to park them. The shelf keeps security-scoped bookmarks and shows thumbnails and Quick Look previews.
 - **Menu bar item** to show or hide the island, open Settings and quit.
@@ -43,7 +43,7 @@ The unit tests in `Mac灵动岛Tests` are hosted by the app. When it runs as a t
 | Permission | Used for |
 |---|---|
 | Accessibility | Global keyboard shortcuts. Settings → General has a button to request it. |
-| Automation (Apple Events) | Reading lyrics from Music, pasting clipboard items through System Events, and selecting a Claude Code session's tab in Terminal or iTerm2. |
+| Automation (Apple Events) | Reading lyrics from Music, pasting clipboard items through System Events, and selecting an agent session's tab in Terminal or iTerm2. |
 
 ## Keyboard shortcuts
 
@@ -74,8 +74,8 @@ Models/, ViewModels/  Now playing and shelf models and the shelf view model
 Utilities/            Settings store (Defaults+Keys.swift), AppleScript, localization, logging and other helpers
 Extensions/           Small AppKit and SwiftUI extensions
 MediaRemoteAdapter/   Library the now-playing helper process loads (see below)
-Agents/               Claude Code: hook events, the socket server, the session store, the hook installer, terminal focusing
-ClaudeHookBridge/     island-claude-hook, the command Claude Code's hooks run
+Agents/               Coding agents: hook events, the socket server, the session store, the hook installer, session titles, terminal focusing
+ClaudeHookBridge/     island-claude-hook, the command every agent's hooks run
 Mac灵动岛Tests/        Unit tests
 docs/archive/         Notes from earlier development; kept for reference and mostly out of date
 ```
@@ -93,9 +93,19 @@ Mac灵动岛App (@main)
    └─ StatusBarController               menu bar item
 ```
 
-## How Claude Code is connected
+## How agents are connected
 
-Connecting adds one command hook to each Claude Code hook event in `~/.claude/settings.json` (the file is backed up to `settings.json.mac-island-backup` the first time), next to any hooks already there. The command runs `island-claude-hook`, copied to `~/Library/Application Support/com.macdynamicisland.app/`, in the background (`"async": true`) so it never slows Claude Code down. The helper forwards the event JSON, plus the terminal the session runs in, to the app over a Unix socket only your user can open. It prints nothing and always exits 0, so Claude Code carries on normally when the island isn't running. Disconnecting removes only these entries.
+Claude Code, Codex and ZCode all run command hooks with Claude Code's JSON input. Connecting an agent adds one command hook to each hook event it supports, next to any hooks already there, in its config file (backed up to `<file>.mac-island-backup` the first time):
+
+| Agent | Config file | Notes |
+|---|---|---|
+| Claude Code | `~/.claude/settings.json` | Runs in the background (`"async": true`) so it never slows Claude Code down. |
+| Codex | `~/.codex/hooks.json` | Codex runs a new hook only after you trust it: run `/hooks` in Codex after connecting. `update_plan` shows as the task list. |
+| ZCode | `~/.zcode/cli/config.json` (`hooks.events`) | Also sets `hooks.enabled`, since ZCode ignores config-file hooks otherwise. ZCode has no session-end event, so its sessions leave the list when ZCode quits or after 12 quiet hours. |
+
+The command runs `island-claude-hook`, copied to `~/Library/Application Support/com.macdynamicisland.app/`, with the agent's name as an argument. The helper forwards the event JSON, plus the agent and the terminal the session runs in, to the app over a Unix socket only your user can open. It prints nothing and always exits 0, so the agent carries on normally when the island isn't running. Disconnecting removes only these entries.
+
+Claude Code's `PermissionRequest` hook is the exception: it runs in the foreground (`island-claude-hook … claude wait`, with a 24-hour timeout) so the island can answer Claude's questions. Claude Code shows its own prompt at the same time and takes whichever answer comes first. For an AskUserQuestion call, the island keeps the connection open until you answer in the island, and then replies with a `PermissionRequest` decision that allows the call with your `answers` filled in. For anything else, or once the question is answered in the terminal, it closes the connection without a reply, so the hook changes nothing.
 
 ## Known limitations
 

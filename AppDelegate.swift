@@ -94,7 +94,7 @@ class AppIntegration {
     // MARK: - Managers
     private var clipboardManager: ClipboardManager?
     private var hotKeyManager: HotKeyManager?
-    private var claudeHookServer: ClaudeHookServer?
+    private var agentHookServer: AgentHookServer?
 
     private init() {}
 
@@ -139,21 +139,24 @@ class AppIntegration {
 
         let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")
 
-        // Claude Code sessions, reported by island-claude-hook
-        let hookInstaller = ClaudeHookInstaller.standard
-        hookInstaller.refreshIfInstalled()
-        claudeHookServer = ClaudeHookServer(socketURL: hookInstaller.socketURL) { event in
+        // Claude Code, Codex and ZCode sessions, reported by island-claude-hook; every agent's hooks share one socket
+        AgentHookInstaller.all.forEach { $0.refreshIfInstalled() }
+        agentHookServer = AgentHookServer(socketURL: AgentHookInstaller.standard(.claude).socketURL) { event, reply in
             DispatchQueue.main.async {
-                MainActor.assumeIsolated { AgentSessionStore.shared.apply(event) }
+                MainActor.assumeIsolated { AgentSessionStore.shared.apply(event, reply: reply) }
             }
         }
         do {
-            try claudeHookServer?.start()
+            try agentHookServer?.start()
         } catch {
-            logger.error("Claude Code hook server failed to start: \(String(describing: error))")
+            logger.error("Agent hook server failed to start: \(String(describing: error))")
         }
         AgentSessionStore.shared.onStatusChange = { session, previous in
             AgentAlertSound.play(for: session, previous: previous)
+        }
+        // Claude asks you something: open the island on the question, so you can answer it there
+        AgentSessionStore.shared.onQuestion = { _ in
+            OverlayWindowController.shared.showAgentQuestion()
         }
         AgentSessionStore.shared.startPruning()
 
@@ -164,7 +167,7 @@ class AppIntegration {
         MusicManager.shared.stop()
         clipboardManager?.stop()
         hotKeyManager?.stop()
-        claudeHookServer?.stop()
+        agentHookServer?.stop()
 
         // End analytics session
         AnalyticsManager.shared.endSession()

@@ -11,13 +11,14 @@ enum OverlayVisibilityReason: Equatable {
     case nowPlaying         // Media playing, showing controls
     case userExpanded       // User explicitly clicked to expand
     case hotkey             // User triggered via hotkey
+    case agentQuestion      // An agent asked you a question you can answer in the island
     case none               // Hidden state
     
     var shouldAutoHide: Bool {
         switch self {
         case .clipboard, .dropComplete:
             return true
-        case .clipboardHistory, .dragHover, .dragDetected, .nowPlaying, .userExpanded, .hotkey:
+        case .clipboardHistory, .dragHover, .dragDetected, .nowPlaying, .userExpanded, .hotkey, .agentQuestion:
             return false
         case .none:
             return false

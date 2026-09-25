@@ -29,6 +29,11 @@ struct NotchHomeView: View {
         return base * settings.get(SettingsDefaults.cornerRadiusScaling)
     }
 
+    /// Collapsed content sits left of the notch only, so the island's center moves left with it
+    private var islandOffset: CGFloat {
+        NotchMetrics.islandOffset(expanded: isExpanded, notch: notch, showsLiveActivity: appState.showsLiveActivity)
+    }
+
     /// The size OverlayWindowController gives the panel, so the settled island fills it exactly
     private var islandSize: CGSize {
         NotchMetrics.islandSize(
@@ -101,13 +106,14 @@ struct NotchHomeView: View {
         .onHover { hovering in
             handleHover(hovering)
         }
+        .offset(x: islandOffset)
         .animation(isExpanded ? openAnimation : closeAnimation, value: isExpanded)
         // Each tab has its own open size
         .animation(reduceMotion ? nil : animationSpring, value: appState.currentSection)
         .animation(reduceMotion ? nil : animationSpring, value: appState.showsLiveActivity)
     }
 
-    /// Opens the island; when Claude Code is showing beside the notch, on the Agents tab
+    /// Opens the island; when an agent session is showing beside the notch, on the Agents tab
     private func openIsland() {
         if appState.showsLiveActivity && AgentSessionStore.shared.showsCompactLiveActivity {
             appState.currentSection = .agents
@@ -134,6 +140,7 @@ struct NotchHomeView: View {
                 guard !Task.isCancelled, isExpanded, !appState.isDraggingOver else { return }
                 // Ignore a stray exit event while the pointer is still over the island
                 guard !appState.islandFrame.contains(NSEvent.mouseLocation) else { return }
+                appState.isPeekingNotch = false
                 withAnimation(closeAnimation) {
                     appState.deactivateOverlay()
                 }
@@ -145,6 +152,8 @@ struct NotchHomeView: View {
             withAnimation(reduceMotion ? nil : animationSpring) {
                 isHovering = true
             }
+            // Paused music shows beside the notch while the pointer is on it
+            appState.isPeekingNotch = true
 
             if settings.get(SettingsDefaults.enableHaptics) {
                 NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
@@ -167,6 +176,7 @@ struct NotchHomeView: View {
                 try? await Task.sleep(for: .milliseconds(100))
                 guard !Task.isCancelled else { return }
 
+                appState.isPeekingNotch = false
                 withAnimation(reduceMotion ? nil : animationSpring) {
                     isHovering = false
                 }
@@ -182,7 +192,7 @@ struct CompactIslandRegion: View {
 
     let animation: Namespace.ID
 
-    /// Claude Code takes the wings over from music while a session works, waits for you or has just finished
+    /// An agent session takes the wings over from music while it works, waits for you or has just finished
     private var agentSession: AgentSession? {
         agents.showsCompactLiveActivity ? agents.liveSession : nil
     }
@@ -219,7 +229,7 @@ struct CompactIslandRegion: View {
 
 // MARK: - Notch Live Activity (Album Art | Notch | Spectrum)
 
-/// Collapsed now-playing on a notched display: album art left of the notch, spectrum to its right
+/// Collapsed now-playing on a notched display: album art and spectrum left of the notch
 private struct NotchLiveActivityView: View {
     @ObservedObject private var musicManager = MusicManager.shared
     @ObservedObject private var settings = SettingsDefaults.shared
@@ -247,10 +257,6 @@ private struct NotchLiveActivityView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                 .frame(width: wing)
 
-            // Hidden behind the camera housing
-            Color.clear
-                .frame(width: notch.width)
-
             Group {
                 if settings.get(SettingsDefaults.useMusicVisualizer) {
                     Rectangle()
@@ -270,6 +276,10 @@ private struct NotchLiveActivityView: View {
                 }
             }
             .frame(width: wing)
+
+            // Hidden behind the camera housing; nothing to its right, where the menu bar icons are
+            Color.clear
+                .frame(width: notch.width)
         }
     }
 }
@@ -595,9 +605,21 @@ enum NotchMetrics {
     /// Room around the open island so the open spring's overshoot isn't cut off by the panel
     static let overshootMargin: CGFloat = 10
 
-    /// Width of each now-playing wing beside the notch
+    /// Width of each slot of collapsed content (artwork, spectrum, status, progress)
     static func wingWidth(for notch: CGSize) -> CGFloat {
         notch.height + 6
+    }
+
+    /// Collapsed content, two slots wide, all left of the notch so the menu bar icons
+    /// to its right stay visible and clickable
+    static func liveActivityWidth(for notch: CGSize) -> CGFloat {
+        2 * wingWidth(for: notch)
+    }
+
+    /// Horizontal offset of the island's center from the notch's: collapsed, it only grows to the left
+    static func islandOffset(expanded: Bool, notch: CGSize, showsLiveActivity: Bool) -> CGFloat {
+        guard !expanded, notch != .zero, showsLiveActivity else { return 0 }
+        return -liveActivityWidth(for: notch) / 2
     }
 
     /// Settled size of the island; the panel matches it (plus `overshootMargin` when open)
@@ -611,10 +633,10 @@ enum NotchMetrics {
         guard notch != .zero else {
             return CGSize(width: nonNotchWidth, height: nonNotchHeight)
         }
-        // Collapsed: the notch itself, plus a wing on each side while music plays
+        // Collapsed: the notch itself, plus the live activity to its left
         var width = notch.width + 2 * compactTopRadius
         if showsLiveActivity {
-            width += 2 * wingWidth(for: notch)
+            width += liveActivityWidth(for: notch)
         }
         return CGSize(width: width, height: notch.height)
     }

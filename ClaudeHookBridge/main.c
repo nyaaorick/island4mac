@@ -2,17 +2,24 @@
 //  main.c
 //  island-claude-hook
 //
-//  Claude Code runs this for every hook event (ClaudeHookInstaller registers it in
-//  ~/.claude/settings.json). It forwards the event JSON from stdin to Mac灵动岛 over the
-//  Unix socket given as the first argument, prefixed with one JSON line describing where
-//  the session runs, so the island can bring its terminal to the front.
+//  Claude Code, Codex and ZCode run this for every hook event (AgentHookInstaller registers it
+//  in each agent's config file). It forwards the event JSON from stdin to Mac灵动岛 over the
+//  Unix socket given as the first argument, prefixed with one JSON line saying which agent ran
+//  it (the second argument) and where the session runs, so the island can bring its terminal
+//  to the front.
 //
-//  It prints nothing and always exits 0: stdout would be read by Claude Code as hook
+//  Given "wait" as the third argument (Claude Code's PermissionRequest hook, which Claude Code
+//  runs in the foreground), it then waits for the island to reply and prints the reply as the
+//  hook's output: that is how you answer Claude's questions from the island. The island closes
+//  the connection without a reply for everything else.
+//
+//  Otherwise it prints nothing, and it always exits 0: stdout is read by the agent as hook
 //  output, a non-zero exit shows a "hook error" notice, and the island may not be running.
 //
 
 #include <errno.h>
 #include <libproc.h>
+#include <limits.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,7 +31,12 @@
 #include <time.h>
 #include <unistd.h>
 
-enum { kMaxPayload = 16 * 1024 * 1024 };
+enum {
+    kMaxPayload = 16 * 1024 * 1024,
+    kMaxReply = 1024 * 1024,
+    /// How long a waiting hook waits for an answer; as long as its hook timeout
+    kWaitSeconds = 24 * 60 * 60,
+};
 
 static void quit(int signal) {
     (void)signal;
@@ -66,7 +78,7 @@ static pid_t parentOf(pid_t pid) {
     return (pid_t)info.pbi_ppid;
 }
 
-/// The Claude Code process: the first ancestor that isn't a shell wrapping the hook command.
+/// The agent process: the first ancestor that isn't a shell wrapping the hook command.
 static pid_t agentProcess(void) {
     static const char *shells[] = { "sh", "bash", "zsh", "dash", "fish" };
     pid_t pid = getppid();
@@ -128,8 +140,24 @@ static int writeAll(int fd, const char *bytes, size_t length) {
     return 0;
 }
 
+/// Reads the island's reply into `buffer`, up to the island closing the connection.
+/// Returns 0 when there's no reply, or it's too big to be one.
+static size_t readReply(int fd, char *buffer, size_t capacity) {
+    size_t length = 0;
+    while (length < capacity) {
+        ssize_t count = read(fd, buffer + length, capacity - length);
+        if (count == 0) return length;
+        if (count < 0) {
+            if (errno == EINTR) continue;
+            return 0;
+        }
+        length += (size_t)count;
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
-    // Never hold Claude Code up, and never die of a closed socket
+    // Never hold the agent up, and never die of a closed socket
     signal(SIGALRM, quit);
     signal(SIGPIPE, SIG_IGN);
     alarm(3);
@@ -148,20 +176,36 @@ int main(int argc, char *argv[]) {
 
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
-    char header[2048] = "{";
+    char header[4096] = "{";
+    char cwd[PATH_MAX];
     char number[32];
     snprintf(number, sizeof number, "%.6f", (double)now.tv_sec + (double)now.tv_nsec / 1e9);
     appendString(header, sizeof header, "time", number);
+    appendString(header, sizeof header, "agent", argc > 2 ? argv[2] : NULL);
+    int waitsForReply = argc > 3 && strcmp(argv[3], "wait") == 0;
+    if (waitsForReply) appendString(header, sizeof header, "can_reply", "1");
     snprintf(number, sizeof number, "%d", (int)agentProcess());
     appendString(header, sizeof header, "agent_pid", number);
     appendString(header, sizeof header, "tty", controllingTTY());
     appendString(header, sizeof header, "app_bundle_id", getenv("__CFBundleIdentifier"));
     appendString(header, sizeof header, "term_program", getenv("TERM_PROGRAM"));
     appendString(header, sizeof header, "iterm_session_id", getenv("ITERM_SESSION_ID"));
+    // Agents run hooks in the session's directory; not every agent puts it in the event
+    appendString(header, sizeof header, "cwd", getcwd(cwd, sizeof cwd));
     strlcat(header, "}\n", sizeof header);
 
-    if (writeAll(fd, header, strlen(header)) == 0) {
-        writeAll(fd, payload, length);
+    if (writeAll(fd, header, strlen(header)) != 0 || writeAll(fd, payload, length) != 0) {
+        close(fd);
+        return 0;
+    }
+    // The island reads up to the end of the event
+    shutdown(fd, SHUT_WR);
+
+    if (waitsForReply) {
+        alarm(kWaitSeconds);
+        char *reply = malloc(kMaxReply);
+        size_t replyLength = reply ? readReply(fd, reply, kMaxReply) : 0;
+        if (replyLength > 0) writeAll(STDOUT_FILENO, reply, replyLength);
     }
     close(fd);
     return 0;

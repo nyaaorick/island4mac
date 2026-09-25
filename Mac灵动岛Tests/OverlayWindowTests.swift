@@ -77,6 +77,55 @@ final class OverlayWindowTests: XCTestCase {
         collapseAndSettle(state)
     }
 
+    func testCollapsedActivityGrowsOnlyToTheLeft() throws {
+        let state = OverlayWindowController.shared.getAppState()
+        let panel = try islandPanel()
+        guard state.notchSize != .zero else { throw XCTSkip("needs a display with a notch") }
+        collapseAndSettle(state)
+        let compact = panel.frame
+        let canvas = try canvasOnScreen(panel)
+
+        AgentSessionStore.shared.apply(AgentHookEvent(kind: .userPromptSubmit, sessionID: "grows-left"))
+        runMainLoop(for: 0.2)
+        let live = panel.frame
+        XCTAssertLessThan(live.minX, compact.minX, "the live activity grows left of the notch")
+        XCTAssertEqual(live.maxX, compact.maxX, accuracy: 0.5, "nothing covers the menu bar icons right of the notch")
+        assertEqual(try canvasOnScreen(panel), canvas, "an uneven panel must not move the SwiftUI canvas")
+
+        AgentSessionStore.shared.archive("grows-left")
+        runMainLoop(for: settleTime)
+        assertEqual(panel.frame, compact, "the panel shrinks back once the activity is gone")
+    }
+
+    func testPausedMusicShowsOnlyWhileThePointerIsOnTheNotch() throws {
+        let state = OverlayWindowController.shared.getAppState()
+        let panel = try islandPanel()
+        guard state.notchSize != .zero else { throw XCTSkip("needs a display with a notch") }
+        let music = MusicManager.shared
+        collapseAndSettle(state)
+        let compact = panel.frame
+
+        music.songTitle = "Test Song"
+        music.isPlaying = true
+        runMainLoop(for: 0.2)
+        XCTAssertLessThan(panel.frame.minX, compact.minX, "playing: the artwork shows beside the notch")
+
+        music.isPlaying = false
+        runMainLoop(for: 1 + settleTime)
+        assertEqual(panel.frame, compact, "paused: it folds away")
+
+        state.isPeekingNotch = true
+        runMainLoop(for: 0.2)
+        XCTAssertLessThan(panel.frame.minX, compact.minX, "the pointer on the notch brings it back")
+
+        state.isPeekingNotch = false
+        runMainLoop(for: settleTime)
+        assertEqual(panel.frame, compact, "and it folds away again when the pointer leaves")
+
+        music.songTitle = ""
+        runMainLoop(for: 0.2)
+    }
+
     func testEachTabOpensToItsOwnSize() throws {
         let state = OverlayWindowController.shared.getAppState()
         let panel = try islandPanel()

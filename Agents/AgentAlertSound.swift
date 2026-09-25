@@ -1,6 +1,6 @@
 import AppKit
 
-/// A short system sound when a Claude Code session needs you, finishes or fails
+/// A short system sound when an agent session needs you, finishes or fails
 enum AgentAlertSound {
     static func play(for session: AgentSession, previous: AgentSession.Status?) {
         guard SettingsDefaults.shared.get(SettingsDefaults.agentSoundsEnabled),

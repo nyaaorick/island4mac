@@ -1,27 +1,72 @@
 import Foundation
 import OSLog
 
-/// Receives Claude Code hook events from island-claude-hook on a Unix socket only this user can reach.
+/// The open connection of a hook that waits for the island's reply: Claude Code's PermissionRequest
+/// hook, asking one of Claude's questions. Closing it without a reply leaves the question to the terminal.
+nonisolated final class AgentHookReply: @unchecked Sendable {
+    private let lock = NSLock()
+    private var fd: Int32
+
+    init(fd: Int32) {
+        self.fd = fd
+        // A hook the agent has already given up on mustn't take the app down with SIGPIPE
+        var on: Int32 = 1
+        setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on, socklen_t(MemoryLayout<Int32>.size))
+    }
+
+    deinit { close() }
+
+    /// Sends the hook's output and closes the connection
+    func send(_ output: Data) {
+        lock.lock()
+        defer { lock.unlock() }
+        guard fd >= 0 else { return }
+        output.withUnsafeBytes { bytes in
+            var offset = 0
+            while offset < bytes.count {
+                let written = Darwin.send(fd, bytes.baseAddress! + offset, bytes.count - offset, 0)
+                if written < 0 {
+                    if errno == EINTR { continue }
+                    break
+                }
+                offset += written
+            }
+        }
+        Darwin.close(fd)
+        fd = -1
+    }
+
+    func close() {
+        lock.lock()
+        defer { lock.unlock() }
+        guard fd >= 0 else { return }
+        Darwin.close(fd)
+        fd = -1
+    }
+}
+
+/// Receives agent hook events from island-claude-hook on a Unix socket only this user can reach.
 /// Each connection carries one event; they are parsed off the main thread.
-nonisolated final class ClaudeHookServer: @unchecked Sendable {
+nonisolated final class AgentHookServer: @unchecked Sendable {
     enum ServerError: Error {
         case pathTooLong
         case socket(Int32)
     }
 
     let socketURL: URL
-    private let onEvent: @Sendable (ClaudeHookEvent) -> Void
-    private let queue = DispatchQueue(label: "ClaudeHookServer")
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "ClaudeHook")
+    /// Given the connection to reply on when the hook waits for an answer to Claude's question
+    private let onEvent: @Sendable (AgentHookEvent, AgentHookReply?) -> Void
+    private let queue = DispatchQueue(label: "AgentHookServer")
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AgentHook")
     /// Only touched on `queue`
     private var listenSource: DispatchSourceRead?
 
     /// Largest event accepted; tool output can be big, but not this big
     private static let maxEventSize = 32 * 1024 * 1024
-    /// Events after which the session's title is looked up in its transcript
-    private static let titleEvents: Set<ClaudeHookEvent.Kind> = [.sessionStart, .userPromptSubmit, .stop, .postCompact]
+    /// Events after which the session's title is looked up
+    private static let titleEvents: Set<AgentHookEvent.Kind> = [.sessionStart, .userPromptSubmit, .stop, .postCompact]
 
-    init(socketURL: URL, onEvent: @escaping @Sendable (ClaudeHookEvent) -> Void) {
+    init(socketURL: URL, onEvent: @escaping @Sendable (AgentHookEvent, AgentHookReply?) -> Void) {
         self.socketURL = socketURL
         self.onEvent = onEvent
     }
@@ -58,7 +103,7 @@ nonisolated final class ClaudeHookServer: @unchecked Sendable {
             source.setCancelHandler { close(fd) }
             source.resume()
             listenSource = source
-            logger.info("Listening for Claude Code hooks")
+            logger.info("Listening for agent hooks")
         }
     }
 
@@ -79,18 +124,35 @@ nonisolated final class ClaudeHookServer: @unchecked Sendable {
             setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
 
             DispatchQueue.global(qos: .utility).async { [onEvent, logger] in
-                defer { close(client) }
-                guard let data = Self.readAll(from: client) else { return }
-                guard var event = ClaudeHookEvent(forwarded: data) else {
+                guard let data = Self.readAll(from: client), var event = AgentHookEvent(forwarded: data) else {
                     logger.debug("Ignored an unreadable hook event")
+                    close(client)
                     return
                 }
-                // Claude Code names a session a little after it starts, and the title can be renamed later
-                if Self.titleEvents.contains(event.kind), let path = event.transcriptPath {
-                    event.sessionTitle = ClaudeTranscript.title(at: URL(fileURLWithPath: path))
+                // Agents name a session a little after it starts, and the title can be renamed later
+                if Self.titleEvents.contains(event.kind) {
+                    event.sessionTitle = Self.title(of: event)
                 }
-                onEvent(event)
+                // Keep the connection only while there's a question the island can answer
+                if event.canReply, event.kind == .permissionRequest, event.questions != nil {
+                    onEvent(event, AgentHookReply(fd: client))
+                } else {
+                    close(client)
+                    onEvent(event, nil)
+                }
             }
+        }
+    }
+
+    private static func title(of event: AgentHookEvent) -> String? {
+        switch event.agent {
+        case .claude:
+            return event.transcriptPath.flatMap { ClaudeTranscript.title(at: URL(fileURLWithPath: $0)) }
+        case .codex:
+            return CodexSessionIndex.title(forSession: event.sessionID, in: CodexSessionIndex.indexURL(forTranscript: event.transcriptPath))
+        case .zcode:
+            // ZCode's transcript_path is a throwaway file holding only the latest message
+            return nil
         }
     }
 

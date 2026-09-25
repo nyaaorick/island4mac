@@ -29,6 +29,8 @@ final class AppState: ObservableObject {
     /// Whether the collapsed island shows the now-playing wings. Set by OverlayWindowController
     /// after it has sized the panel, so the view never animates outside the panel.
     @Published var showsLiveActivity: Bool = false
+    /// The pointer is on the collapsed island: paused music shows beside the notch while it stays there
+    @Published var isPeekingNotch: Bool = false
     /// Current frame of the island panel, in screen coordinates
     private(set) var islandFrame: CGRect = .zero
 
@@ -63,6 +65,8 @@ final class AppState: ObservableObject {
         let timeout = settingsStore.get(SettingsDefaults.autoCloseTimeout)
         autoCloseTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
+                // An agent's question stays open until you've dealt with it
+                guard self?.visibilityReason != .agentQuestion else { return }
                 self?.deactivateOverlay()
             }
         }

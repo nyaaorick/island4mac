@@ -7,7 +7,7 @@ extension AgentSession {
         switch status {
         case .idle: return "Ready"
         case .working: return runningSubagents > 0 ? "Working · \(runningSubagents) subagents" : "Working"
-        case .needsPermission: return "Needs permission"
+        case .needsPermission: return isAsking ? "Has a question" : "Needs permission"
         case .compacting: return "Compacting"
         case .done: return "Done"
         case .failed: return "Failed"
@@ -20,10 +20,11 @@ extension AgentSession {
         return elapsed(at: now).map(Self.formatDuration)
     }
 
-    /// The colored line under "You: …" while Claude works or waits
+    /// The colored line under "You: …" while the agent works or waits
     var statusLineText: String {
         switch status {
         case .needsPermission:
+            if isAsking { return "Waiting for your answer" }
             return ["Needs permission", activity].compactMap { $0 }.joined(separator: " · ")
         case .compacting:
             return "Compacting the conversation"
@@ -50,6 +51,17 @@ extension AgentSession {
     }
 }
 
+extension AgentKind {
+    /// The badge on a session row
+    var color: Color {
+        switch self {
+        case .claude: return .orange
+        case .codex: return .cyan
+        case .zcode: return .mint
+        }
+    }
+}
+
 extension AgentSession.Status {
     var color: Color {
         switch self {
@@ -67,6 +79,8 @@ extension AgentSession.Status {
 
 struct AgentStatusGlyph: View {
     let status: AgentSession.Status
+    /// Waiting for an answer to a question rather than for a permission
+    var isAsking = false
     var size: CGFloat = 14
 
     var body: some View {
@@ -75,7 +89,7 @@ struct AgentStatusGlyph: View {
             case .working, .compacting:
                 AgentSpinner(color: status.color, lineWidth: max(1.5, size / 8))
             case .needsPermission:
-                Image(systemName: "hand.raised.fill")
+                Image(systemName: isAsking ? "questionmark.bubble.fill" : "hand.raised.fill")
                     .resizable()
                     .scaledToFit()
                     .foregroundStyle(status.color)
@@ -120,7 +134,7 @@ private struct AgentSpinner: View {
 
 // MARK: - Collapsed Island
 
-/// Collapsed Claude Code on a notched display: status left of the notch, progress to its right
+/// A collapsed agent session on a notched display: status and progress left of the notch
 struct AgentNotchLiveActivityView: View {
     let session: AgentSession
     let notch: CGSize
@@ -132,7 +146,7 @@ struct AgentNotchLiveActivityView: View {
 
         HStack(spacing: 0) {
             HStack(spacing: 2) {
-                AgentStatusGlyph(status: session.status, size: max(12, notch.height - 18))
+                AgentStatusGlyph(status: session.status, isAsking: session.isAsking, size: max(12, notch.height - 18))
                 if activeCount > 1 {
                     Text("\(activeCount)")
                         .font(.system(size: 9, weight: .bold).monospacedDigit())
@@ -140,10 +154,6 @@ struct AgentNotchLiveActivityView: View {
                 }
             }
             .frame(width: wing)
-
-            // Hidden behind the camera housing
-            Color.clear
-                .frame(width: notch.width)
 
             TimelineView(.periodic(from: .now, by: 1)) { timeline in
                 Text(session.progressText(at: timeline.date) ?? "")
@@ -153,20 +163,24 @@ struct AgentNotchLiveActivityView: View {
                     .minimumScaleFactor(0.7)
             }
             .frame(width: wing)
+
+            // Hidden behind the camera housing; nothing to its right, where the menu bar icons are
+            Color.clear
+                .frame(width: notch.width)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("\(session.projectName), \(session.statusText)"))
+        .accessibilityLabel(Text("\(session.agent.displayName), \(session.projectName), \(session.statusText)"))
     }
 }
 
-/// Collapsed Claude Code on a display without a notch: status, project and progress in one pill
+/// A collapsed agent session on a display without a notch: status, project and progress in one pill
 struct CompactAgentLiveActivityView: View {
     let session: AgentSession
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
             HStack(spacing: 8) {
-                AgentStatusGlyph(status: session.status, size: 14)
+                AgentStatusGlyph(status: session.status, isAsking: session.isAsking, size: 14)
 
                 VStack(alignment: .leading, spacing: 1) {
                     Text(session.projectName)
@@ -200,6 +214,10 @@ struct AgentsView: View {
         } else {
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 6) {
+                    // What an agent is waiting for you to answer comes first
+                    ForEach(store.pendingQuestions) { question in
+                        AgentQuestionCard(question: question, session: store.sessions.first { $0.id == question.sessionID })
+                    }
                     ForEach(store.sessions) { session in
                         AgentSessionRow(session: session)
                     }
@@ -219,10 +237,10 @@ struct AgentTabControls: View {
         let soundsOn = settings.get(SettingsDefaults.agentSoundsEnabled)
         HStack(spacing: 2) {
             controlButton(soundsOn ? "speaker.wave.2.fill" : "speaker.slash.fill",
-                          help: soundsOn ? "Mute Claude Code alerts" : "Play a sound when Claude needs you or finishes") {
+                          help: soundsOn ? "Mute agent alerts" : "Play a sound when an agent needs you or finishes") {
                 settings.set(SettingsDefaults.agentSoundsEnabled, value: !soundsOn)
             }
-            controlButton("gearshape.fill", help: "Claude Code settings") {
+            controlButton("gearshape.fill", help: "Agent settings") {
                 SettingsWindowController.shared.showSettings()
             }
         }
@@ -248,7 +266,7 @@ private struct AgentSessionRow: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
             HStack(alignment: .top, spacing: 12) {
-                AgentStatusGlyph(status: session.status, size: 18)
+                AgentStatusGlyph(status: session.status, isAsking: session.isAsking, size: 18)
                     .frame(width: 22)
                     .padding(.top, 1)
 
@@ -257,12 +275,12 @@ private struct AgentSessionRow: View {
                         titleText
                             .lineLimit(1)
                         Spacer(minLength: 8)
-                        Text("Claude")
+                        Text(session.agent.shortName)
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(session.agent.color)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Capsule().fill(Color.orange.opacity(0.15)))
+                            .background(Capsule().fill(session.agent.color.opacity(0.15)))
                         trailing(at: timeline.date)
                             .frame(minWidth: 34, alignment: .trailing)
                     }
@@ -294,7 +312,7 @@ private struct AgentSessionRow: View {
             .contentShape(Rectangle())
             .onTapGesture { TerminalFocuser.focus(session.terminal) }
             .onHover { isHovering = $0 }
-            .help("Show in terminal")
+            .help("Show the session")
         }
     }
 
@@ -306,7 +324,7 @@ private struct AgentSessionRow: View {
             .foregroundColor(.white)
     }
 
-    /// Running time while Claude works, how long ago otherwise; the archive button on hover
+    /// Running time while the agent works, how long ago otherwise; the archive button on hover
     @ViewBuilder
     private func trailing(at now: Date) -> some View {
         if isHovering {
@@ -341,7 +359,7 @@ private struct AgentSessionRow: View {
                 .lineLimit(1)
         case .done, .failed:
             if let message = session.message {
-                // Claude's last reply, or the error
+                // The agent's last reply, or the error
                 Text(message)
                     .font(.system(size: 11))
                     .foregroundStyle(session.status == .failed ? session.status.color : .white.opacity(0.75))
@@ -354,7 +372,192 @@ private struct AgentSessionRow: View {
     }
 }
 
-/// The session's task list: counts, then a few items around the one Claude is on
+/// A question an agent is waiting on, answered right in the island. With a single question that takes one
+/// choice, picking an option answers it; otherwise you pick, then submit.
+private struct AgentQuestionCard: View {
+    let question: AgentPendingQuestion
+    let session: AgentSession?
+    /// Question text → the labels you picked
+    @State private var picked: [String: Set<String>] = [:]
+    /// Question text → your own answer
+    @State private var typed: [String: String] = [:]
+
+    private var answersOnTap: Bool {
+        question.questions.count == 1 && !question.questions[0].allowsMultipleSelection && !question.questions[0].options.isEmpty
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            header
+
+            ForEach(question.questions) { item in
+                questionView(item)
+            }
+
+            if question.canAnswer && !answersOnTap {
+                HStack {
+                    Spacer()
+                    Button("Submit") { submit() }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.yellow)
+                        .foregroundStyle(.black)
+                        .controlSize(.small)
+                        .disabled(answers == nil)
+                }
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.yellow.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.yellow.opacity(0.35), lineWidth: 1)
+                )
+        )
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 8) {
+                Image(systemName: "questionmark.bubble.fill")
+                    .foregroundStyle(.yellow)
+                Text("\(session?.projectName ?? question.agent.displayName) · \(question.agent.shortName) is asking you")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Button {
+                    AgentSessionStore.shared.dismissQuestion(question.id)
+                    if let session { TerminalFocuser.focus(session.terminal) }
+                } label: {
+                    Text("Answer in terminal")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                .buttonStyle(.plain)
+                .help("Leave this question to the terminal and bring it to the front")
+            }
+            Text(question.canAnswer
+                 ? (answersOnTap ? "Pick an answer here, or answer in the terminal" : "Answer here and submit, or answer in the terminal")
+                 : "Answer this one in the terminal: the session started before the island could answer for it")
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.45))
+        }
+    }
+
+    private func questionView(_ item: AgentQuestion) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                if let header = item.header {
+                    Text(header)
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(.yellow)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(Color.yellow.opacity(0.15)))
+                }
+                Text(item.text)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            ForEach(item.options, id: \.label) { option in
+                optionRow(option, of: item)
+            }
+
+            TextField(item.options.isEmpty ? "Your answer" : "Other…", text: typedBinding(for: item))
+                .textFieldStyle(.plain)
+                .font(.system(size: 11))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.06)))
+                .disabled(!question.canAnswer)
+                .onSubmit { if answers != nil { submit() } }
+        }
+    }
+
+    private func optionRow(_ option: AgentQuestion.Option, of item: AgentQuestion) -> some View {
+        let isPicked = picked[item.text, default: []].contains(option.label)
+        let symbol = item.allowsMultipleSelection
+            ? (isPicked ? "checkmark.square.fill" : "square")
+            : (isPicked ? "largecircle.fill.circle" : "circle")
+        return Button {
+            pick(option.label, in: item)
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: symbol)
+                    .font(.system(size: 11))
+                    .foregroundStyle(isPicked ? .yellow : .white.opacity(0.5))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(option.label)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white)
+                    if let description = option.description {
+                        Text(description)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.white.opacity(0.5))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color.white.opacity(isPicked ? 0.12 : 0.05))
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(!question.canAnswer)
+    }
+
+    private func pick(_ label: String, in item: AgentQuestion) {
+        if item.allowsMultipleSelection {
+            picked[item.text, default: []].formSymmetricDifference([label])
+            return
+        }
+        picked[item.text] = [label]
+        typed[item.text] = nil
+        if answersOnTap { submit() }
+    }
+
+    private func typedBinding(for item: AgentQuestion) -> Binding<String> {
+        Binding(
+            get: { typed[item.text] ?? "" },
+            set: { text in
+                typed[item.text] = text
+                // Your own words replace a single choice
+                if !item.allowsMultipleSelection && !text.isEmpty { picked[item.text] = nil }
+            }
+        )
+    }
+
+    /// Every question's answer, or nil while one is unanswered
+    private var answers: [String: String]? {
+        var answers: [String: String] = [:]
+        for item in question.questions {
+            let own = (typed[item.text] ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            let chosen = item.options.map(\.label).filter { picked[item.text, default: []].contains($0) }
+            let parts = item.allowsMultipleSelection ? chosen + (own.isEmpty ? [] : [own]) : [own.isEmpty ? chosen.first : own].compactMap { $0 }
+            guard !parts.isEmpty else { return nil }
+            answers[item.text] = parts.joined(separator: ", ")
+        }
+        return answers
+    }
+
+    private func submit() {
+        guard question.canAnswer, let answers else { return }
+        withAnimation(boringInteractiveSpring) {
+            AgentSessionStore.shared.answer(question.id, with: answers)
+        }
+    }
+}
+
+/// The session's task list: counts, then a few items around the one the agent is on
 private struct AgentTaskChecklist: View {
     let tasks: [AgentTask]
     private let limit = 4
@@ -402,8 +605,16 @@ private struct AgentTaskChecklist: View {
 }
 
 private struct AgentsEmptyView: View {
-    @State private var isInstalled = ClaudeHookInstaller.standard.isInstalled
+    @State private var connected = Set(AgentHookInstaller.all.filter(\.isInstalled).map(\.agent))
+    @State private var note: String?
     @State private var errorText: String?
+
+    /// Agents used on this Mac that aren't connected yet; all of them when none has been used
+    private var connectable: [AgentHookInstaller] {
+        let installers = AgentHookInstaller.all.filter { !connected.contains($0.agent) }
+        let present = installers.filter(\.isAgentPresent)
+        return present.isEmpty && connected.isEmpty ? installers : present
+    }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -411,33 +622,55 @@ private struct AgentsEmptyView: View {
                 .font(.system(size: 28))
                 .foregroundStyle(.white.opacity(0.3))
 
-            if isInstalled {
-                Text("No Claude Code sessions")
+            if connected.isEmpty {
+                Text("No agent is connected")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.6))
-                Text("Sessions show up here once you send Claude a prompt")
+            } else {
+                Text("No agent sessions")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.6))
+                Text("Sessions show up here once you send an agent a prompt")
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.4))
-            } else {
-                Text("Claude Code isn't connected")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.6))
-                Button("Connect Claude Code") {
-                    do {
-                        try ClaudeHookInstaller.standard.install()
-                        isInstalled = true
-                        errorText = nil
-                    } catch {
-                        errorText = error.localizedDescription
+            }
+
+            if !connectable.isEmpty {
+                HStack(spacing: 8) {
+                    ForEach(connectable, id: \.agent) { installer in
+                        connectButton(installer)
                     }
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
-                Text(errorText ?? "Adds hooks to ~/.claude/settings.json (backed up first)")
+            }
+
+            if let caption = errorText ?? note ?? (connectable.isEmpty ? nil : "Adds hooks to the agent's config file (backed up first)") {
+                Text(caption)
                     .font(.system(size: 10))
                     .foregroundStyle(errorText == nil ? .white.opacity(0.4) : .red)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    @ViewBuilder
+    private func connectButton(_ installer: AgentHookInstaller) -> some View {
+        let button = Button("Connect \(installer.agent.displayName)") {
+            do {
+                try installer.install()
+                connected.insert(installer.agent)
+                errorText = nil
+                // Codex runs a new hook only once you've trusted it
+                note = installer.agent == .codex ? "In Codex, run /hooks and trust the new hooks" : nil
+            } catch {
+                errorText = error.localizedDescription
+            }
+        }
+        .tint(installer.agent.color)
+        // The main call to action until an agent is connected
+        if connected.isEmpty {
+            button.buttonStyle(.borderedProminent)
+        } else {
+            button.buttonStyle(.bordered)
+        }
     }
 }

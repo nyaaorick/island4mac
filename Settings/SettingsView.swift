@@ -67,7 +67,7 @@ struct MainSettingsView: View {
             
             AgentSettingsView()
                 .tabItem {
-                    Label("Claude Code", systemImage: "terminal")
+                    Label("Agents", systemImage: "terminal")
                 }
 
             ClipboardSettingsWindow(hubStore: OverlayWindowController.shared.getAppState().clipVault)

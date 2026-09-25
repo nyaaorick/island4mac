@@ -12,3 +12,6 @@ results.txt
 *.xcuserstate
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
+
+# Coverage data an instrumented build writes into the directory it runs in
+*.profraw

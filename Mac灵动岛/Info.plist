@@ -54,7 +54,7 @@
     
     <!-- Privacy Usage Descriptions - English -->
     <key>NSAppleEventsUsageDescription</key>
-    <string>Mac灵动岛 uses Apple Events to read lyrics from Music, to paste clipboard items into the frontmost app, and to bring the terminal tab of a Claude Code session to the front.</string>
+    <string>Mac灵动岛 uses Apple Events to read lyrics from Music, to paste clipboard items into the frontmost app, and to bring the terminal tab of a coding agent session to the front.</string>
 
     <key>NSAppleMusicUsageDescription</key>
     <string>Mac灵动岛 needs access to Apple Music to display now playing information and control playback.</string>

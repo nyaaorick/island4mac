@@ -1,6 +1,6 @@
 import AppKit
 
-/// Brings the terminal tab a Claude Code session runs in to the front
+/// Brings the terminal tab (or the app) an agent session runs in to the front
 enum TerminalFocuser {
     private static let terminalID = "com.apple.Terminal"
     private static let iTermID = "com.googlecode.iterm2"
@@ -8,7 +8,7 @@ enum TerminalFocuser {
     static func focus(_ terminal: AgentTerminal) {
         guard let bundleID = terminal.appBundleID ?? bundleID(forTermProgram: terminal.termProgram) else { return }
 
-        // Terminal and iTerm2 can select the exact tab; anything else (an editor, the Claude app) is just activated
+        // Terminal and iTerm2 can select the exact tab; anything else (an editor, the Claude, Codex or ZCode app) is just activated
         if let tty = terminal.tty, isDeviceName(tty), let script = selectTabScript(bundleID: bundleID, tty: "/dev/\(tty)") {
             Task {
                 if await AppleScriptHelper.execute(script) == nil {

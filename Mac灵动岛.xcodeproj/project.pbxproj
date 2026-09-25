@@ -80,17 +80,18 @@
 		4D52410100000000000000A3 /* MediaRemoteAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A1 /* MediaRemoteAdapter.m */; };
 		4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D5241020000000000000004 /* AgentSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000003 /* AgentSessionStore.swift */; };
-		4D5241020000000000000006 /* ClaudeHookEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000005 /* ClaudeHookEvent.swift */; };
-		4D5241020000000000000008 /* ClaudeHookInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000007 /* ClaudeHookInstaller.swift */; };
-		4D524102000000000000000A /* ClaudeHookServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000009 /* ClaudeHookServer.swift */; };
+		4D5241020000000000000006 /* AgentHookEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000005 /* AgentHookEvent.swift */; };
+		4D5241020000000000000008 /* AgentHookInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000007 /* AgentHookInstaller.swift */; };
+		4D524102000000000000000A /* AgentHookServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000009 /* AgentHookServer.swift */; };
 		4D524102000000000000000C /* TerminalFocuser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000000B /* TerminalFocuser.swift */; };
 		4D524102000000000000000E /* AgentViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000000D /* AgentViews.swift */; };
 		4D5241020000000000000010 /* AgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000000F /* AgentSettingsView.swift */; };
 		4D524102000000000000001E /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000001D /* main.c */; };
 		4D5241020000000000000016 /* island-claude-hook in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000012 /* island-claude-hook */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D5241030000000000000002 /* AgentSessionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241030000000000000001 /* AgentSessionStoreTests.swift */; };
-		4D5241030000000000000004 /* ClaudeHookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241030000000000000003 /* ClaudeHookTests.swift */; };
+		4D5241030000000000000004 /* AgentHookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241030000000000000003 /* AgentHookTests.swift */; };
 		4D5241040000000000000002 /* ClaudeTranscript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241040000000000000001 /* ClaudeTranscript.swift */; };
+		4D5241050000000000000002 /* CodexSessionIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241050000000000000001 /* CodexSessionIndex.swift */; };
 		4D5241040000000000000004 /* AgentAlertSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241040000000000000003 /* AgentAlertSound.swift */; };
 /* End PBXBuildFile section */
 
@@ -219,17 +220,18 @@
 		4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMediaRemoteAdapter.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D52410100000000000000B2 /* ScreenManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManagerTests.swift; sourceTree = "<group>"; };
 		4D5241020000000000000003 /* AgentSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSessionStore.swift; sourceTree = "<group>"; };
-		4D5241020000000000000005 /* ClaudeHookEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHookEvent.swift; sourceTree = "<group>"; };
-		4D5241020000000000000007 /* ClaudeHookInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHookInstaller.swift; sourceTree = "<group>"; };
-		4D5241020000000000000009 /* ClaudeHookServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHookServer.swift; sourceTree = "<group>"; };
+		4D5241020000000000000005 /* AgentHookEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHookEvent.swift; sourceTree = "<group>"; };
+		4D5241020000000000000007 /* AgentHookInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHookInstaller.swift; sourceTree = "<group>"; };
+		4D5241020000000000000009 /* AgentHookServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHookServer.swift; sourceTree = "<group>"; };
 		4D524102000000000000000B /* TerminalFocuser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalFocuser.swift; sourceTree = "<group>"; };
 		4D524102000000000000000D /* AgentViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentViews.swift; sourceTree = "<group>"; };
 		4D524102000000000000000F /* AgentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettingsView.swift; sourceTree = "<group>"; };
 		4D5241020000000000000012 /* island-claude-hook */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "island-claude-hook"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D524102000000000000001D /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		4D5241030000000000000001 /* AgentSessionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSessionStoreTests.swift; sourceTree = "<group>"; };
-		4D5241030000000000000003 /* ClaudeHookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHookTests.swift; sourceTree = "<group>"; };
+		4D5241030000000000000003 /* AgentHookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHookTests.swift; sourceTree = "<group>"; };
 		4D5241040000000000000001 /* ClaudeTranscript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeTranscript.swift; sourceTree = "<group>"; };
+		4D5241050000000000000001 /* CodexSessionIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexSessionIndex.swift; sourceTree = "<group>"; };
 		4D5241040000000000000003 /* AgentAlertSound.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentAlertSound.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -537,7 +539,7 @@
 				C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */,
 				0247955385A9AC7057FE0B3B /* OverlayWindowTests.swift */,
 				4D52410100000000000000B2 /* ScreenManagerTests.swift */,
-				4D5241030000000000000003 /* ClaudeHookTests.swift */,
+				4D5241030000000000000003 /* AgentHookTests.swift */,
 				4D5241030000000000000001 /* AgentSessionStoreTests.swift */,
 			);
 			path = "Mac灵动岛Tests";
@@ -556,10 +558,11 @@
 			children = (
 				4D5241040000000000000003 /* AgentAlertSound.swift */,
 				4D5241040000000000000001 /* ClaudeTranscript.swift */,
+				4D5241050000000000000001 /* CodexSessionIndex.swift */,
 				4D524102000000000000000B /* TerminalFocuser.swift */,
-				4D5241020000000000000009 /* ClaudeHookServer.swift */,
-				4D5241020000000000000007 /* ClaudeHookInstaller.swift */,
-				4D5241020000000000000005 /* ClaudeHookEvent.swift */,
+				4D5241020000000000000009 /* AgentHookServer.swift */,
+				4D5241020000000000000007 /* AgentHookInstaller.swift */,
+				4D5241020000000000000005 /* AgentHookEvent.swift */,
 				4D5241020000000000000003 /* AgentSessionStore.swift */,
 			);
 			path = Agents;
@@ -731,12 +734,13 @@
 			files = (
 				4D5241040000000000000004 /* AgentAlertSound.swift in Sources */,
 				4D5241040000000000000002 /* ClaudeTranscript.swift in Sources */,
+				4D5241050000000000000002 /* CodexSessionIndex.swift in Sources */,
 				4D5241020000000000000010 /* AgentSettingsView.swift in Sources */,
 				4D524102000000000000000E /* AgentViews.swift in Sources */,
 				4D524102000000000000000C /* TerminalFocuser.swift in Sources */,
-				4D524102000000000000000A /* ClaudeHookServer.swift in Sources */,
-				4D5241020000000000000008 /* ClaudeHookInstaller.swift in Sources */,
-				4D5241020000000000000006 /* ClaudeHookEvent.swift in Sources */,
+				4D524102000000000000000A /* AgentHookServer.swift in Sources */,
+				4D5241020000000000000008 /* AgentHookInstaller.swift in Sources */,
+				4D5241020000000000000006 /* AgentHookEvent.swift in Sources */,
 				4D5241020000000000000004 /* AgentSessionStore.swift in Sources */,
 				B604001DB9274EEAA702BD55 /* Mac灵动岛App.swift in Sources */,
 				51F1B11E2F0E4A2500B89019 /* NowPlayingState.swift in Sources */,
@@ -813,7 +817,7 @@
 				35C45DEF006A10FE546DCB37 /* ClipboardHubStoreTests.swift in Sources */,
 				F47AB87F21601EACC7D73B1D /* OverlayWindowTests.swift in Sources */,
 				4D52410100000000000000B1 /* ScreenManagerTests.swift in Sources */,
-				4D5241030000000000000004 /* ClaudeHookTests.swift in Sources */,
+				4D5241030000000000000004 /* AgentHookTests.swift in Sources */,
 				4D5241030000000000000002 /* AgentSessionStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1120,6 +1124,7 @@
 		4D524102000000000000001B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 66233X8P8H;
@@ -1132,6 +1137,7 @@
 		4D524102000000000000001C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 66233X8P8H;
