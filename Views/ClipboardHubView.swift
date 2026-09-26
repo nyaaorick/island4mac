@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - ClipboardHubView (The Island functional zone)
 struct ClipboardHubView: View {
+    @EnvironmentObject private var appState: AppState
     @ObservedObject var vault: IslandClipVault
     
     var body: some View {
@@ -30,8 +31,9 @@ struct ClipboardHubView: View {
                     HStack(spacing: 16) {
                         ForEach(vault.items) { item in
                             ClipboardCardView(item: item) {
-                                vault.pasteItem(item)
-                                OverlayWindowController.shared.getAppState().deactivateOverlay()
+                                vault.pasteItem(item, into: OverlayWindowController.shared.previousApp)
+                                // This island, which may not be the main one
+                                appState.deactivateOverlay()
                             }
                         }
                     }

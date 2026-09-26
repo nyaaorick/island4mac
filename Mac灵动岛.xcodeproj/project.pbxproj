@@ -79,6 +79,8 @@
 		35C45DEF006A10FE546DCB37 /* ClipboardHubStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */; };
 		F47AB87F21601EACC7D73B1D /* OverlayWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0247955385A9AC7057FE0B3B /* OverlayWindowTests.swift */; };
 		4D52410100000000000000B1 /* ScreenManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000B2 /* ScreenManagerTests.swift */; };
+		4D5241060000000000000002 /* HotKeyManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000001 /* HotKeyManagerTests.swift */; };
+		4D5241060000000000000004 /* LyricsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000003 /* LyricsServiceTests.swift */; };
 		4D52410100000000000000A3 /* MediaRemoteAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A1 /* MediaRemoteAdapter.m */; };
 		4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D5241020000000000000004 /* AgentSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000003 /* AgentSessionStore.swift */; };
@@ -223,6 +225,8 @@
 		4D52410100000000000000A1 /* MediaRemoteAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MediaRemoteAdapter.m; sourceTree = "<group>"; };
 		4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMediaRemoteAdapter.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D52410100000000000000B2 /* ScreenManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManagerTests.swift; sourceTree = "<group>"; };
+		4D5241060000000000000001 /* HotKeyManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManagerTests.swift; sourceTree = "<group>"; };
+		4D5241060000000000000003 /* LyricsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsServiceTests.swift; sourceTree = "<group>"; };
 		4D5241020000000000000003 /* AgentSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSessionStore.swift; sourceTree = "<group>"; };
 		4D5241020000000000000005 /* AgentHookEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHookEvent.swift; sourceTree = "<group>"; };
 		4D5241020000000000000007 /* AgentHookInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHookInstaller.swift; sourceTree = "<group>"; };
@@ -547,6 +551,8 @@
 				4D52410100000000000000B2 /* ScreenManagerTests.swift */,
 				4D5241030000000000000003 /* AgentHookTests.swift */,
 				4D5241030000000000000001 /* AgentSessionStoreTests.swift */,
+				4D5241060000000000000001 /* HotKeyManagerTests.swift */,
+				4D5241060000000000000003 /* LyricsServiceTests.swift */,
 			);
 			path = "Mac灵动岛Tests";
 			sourceTree = "<group>";
@@ -827,6 +833,8 @@
 				4D52410100000000000000B1 /* ScreenManagerTests.swift in Sources */,
 				4D5241030000000000000004 /* AgentHookTests.swift in Sources */,
 				4D5241030000000000000002 /* AgentSessionStoreTests.swift in Sources */,
+				4D5241060000000000000002 /* HotKeyManagerTests.swift in Sources */,
+				4D5241060000000000000004 /* LyricsServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

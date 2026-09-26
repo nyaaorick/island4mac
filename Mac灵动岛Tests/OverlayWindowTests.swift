@@ -1,4 +1,5 @@
 import XCTest
+import Combine
 @testable import Mac灵动岛
 
 /// The island animates entirely in SwiftUI on a fixed-size canvas; the panel is only resized
@@ -254,6 +255,23 @@ final class OverlayWindowTests: XCTestCase {
         assertEqual(try canvasOnScreen(panel), canvas, "switching tabs must not move the SwiftUI canvas")
 
         collapseAndSettle(state)
+    }
+
+    /// What hands the keyboard back to the app you were using: sent once, when the open island closes
+    func testClosingTheIslandIsReportedOnce() {
+        // A state of its own, without a panel, so nothing on screen moves
+        let state = AppState(sharingWith: OverlayWindowController.shared.getAppState())
+        var collapses = 0
+        let subscription = state.didCollapse.sink { collapses += 1 }
+        defer { subscription.cancel() }
+
+        state.deactivateOverlay()
+        XCTAssertEqual(collapses, 0, "it was closed already")
+        state.activateOverlay()
+        state.currentSection = .clipboard
+        XCTAssertEqual(collapses, 0, "switching tabs isn't closing")
+        state.deactivateOverlay()
+        XCTAssertEqual(collapses, 1)
     }
 
     func testTheIslandIsWiderOnlyOnALargeExternalDisplay() {

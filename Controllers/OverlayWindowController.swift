@@ -65,6 +65,10 @@ final class OverlayWindowController: NSObject {
     /// 正在播放（暂停超过 1 秒才算停）
     private var musicIsPlaying = false
 
+    /// The app you were using before a click on an island brought this one to the front (the panel has to become
+    /// key for text fields and drops). The keyboard goes back to it when the island closes, and pastes go into it
+    private(set) var previousApp: NSRunningApplication?
+
     private override init() {
         super.init()
         setupManagers() // INITIALIZE MUSIC STREAM
@@ -103,6 +107,14 @@ final class OverlayWindowController: NSObject {
                 state.deactivateOverlay()
             }
         }
+    }
+
+    /// Gives the keyboard back to the app you were using once the island in `panel` has closed. Not while you're
+    /// in another window of this app (Settings, a file dialog, another island), and not when you'd left already
+    func returnFocus(from panel: NSWindow) {
+        guard NSApp.isActive, let app = previousApp, !app.isTerminated else { return }
+        if let key = NSApp.keyWindow, key !== panel { return }
+        app.activate(options: [])
     }
 
     private func islandUnderMouse() -> IslandWindow? {
@@ -189,6 +201,17 @@ final class OverlayWindowController: NSObject {
             .dropFirst()
             .sink { [weak self] noneLeft in
                 if noneLeft { self?.closeAfterAgentPrompts() }
+            }
+            .store(in: &cancellables)
+
+        // 记下你在用的 App：点岛会把本 App 带到前台，岛收起时要把键盘还给它
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        previousApp = NSWorkspace.shared.frontmostApplication.flatMap { $0.processIdentifier == ownPID ? nil : $0 }
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didActivateApplicationNotification)
+            .compactMap { $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication }
+            .filter { $0.processIdentifier != ownPID }
+            .sink { [weak self] app in
+                self?.previousApp = app
             }
             .store(in: &cancellables)
 
@@ -283,15 +306,4 @@ final class OverlayWindowController: NSObject {
 
     func show() { islands.forEach { $0.appState.isOverlayVisible = true } }
     func hide() { islands.forEach { $0.appState.isOverlayVisible = false } }
-
-    func showTemporarily(duration: TimeInterval = 1.5) {
-        show()
-        Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(duration))
-            guard let self else { return }
-            for island in self.islands where island.appState.overlayMode == .compact {
-                island.appState.isOverlayVisible = false
-            }
-        }
-    }
 }

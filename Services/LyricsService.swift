@@ -167,8 +167,9 @@ final class LyricsService {
                let lrc = json["lrc"] as? [String: Any],
                let lyricText = lrc["lyric"] as? String {
                 
-                // 解析 LRC 格式歌词
-                let synced = parseLRCFormat(lyricText)
+                // 解析 LRC 格式歌词；一行都没解析出来就不算找到，交给下一个来源
+                let synced = Self.parseLRC(lyricText)
+                guard !synced.isEmpty else { return nil }
                 let plain = synced.map { $0.line }.joined(separator: "\n")
                 
                 return LyricsResult(
@@ -239,15 +240,15 @@ final class LyricsService {
     /// 解析 LrcLib search API 响应（返回数组）
     private func parseLrcLibSearchResponse(from data: Data) -> LyricsResult? {
         do {
-            // Search API 返回的是数组
+            // Search API 返回的是数组；同一首歌常有好几个版本，优先选带同步歌词的
             if let jsonArray = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
-               let first = jsonArray.first {
+               let first = jsonArray.first(where: { !($0["syncedLyrics"] as? String ?? "").isEmpty }) ?? jsonArray.first {
                 
                 let syncedLRC = first["syncedLyrics"] as? String ?? ""
                 let plainLyrics = first["plainLyrics"] as? String ?? ""
                 
                 // 优先使用同步歌词
-                let synced = parseLRCFormat(syncedLRC)
+                let synced = Self.parseLRC(syncedLRC)
                 let resolvedPlain = plainLyrics.isEmpty ? syncedLRC : plainLyrics
                 
                 if synced.isEmpty && resolvedPlain.isEmpty {
@@ -269,49 +270,40 @@ final class LyricsService {
     // MARK: - LRC 格式解析
     
     /// 解析 LRC 格式歌词
-    /// 支持格式: [mm:ss.xx] 或 [m:ss] 或 [mm:ss]
-    private func parseLRCFormat(_ lrcText: String) -> [(timeInSeconds: Double, line: String)] {
-        var result: [(Double, String)] = []
-        
-        let lines = lrcText.components(separatedBy: .newlines)
-        // 匹配 [mm:ss.xx] 或 [m:ss] 格式（与 Boring Notch 保持一致）
-        let pattern = #"\[(\d{1,2}):(\d{2})(?:\.(\d{1,2}))?\]"#
-        
-        guard let regex = try? NSRegularExpression(pattern: pattern) else {
-            return result
+    /// 时间戳支持 [mm:ss]、[mm:ss.x]、[mm:ss.xx] 和 [mm:ss.xxx]（网易云常用三位毫秒）；
+    /// 一行可以带好几个时间戳，副歌重复时常这样写
+    static func parseLRC(_ lrcText: String) -> [(timeInSeconds: Double, line: String)] {
+        guard let timestamp = try? NSRegularExpression(pattern: #"\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]"#) else {
+            return []
         }
-        
-        for lineSub in lines {
-            let line = String(lineSub)
-            let nsLine = line as NSString
-            
-            if let match = regex.firstMatch(in: line, range: NSRange(location: 0, length: nsLine.length)) {
-                let minStr = nsLine.substring(with: match.range(at: 1))
-                let secStr = nsLine.substring(with: match.range(at: 2))
-                
-                // 毫秒/厘秒可选
-                let csRange = match.range(at: 3)
-                let centiStr = csRange.location != NSNotFound ? nsLine.substring(with: csRange) : "0"
-                
-                let minutes = Double(minStr) ?? 0
-                let seconds = Double(secStr) ?? 0
-                let centis = Double(centiStr) ?? 0
-                
-                // 根据位数决定是毫秒还是厘秒
-                let centisMultiplier: Double = centiStr.count == 3 ? 1000.0 : 100.0
-                let time = minutes * 60 + seconds + centis / centisMultiplier
-                
-                // 提取歌词文本（时间戳之后的部分）
-                let textStart = match.range.location + match.range.length
-                let text = nsLine.substring(from: textStart).trimmingCharacters(in: .whitespaces)
-                
-                if !text.isEmpty {
-                    result.append((time, text))
-                }
+        var result: [(timeInSeconds: Double, line: String)] = []
+
+        for rawLine in lrcText.components(separatedBy: .newlines) {
+            let line = rawLine as NSString
+            var times: [Double] = []
+            var textStart = 0
+            // 第一个时间戳在哪都行，后面的要一个紧接一个
+            var options: NSRegularExpression.MatchingOptions = []
+
+            while let match = timestamp.firstMatch(in: rawLine, options: options,
+                                                   range: NSRange(location: textStart, length: line.length - textStart)) {
+                let minutes = Double(line.substring(with: match.range(at: 1))) ?? 0
+                let seconds = Double(line.substring(with: match.range(at: 2))) ?? 0
+                // 小数部分按位数算：.3 是 0.3 秒，.36 是 0.36 秒，.360 也是 0.36 秒
+                let fraction = match.range(at: 3).location == NSNotFound
+                    ? 0 : Double("0." + line.substring(with: match.range(at: 3))) ?? 0
+                times.append(minutes * 60 + seconds + fraction)
+                textStart = match.range.location + match.range.length
+                options = .anchored
             }
+
+            // 提取歌词文本（时间戳之后的部分）；[ar:歌手] 这类标签行没有时间戳，自然跳过
+            let text = line.substring(from: textStart).trimmingCharacters(in: .whitespaces)
+            guard !text.isEmpty else { continue }
+            result += times.map { (timeInSeconds: $0, line: text) }
         }
-        
-        return result.sorted { $0.0 < $1.0 }
+
+        return result.sorted { $0.timeInSeconds < $1.timeInSeconds }
     }
     
     /// 清除缓存

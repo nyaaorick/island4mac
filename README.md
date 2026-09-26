@@ -121,7 +121,6 @@ Once the call is answered in the terminal (the island matches its `PostToolUse` 
 - Apps that don't report to the system Now Playing (nothing shows in Control Center) aren't shown.
 - The AppIcon set has no images yet.
 - Some settings aren't wired up yet and have no effect: the menu bar icon, shadow, lighting effect, gradient, colored spectrogram, music control slot limit and slider color toggles; the shelf on/off toggle; the three gesture settings; showing on all displays and the display picker; expanded drag detection; the settings icon in the notch; the idle face; notch height; and remembering the last tab.
-- ⌥⌘L (position lock) and ⌥⌘M (move mode) are registered, but nothing reads the flags they toggle yet.
 
 ## License
 

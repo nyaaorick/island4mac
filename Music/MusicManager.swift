@@ -266,18 +266,17 @@ class MusicManager: ObservableObject {
     
     // MARK: - Fetch Lyrics
     
-    /// 获取歌词（先尝试 AppleScript，再尝试在线 API）
+    /// 获取歌词：先查在线的同步歌词（能跟着歌走），查不到同步歌词时再用 Apple Music 自带的歌词
     private func fetchLyrics(title: String, artist: String) async {
         isFetchingLyrics = true
 
-        var lyrics: (plainText: String, synced: [(timeInSeconds: Double, line: String)])?
+        // 1️⃣ 在线 API（LrcLib、网易云等），任何播放器都适用
+        var lyrics = await fetchLyricsFromAPI(title: title, artist: artist)
 
-        // 1️⃣ 尝试从 Apple Music 获取歌词（如果正在使用）
-        if bundleIdentifier == "com.apple.Music", let appleMusicLyrics = await fetchLyricsFromAppleMusic() {
-            lyrics = (appleMusicLyrics, []) // Apple Music 通常不提供同步歌词
-        } else {
-            // 2️⃣ 尝试从在线 API 获取歌词（兼容 QQ音乐、网易云等）
-            lyrics = await fetchLyricsFromAPI(title: title, artist: artist)
+        // 2️⃣ Apple Music 自带的歌词只有纯文本，而且流媒体歌曲大多没有（读到的是空字符串，不能当成找到了）
+        if lyrics?.synced.isEmpty ?? true, !Task.isCancelled, bundleIdentifier == "com.apple.Music",
+           let own = await fetchLyricsFromAppleMusic(), !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            lyrics = (own, [])
         }
 
         // 切歌后，旧请求的结果作废

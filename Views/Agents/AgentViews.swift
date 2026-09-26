@@ -484,13 +484,14 @@ private struct AgentPermissionCard: View {
 
                     Spacer()
 
+                    // Only a click allows: as the default button, Return in the note above would allow the call
+                    // instead of sending the note, and so would Return anywhere else in the island
                     Button("Allow") {
                         respond { $0.allow(prompt.id) }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.yellow)
                     .foregroundStyle(.black)
-                    .keyboardShortcut(.defaultAction)
                 }
                 .controlSize(.small)
 

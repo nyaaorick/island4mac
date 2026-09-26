@@ -19,7 +19,11 @@ final class AppState: ObservableObject {
     @Published var visibilityReason: OverlayVisibilityReason = .none
     @Published var interactionState: IslandInteractionState = .idle
     @Published var overlayMode: OverlayMode = .compact {
-        didSet { resetAutoCloseTimer(); islandSizeDidChange.send() }
+        didSet {
+            resetAutoCloseTimer()
+            islandSizeDidChange.send()
+            if oldValue == .expanded && overlayMode == .compact { didCollapse.send() }
+        }
     }
     @Published var currentSection: IslandSection = .music {
         didSet { resetAutoCloseTimer(); islandSizeDidChange.send() }
@@ -27,6 +31,8 @@ final class AppState: ObservableObject {
     /// Sent once a new overlayMode or currentSection is stored. @Published sends before the value is stored,
     /// and resizing the panel then makes SwiftUI lay out with the old value and miss the new one
     let islandSizeDidChange = PassthroughSubject<Void, Never>()
+    /// Sent when the open island has closed
+    let didCollapse = PassthroughSubject<Void, Never>()
     @Published var isDraggingOver: Bool = false
 
     /// Notch size of the display the island is on (.zero when it has no notch)
@@ -43,6 +49,13 @@ final class AppState: ObservableObject {
     @Published var isPeekingNotch: Bool = false
     /// Current frame of the island panel, in screen coordinates
     private(set) var islandFrame: CGRect = .zero
+    /// The panel showing this island; IslandWindow sets it
+    weak var panel: NSWindow?
+    /// You're typing in the island, e.g. an answer to an agent's question: it doesn't close under you
+    var isTyping: Bool {
+        guard let panel, panel.isKeyWindow else { return false }
+        return panel.firstResponder is NSText
+    }
 
     // CUSTOMIZATION: Resolved from settingsStore
     var islandBackgroundColor: Color {
@@ -81,8 +94,9 @@ final class AppState: ObservableObject {
         let timeout = settingsStore.get(SettingsDefaults.autoCloseTimeout)
         autoCloseTimer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
-                // An agent's question or permission prompt stays open until you've dealt with it
-                guard self?.visibilityReason != .agentPrompt else { return }
+                // An agent's question or permission prompt stays open until you've dealt with it,
+                // and nothing closes under your typing
+                guard self?.visibilityReason != .agentPrompt, self?.isTyping != true else { return }
                 self?.deactivateOverlay()
             }
         }
@@ -96,16 +110,6 @@ final class AppState: ObservableObject {
     func requestAXPermission() {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
         AXIsProcessTrustedWithOptions(options as CFDictionary)
-    }
-
-    func togglePositionLock() {
-        isPositionLocked.toggle()
-        logEvent("Position lock: \(isPositionLocked)")
-    }
-
-    func toggleMoveMode() {
-        isMoveModeEnabled.toggle()
-        logEvent("Move mode: \(isMoveModeEnabled)")
     }
 
     // ENUMS

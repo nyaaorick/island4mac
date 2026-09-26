@@ -148,20 +148,33 @@ final class ClipboardHubStore: ObservableObject {
         saveToDisk()
     }
     
-    func pasteItem(_ item: IslandClipItem) {
+    /// Pastes the item into `app`, the app you were using. Clicking the card brought this app to the front,
+    /// so that one comes back first, or the ⌘V would land in the island
+    func pasteItem(_ item: IslandClipItem, into app: NSRunningApplication?) {
         copyToClipboard(item)
-        
-        let script = """
+        guard let app, !app.isTerminated else { return }
+        app.activate(options: [])
+        Task {
+            // Activating takes a moment. If it doesn't come forward the item stays on the clipboard,
+            // rather than being pasted into whatever is in front
+            var isInFront: Bool { NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier }
+            for _ in 0..<20 {
+                if isInFront { break }
+                try? await Task.sleep(for: .milliseconds(25))
+            }
+            guard isInFront else { return }
+            // Its window becomes key just after
+            try? await Task.sleep(for: .milliseconds(50))
+            // Off the main thread: an Apple Event can wait on a permission prompt
+            _ = await AppleScriptHelper.execute(Self.pasteScript)
+        }
+    }
+
+    private static let pasteScript = """
         tell application "System Events"
             keystroke "v" using {command down}
         end tell
         """
-        
-        var error: NSDictionary?
-        if let scriptObject = NSAppleScript(source: script) {
-            scriptObject.executeAndReturnError(&error)
-        }
-    }
     
     func copyToClipboard(_ item: IslandClipItem) {
         let pb = NSPasteboard.general

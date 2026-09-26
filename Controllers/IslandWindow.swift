@@ -83,6 +83,7 @@ final class IslandWindow {
 
         self.hostingView = hostingView
         panel.contentView = container
+        appState.panel = panel
 
         setupObservers()
     }
@@ -122,6 +123,14 @@ final class IslandWindow {
             .removeDuplicates()
             .sink { [weak self] _ in
                 self?.scheduleWindowUpdate()
+            }
+            .store(in: &cancellables)
+
+        // 点岛会把本 App 带到前台，抢走你在用的 App 的键盘；岛收起后还给它
+        appState.didCollapse
+            .sink { [weak self] in
+                guard let self else { return }
+                OverlayWindowController.shared.returnFocus(from: self.panel)
             }
             .store(in: &cancellables)
     }

@@ -138,6 +138,11 @@ struct NotchHomeView: View {
             guard !hovering, !appState.isDraggingOver else { return }
             hoverTask = Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(300))
+                // Not while you're typing in it (an answer to an agent, a note): what you wrote would be lost.
+                // It closes once you're done, e.g. you've sent it or clicked another app
+                while !Task.isCancelled, appState.isTyping {
+                    try? await Task.sleep(for: .milliseconds(300))
+                }
                 guard !Task.isCancelled, isExpanded, !appState.isDraggingOver else { return }
                 // Ignore a stray exit event while the pointer is still over the island
                 guard !appState.islandFrame.contains(NSEvent.mouseLocation) else { return }
@@ -426,13 +431,8 @@ private struct CompactMusicLiveActivityView: View {
             return line.isEmpty ? "…" : line
         }
 
-        let trimmed = musicManager.currentLyrics.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            return musicManager.artistName.isEmpty ? "" : musicManager.artistName
-        }
-
-        // Compact: single line
-        return trimmed.replacingOccurrences(of: "\n", with: " ")
+        // Lyrics without timing can't follow the song: the whole song in one scrolling line is no use here
+        return musicManager.artistName
     }
 }
 
