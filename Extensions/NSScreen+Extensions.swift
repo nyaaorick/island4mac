@@ -42,4 +42,15 @@ extension NSScreen {
               let right = auxiliaryTopRightArea else { return .zero }
         return CGSize(width: frame.width - left.width - right.width, height: safeAreaInsets.top)
     }
+
+    /// The Mac's own display, as opposed to an external one
+    var isBuiltIn: Bool {
+        guard let displayID else { return false }
+        return CGDisplayIsBuiltin(displayID) != 0
+    }
+
+    /// An external display with room for the wider island (see NotchMetrics.isLargeDisplay)
+    var isLargeDisplay: Bool {
+        NotchMetrics.isLargeDisplay(width: frame.width, notch: notchSize, isBuiltIn: isBuiltIn)
+    }
 }

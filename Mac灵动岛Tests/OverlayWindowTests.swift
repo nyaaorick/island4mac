@@ -255,4 +255,67 @@ final class OverlayWindowTests: XCTestCase {
 
         collapseAndSettle(state)
     }
+
+    func testTheIslandIsWiderOnlyOnALargeExternalDisplay() {
+        let notch = CGSize(width: 185, height: 32)
+        XCTAssertTrue(NotchMetrics.isLargeDisplay(width: 1920, notch: .zero, isBuiltIn: false), "a 1080p monitor")
+        XCTAssertTrue(NotchMetrics.isLargeDisplay(width: 2560, notch: .zero, isBuiltIn: false))
+        XCTAssertFalse(NotchMetrics.isLargeDisplay(width: 1680, notch: .zero, isBuiltIn: false), "a smaller monitor")
+        XCTAssertFalse(NotchMetrics.isLargeDisplay(width: 2056, notch: notch, isBuiltIn: true),
+                       "the built-in display keeps its island, however much space it's set to show")
+        XCTAssertFalse(NotchMetrics.isLargeDisplay(width: 2240, notch: .zero, isBuiltIn: true), "nor one without a notch")
+
+        func width(expanded: Bool, section: AppState.IslandSection = .music, wings: IslandWings = .none, largeDisplay: Bool) -> CGFloat {
+            NotchMetrics.islandSize(expanded: expanded, section: section, notch: .zero, wings: wings,
+                                    largeDisplay: largeDisplay, nonNotchHeight: 32).width
+        }
+        // What a display without a notch gets while it shows now playing or an agent session
+        let live = NotchMetrics.liveActivityWings(leadingRoom: nil, trailingRoom: nil, notch: .zero)
+        XCTAssertFalse(live.isEmpty)
+        XCTAssertEqual(width(expanded: false, largeDisplay: true), NotchMetrics.nonNotchWidth, "idle, the pill keeps its size")
+        XCTAssertEqual(width(expanded: false, wings: live, largeDisplay: true), NotchMetrics.largeDisplayLiveActivityWidth,
+                       "now playing, it widens for the whole title and lyric line")
+        XCTAssertEqual(width(expanded: false, wings: live, largeDisplay: false), NotchMetrics.nonNotchWidth)
+        for section in AppState.IslandSection.allCases {
+            XCTAssertEqual(width(expanded: true, section: section, largeDisplay: true), NotchMetrics.largeDisplayExpandedWidth,
+                           "every tab opens as wide, so the tab bar never moves")
+            XCTAssertEqual(width(expanded: true, section: section, largeDisplay: false), NotchMetrics.expandedWidth)
+        }
+        XCTAssertEqual(NotchMetrics.canvasSize(notch: .zero, largeDisplay: true).width,
+                       NotchMetrics.largeDisplayExpandedWidth + 2 * NotchMetrics.overshootMargin, "the canvas holds the wider island")
+    }
+
+    func testTheIslandOpensAsWideAsItsDisplayAllows() throws {
+        let state = OverlayWindowController.shared.getAppState()
+        let panel = try islandPanel()
+        collapseAndSettle(state)
+        let screen = try XCTUnwrap(panel.screen)
+        XCTAssertEqual(state.isOnLargeDisplay, screen.isLargeDisplay)
+        if screen.hasNotch {
+            XCTAssertFalse(state.isOnLargeDisplay, "the island under the notch stays as it is")
+        }
+
+        state.activateOverlay()
+        let open = state.isOnLargeDisplay ? NotchMetrics.largeDisplayExpandedWidth : NotchMetrics.expandedWidth
+        XCTAssertEqual(panel.frame.width, open + 2 * NotchMetrics.overshootMargin, accuracy: 0.5)
+
+        collapseAndSettle(state)
+    }
+
+    func testTheLiveActivityPillWidensOnALargeDisplay() throws {
+        let state = OverlayWindowController.shared.getAppState()
+        let panel = try islandPanel()
+        guard state.isOnLargeDisplay, let screen = panel.screen else { throw XCTSkip("needs the island on a large external display") }
+        collapseAndSettle(state)
+        XCTAssertEqual(panel.frame.width, NotchMetrics.nonNotchWidth, accuracy: 0.5, "idle, the pill keeps its size")
+
+        AgentSessionStore.shared.apply(AgentHookEvent(kind: .userPromptSubmit, sessionID: "wide-pill"))
+        runMainLoop(for: 0.2)
+        XCTAssertEqual(panel.frame.width, NotchMetrics.largeDisplayLiveActivityWidth, accuracy: 0.5, "a session at work widens it")
+        XCTAssertEqual(panel.frame.midX, screen.frame.midX, accuracy: 0.5, "and it stays centered")
+
+        AgentSessionStore.shared.archive("wide-pill")
+        runMainLoop(for: settleTime)
+        XCTAssertEqual(panel.frame.width, NotchMetrics.nonNotchWidth, accuracy: 0.5, "it narrows again once the session is gone")
+    }
 }

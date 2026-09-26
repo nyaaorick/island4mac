@@ -41,6 +41,7 @@ struct NotchHomeView: View {
             section: appState.currentSection,
             notch: notch,
             wings: appState.liveActivityWings,
+            largeDisplay: appState.isOnLargeDisplay,
             nonNotchHeight: settings.get(SettingsDefaults.nonNotchHeight)
         )
     }
@@ -203,7 +204,7 @@ struct CompactIslandRegion: View {
             // No notch on this display: a small pill at the top center
             HStack(spacing: 8) {
                 if appState.showsLiveActivity, let session = agentSession {
-                    CompactAgentLiveActivityView(session: session)
+                    CompactAgentLiveActivityView(session: session, isWide: appState.isOnLargeDisplay)
                 } else if appState.showsLiveActivity && MusicManager.shared.showsCompactLiveActivity {
                     CompactMusicLiveActivityView(animation: animation)
                 } else {
@@ -332,7 +333,9 @@ private struct CompactMusicLiveActivityView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let marqueeWidth = max(80, geo.size.width - 24 - 10 - 8 - 8)
+            // The title and lyric line get all the room the artwork and the spectrum leave,
+            // so the wider pill of a large display shows them whole
+            let marqueeWidth = max(0, geo.size.width - 24 - 18 - 2 * 8)
 
             HStack(spacing: 8) {
                 // Album art (tiny)
@@ -383,8 +386,6 @@ private struct CompactMusicLiveActivityView: View {
                     }
                 }
 
-                Spacer(minLength: 0)
-
                 if settings.get(SettingsDefaults.useMusicVisualizer) {
                     // ✅ 移除 .gradient 光效，只使用纯色填充
                     Rectangle()
@@ -401,6 +402,7 @@ private struct CompactMusicLiveActivityView: View {
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(musicManager.isPlaying ? .green : Color.white.opacity(0.35))
                         .symbolEffect(.bounce, options: .repeating, value: musicManager.isPlaying)
+                        .frame(width: 18)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -562,7 +564,7 @@ struct ExpandedIslandRegion: View {
                     }
                 }
             }
-            // The rest of the open island, sized per tab by NotchMetrics.expandedSize(for:)
+            // The rest of the open island, sized per tab by NotchMetrics.expandedSize(for:largeDisplay:)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
@@ -613,9 +615,11 @@ enum NotchMetrics {
     /// Width of the open island. The same for every tab, so switching tabs never slides the tab bar
     /// out from under the pointer
     static let expandedWidth: CGFloat = 640
+    /// Width of the open island on a large display, again the same for every tab
+    static let largeDisplayExpandedWidth: CGFloat = 760
 
     /// Open island below the camera housing: the tab bar plus a content area as tall as what each tab shows
-    static func expandedSize(for section: AppState.IslandSection) -> CGSize {
+    static func expandedSize(for section: AppState.IslandSection, largeDisplay: Bool) -> CGSize {
         let contentHeight: CGFloat
         switch section {
         case .music:
@@ -631,10 +635,23 @@ enum NotchMetrics {
             // A couple of session rows with their task lists; the list scrolls
             contentHeight = 270
         }
-        return CGSize(width: expandedWidth, height: tabBarHeight + contentHeight)
+        return CGSize(width: largeDisplay ? largeDisplayExpandedWidth : expandedWidth, height: tabBarHeight + contentHeight)
     }
     /// Collapsed pill on displays without a notch
     static let nonNotchWidth: CGFloat = 185
+    /// Collapsed pill on a large display while it shows now playing or an agent session:
+    /// wide enough for the whole title and lyric line
+    static let largeDisplayLiveActivityWidth: CGFloat = 360
+    /// External displays at least this wide (1080p and up) are large: the wider island still leaves
+    /// the menus and status icons their room
+    static let largeDisplayMinWidth: CGFloat = 1920
+
+    /// Whether the island on a display gets the wider layout. Only an external display can,
+    /// so the island on the built-in display always stays as it is
+    static func isLargeDisplay(width: CGFloat, notch: CGSize, isBuiltIn: Bool) -> Bool {
+        !isBuiltIn && notch == .zero && width >= largeDisplayMinWidth
+    }
+
     /// Room around the open island so the open spring's overshoot isn't cut off by the panel
     static let overshootMargin: CGFloat = 10
 
@@ -671,15 +688,18 @@ enum NotchMetrics {
     }
 
     /// Settled size of the island; the panel matches it (plus `overshootMargin` when open)
-    static func islandSize(expanded: Bool, section: AppState.IslandSection, notch: CGSize, wings: IslandWings, nonNotchHeight: CGFloat) -> CGSize {
+    static func islandSize(expanded: Bool, section: AppState.IslandSection, notch: CGSize, wings: IslandWings,
+                           largeDisplay: Bool, nonNotchHeight: CGFloat) -> CGSize {
         if expanded {
             // Content starts below the camera housing
-            let open = expandedSize(for: section)
+            let open = expandedSize(for: section, largeDisplay: largeDisplay)
             return CGSize(width: open.width, height: open.height + notch.height)
         }
-        // No notch (external display): a small pill at the top center
+        // No notch (external display): a small pill at the top center. On a large display it widens
+        // while it shows now playing or an agent session (it has wings then)
         guard notch != .zero else {
-            return CGSize(width: nonNotchWidth, height: nonNotchHeight)
+            let width = largeDisplay && !wings.isEmpty ? largeDisplayLiveActivityWidth : nonNotchWidth
+            return CGSize(width: width, height: nonNotchHeight)
         }
         // Collapsed: the notch itself, plus the live activity beside it
         let width = notch.width + 2 * compactTopRadius + wings.leading + wings.trailing
@@ -687,8 +707,8 @@ enum NotchMetrics {
     }
 
     /// Fixed size of the SwiftUI canvas: the largest open island plus its overshoot margin
-    static func canvasSize(notch: CGSize) -> CGSize {
-        let openSizes = AppState.IslandSection.allCases.map { expandedSize(for: $0) }
+    static func canvasSize(notch: CGSize, largeDisplay: Bool) -> CGSize {
+        let openSizes = AppState.IslandSection.allCases.map { expandedSize(for: $0, largeDisplay: largeDisplay) }
         return CGSize(
             width: (openSizes.map(\.width).max() ?? 0) + 2 * overshootMargin,
             height: (openSizes.map(\.height).max() ?? 0) + notch.height + overshootMargin

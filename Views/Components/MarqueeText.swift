@@ -37,6 +37,12 @@ struct IslandMarqueeText: View {
                     calculateTextWidth()
                     startMarqueeIfNeeded()
                 }
+                // The island moved to a display where the pill is wider (or narrower): the text may fit now, or not
+                .onChange(of: frameWidth) { _, _ in
+                    offset = 0
+                    isAnimating = false
+                    startMarqueeIfNeeded()
+                }
         }
         .frame(width: frameWidth)
         .clipped()
@@ -73,6 +79,8 @@ struct IslandMarqueeText: View {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            // The text or the width changed in the meantime and it fits now
+            guard isAnimating else { return }
             withAnimation(.linear(duration: duration).repeatForever(autoreverses: false)) {
                 offset = -distance
             }

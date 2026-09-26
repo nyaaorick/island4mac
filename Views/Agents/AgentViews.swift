@@ -170,6 +170,8 @@ struct AgentNotchLiveActivityView: View {
 /// A collapsed agent session on a display without a notch: status, project and progress in one pill
 struct CompactAgentLiveActivityView: View {
     let session: AgentSession
+    /// The wider pill of a large display, with room to say what the agent is doing rather than just its state
+    var isWide = false
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { timeline in
@@ -180,7 +182,7 @@ struct CompactAgentLiveActivityView: View {
                     Text(session.projectName)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundStyle(.white)
-                    Text(session.statusText)
+                    Text(isWide && session.isActive ? session.statusLineText : session.statusText)
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(session.status.color)
                 }

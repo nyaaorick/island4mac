@@ -31,6 +31,9 @@ final class AppState: ObservableObject {
 
     /// Notch size of the display the island is on (.zero when it has no notch)
     @Published var notchSize: CGSize = .zero
+    /// The island is on a large external display (NSScreen.isLargeDisplay): it opens wider, and its collapsed pill
+    /// widens to fit the whole title and lyric line
+    @Published var isOnLargeDisplay = false
     /// Collapsed content beside the notch, as wide as the menus and status icons leave room for.
     /// Set by OverlayWindowController after it has sized the panel, so the view never animates outside the panel.
     @Published var liveActivityWings: IslandWings = .none

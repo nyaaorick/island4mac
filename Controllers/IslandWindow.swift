@@ -42,9 +42,10 @@ final class IslandWindow {
             defer: false
         )
 
-        // 先告诉视图当前屏幕的刘海尺寸，避免首帧按无刘海布局
+        // 先告诉视图当前屏幕的刘海尺寸和大小，避免首帧按无刘海、非大屏布局
         if let screen = preferredScreen() {
             appState.notchSize = screen.notchSize
+            appState.isOnLargeDisplay = screen.isLargeDisplay
             currentDisplayID = screen.displayID
         }
 
@@ -72,7 +73,7 @@ final class IslandWindow {
         // 面板可能左右不对称地变大变小，画布由 layoutCanvas 按屏幕位置摆放，不随面板自动伸缩
         hostingView.autoresizingMask = []
         // 挂进窗口之前就定好尺寸：此时容器宽高为 0，画布贴顶居中
-        let canvas = NotchMetrics.canvasSize(notch: appState.notchSize)
+        let canvas = NotchMetrics.canvasSize(notch: appState.notchSize, largeDisplay: appState.isOnLargeDisplay)
         hostingView.frame = NSRect(x: -canvas.width / 2, y: -canvas.height, width: canvas.width, height: canvas.height)
 
         let container = NSView(frame: .zero)
@@ -147,8 +148,11 @@ final class IslandWindow {
         guard let screen = targetScreen(for: mode) else { return }
         currentDisplayID = screen.displayID
         let notchSize = screen.notchSize
-        if appState.notchSize != notchSize {
+        // 大外接屏上的岛更宽，画布也跟着变
+        let largeDisplay = screen.isLargeDisplay
+        if appState.notchSize != notchSize || appState.isOnLargeDisplay != largeDisplay {
             appState.notchSize = notchSize
+            appState.isOnLargeDisplay = largeDisplay
             layoutCanvas()
         }
         let showsMusic = MusicManager.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch)
@@ -205,7 +209,7 @@ final class IslandWindow {
     /// 收起的岛两翼宽度不一时面板左右不对称，所以不能按面板居中
     private func layoutCanvas() {
         guard let container = panel.contentView else { return }
-        let size = NotchMetrics.canvasSize(notch: appState.notchSize)
+        let size = NotchMetrics.canvasSize(notch: appState.notchSize, largeDisplay: appState.isOnLargeDisplay)
         let bounds = container.bounds
         let screenMidX = currentScreen?.frame.midX ?? panel.frame.midX
         let frame = NSRect(
@@ -253,6 +257,7 @@ final class IslandWindow {
             section: section,
             notch: screen.notchSize,
             wings: wings,
+            largeDisplay: screen.isLargeDisplay,
             nonNotchHeight: settingsStore.get(SettingsDefaults.nonNotchHeight)
         )
         if mode == .expanded {
