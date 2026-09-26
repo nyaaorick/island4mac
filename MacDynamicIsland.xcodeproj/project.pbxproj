@@ -83,7 +83,7 @@
 		4D5241060000000000000002 /* HotKeyManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000001 /* HotKeyManagerTests.swift */; };
 		4D5241060000000000000004 /* LyricsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000003 /* LyricsServiceTests.swift */; };
 		4D5241070000000000000004 /* FullScreenVideoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241070000000000000003 /* FullScreenVideoTests.swift */; };
-		4D52410100000000000000A3 /* MediaRemoteAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A1 /* MediaRemoteAdapter.m */; };
+		4D52410100000000000000A3 /* MediaRemoteAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A1 /* MediaRemoteAdapter.swift */; };
 		4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D5241020000000000000004 /* AgentSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000003 /* AgentSessionStore.swift */; };
 		4D5241020000000000000006 /* AgentHookEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000005 /* AgentHookEvent.swift */; };
@@ -92,7 +92,7 @@
 		4D524102000000000000000C /* TerminalFocuser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000000B /* TerminalFocuser.swift */; };
 		4D524102000000000000000E /* AgentViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000000D /* AgentViews.swift */; };
 		4D5241020000000000000010 /* AgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000000F /* AgentSettingsView.swift */; };
-		4D524102000000000000001E /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000001D /* main.c */; };
+		4D524102000000000000001E /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D524102000000000000001D /* main.swift */; };
 		4D5241020000000000000016 /* island-claude-hook in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000012 /* island-claude-hook */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D5241030000000000000002 /* AgentSessionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241030000000000000001 /* AgentSessionStoreTests.swift */; };
 		4D5241030000000000000004 /* AgentHookTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241030000000000000003 /* AgentHookTests.swift */; };
@@ -224,7 +224,7 @@
 		16699883D1FCA93359C8C3D6 /* MacDynamicIslandTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MacDynamicIslandTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHubStoreTests.swift; sourceTree = "<group>"; };
 		0247955385A9AC7057FE0B3B /* OverlayWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowTests.swift; sourceTree = "<group>"; };
-		4D52410100000000000000A1 /* MediaRemoteAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MediaRemoteAdapter.m; sourceTree = "<group>"; };
+		4D52410100000000000000A1 /* MediaRemoteAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaRemoteAdapter.swift; sourceTree = "<group>"; };
 		4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMediaRemoteAdapter.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D52410100000000000000B2 /* ScreenManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManagerTests.swift; sourceTree = "<group>"; };
 		4D5241060000000000000001 /* HotKeyManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManagerTests.swift; sourceTree = "<group>"; };
@@ -238,7 +238,7 @@
 		4D524102000000000000000D /* AgentViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentViews.swift; sourceTree = "<group>"; };
 		4D524102000000000000000F /* AgentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSettingsView.swift; sourceTree = "<group>"; };
 		4D5241020000000000000012 /* island-claude-hook */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "island-claude-hook"; sourceTree = BUILT_PRODUCTS_DIR; };
-		4D524102000000000000001D /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		4D524102000000000000001D /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		4D5241030000000000000001 /* AgentSessionStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSessionStoreTests.swift; sourceTree = "<group>"; };
 		4D5241030000000000000003 /* AgentHookTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHookTests.swift; sourceTree = "<group>"; };
 		4D5241040000000000000001 /* ClaudeTranscript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeTranscript.swift; sourceTree = "<group>"; };
@@ -557,7 +557,7 @@
 		4D52410100000000000000A5 /* MediaRemoteAdapter */ = {
 			isa = PBXGroup;
 			children = (
-				4D52410100000000000000A1 /* MediaRemoteAdapter.m */,
+				4D52410100000000000000A1 /* MediaRemoteAdapter.swift */,
 			);
 			path = MediaRemoteAdapter;
 			sourceTree = "<group>";
@@ -588,7 +588,7 @@
 		4D5241020000000000000011 /* ClaudeHookBridge */ = {
 			isa = PBXGroup;
 			children = (
-				4D524102000000000000001D /* main.c */,
+				4D524102000000000000001D /* main.swift */,
 			);
 			path = ClaudeHookBridge;
 			sourceTree = "<group>";
@@ -840,7 +840,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4D52410100000000000000A3 /* MediaRemoteAdapter.m in Sources */,
+				4D52410100000000000000A3 /* MediaRemoteAdapter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -848,7 +848,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4D524102000000000000001E /* main.c in Sources */,
+				4D524102000000000000001E /* main.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1118,6 +1118,7 @@
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -1131,6 +1132,7 @@
 				EXECUTABLE_PREFIX = lib;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -1144,6 +1146,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				PRODUCT_NAME = "island-claude-hook";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
 		};
@@ -1157,6 +1160,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				PRODUCT_NAME = "island-claude-hook";
 				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};

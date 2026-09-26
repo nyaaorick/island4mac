@@ -5,19 +5,19 @@ macOS menu bar app (Swift, SwiftUI + AppKit) that turns the MacBook notch into a
 ## Rules for this repo
 
 - English only: code, comments, log messages, UI strings and test fixtures. The only localization is `en.lproj/Localizable.strings` (read through `L("key")` in `Utilities/Localization.swift`).
+- Swift only: no C, Objective-C or shell files, including the two helpers (`ClaudeHookBridge/main.swift`, `MediaRemoteAdapter/MediaRemoteAdapter.swift`). The hook helper runs on every agent hook event, so keep it to `import Darwin` and check its startup time (about 27 ms per run, same as the old C version) after changing it.
 - Docs are limited to this file, `roadmap.md` and `backup.md`. Do not add a `docs/` folder or a README.
 - The app is not sandboxed (MediaRemote and AppleScript need that). Distribution is Developer ID + notarization, outside the Mac App Store.
 
 ## Build and test
 
-<!-- AUTO-GENERATED from MacDynamicIsland.xcodeproj and build_test.sh -->
+<!-- AUTO-GENERATED from MacDynamicIsland.xcodeproj -->
 
 | Command | Description |
 |---|---|
 | `open MacDynamicIsland.xcodeproj` | Open in Xcode (scheme `MacDynamicIsland`, pick a team under Signing & Capabilities) |
 | `xcodebuild -project MacDynamicIsland.xcodeproj -scheme MacDynamicIsland -destination 'platform=macOS' build` | Build |
 | `xcodebuild -project MacDynamicIsland.xcodeproj -scheme MacDynamicIsland -destination 'platform=macOS' test` | Run unit tests |
-| `./build_test.sh` | Clean Debug build and warning count |
 
 <!-- END AUTO-GENERATED -->
 
@@ -39,7 +39,7 @@ Services/             NowPlayingManager (MediaRemote via adapter), LyricsService
 Managers/             Clipboard polling, hotkeys, drag detection, screens, full-screen video detection
 Agents/               Hook events, socket server, session store, hook installer, terminal focusing
 ClaudeHookBridge/     island-claude-hook: the command every agent's hooks run
-MediaRemoteAdapter/   Library loaded by the now-playing helper process
+MediaRemoteAdapter/   Library loaded into perl by the now-playing helper process (exports mediaremote_adapter_stream)
 Models/, ViewModels/, Utilities/, Extensions/, Animations/, Configuration/, Protocols/
 en.lproj/             Localizable.strings
 ```
