@@ -338,9 +338,10 @@ private struct CompactMusicLiveActivityView: View {
 
     var body: some View {
         GeometryReader { geo in
-            // The title and lyric line get all the room the artwork and the spectrum leave,
-            // so the wider pill of a large display shows them whole
-            let marqueeWidth = max(0, geo.size.width - 24 - 18 - 2 * 8)
+            // The artwork and the spectrum get a slot as wide on either side, so the title and lyric line between them
+            // sit in the middle of the pill. They get all the rest, so the wider pill of a large display shows them whole
+            let slot: CGFloat = 24
+            let textWidth = max(0, geo.size.width - 2 * slot - 2 * 8)
 
             HStack(spacing: 8) {
                 // Album art (tiny)
@@ -348,77 +349,86 @@ private struct CompactMusicLiveActivityView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .matchedGeometryEffect(id: "album_art", in: animation)
-                    .frame(width: 24, height: 24)
+                    .frame(width: slot, height: slot)
                     .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 5, style: .continuous)
                             .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                     )
 
-                VStack(alignment: .leading, spacing: 1) {
+                // Title, lyric line and progress one under the other, so the progress never covers the words
+                VStack(spacing: 0) {
                     // Song title
                     IslandMarqueeText(
                         text: .constant(musicManager.songTitle.isEmpty ? "Not Playing" : musicManager.songTitle),
                         font: .system(size: 11, weight: .semibold),
                         nsFont: .systemFont(ofSize: 11, weight: .semibold),
                         textColor: .white,
-                        frameWidth: marqueeWidth
+                        frameWidth: textWidth,
+                        centersWhenFitting: true
                     )
+                    .frame(height: 13)
 
                     // Lyrics (real-time) or artist line
-                    if settings.get(SettingsDefaults.enableLyrics) {
-                        TimelineView(.animation(minimumInterval: 0.25)) { timeline in
-                            let elapsed = musicManager.estimatedPlaybackPosition(at: timeline.date)
-                            let line = compactLyricsLine(elapsed: elapsed)
+                    Group {
+                        if settings.get(SettingsDefaults.enableLyrics) {
+                            TimelineView(.animation(minimumInterval: 0.25)) { timeline in
+                                let elapsed = musicManager.estimatedPlaybackPosition(at: timeline.date)
+                                let line = compactLyricsLine(elapsed: elapsed)
 
+                                IslandMarqueeText(
+                                    text: .constant(line),
+                                    font: .system(size: 10, weight: .medium),
+                                    nsFont: .systemFont(ofSize: 10, weight: .medium),
+                                    textColor: musicManager.isFetchingLyrics ? Color.white.opacity(0.35) : Color.white.opacity(0.65),
+                                    frameWidth: textWidth,
+                                    centersWhenFitting: true
+                                )
+                                .id(line)
+                            }
+                        } else {
                             IslandMarqueeText(
-                                text: .constant(line),
+                                text: .constant(musicManager.artistName.isEmpty ? "" : musicManager.artistName),
                                 font: .system(size: 10, weight: .medium),
                                 nsFont: .systemFont(ofSize: 10, weight: .medium),
-                                textColor: musicManager.isFetchingLyrics ? Color.white.opacity(0.35) : Color.white.opacity(0.65),
-                                frameWidth: marqueeWidth
+                                textColor: Color.white.opacity(0.55),
+                                frameWidth: textWidth,
+                                centersWhenFitting: true
                             )
-                            .id(line)
                         }
-                    } else {
-                        IslandMarqueeText(
-                            text: .constant(musicManager.artistName.isEmpty ? "" : musicManager.artistName),
-                            font: .system(size: 10, weight: .medium),
-                            nsFont: .systemFont(ofSize: 10, weight: .medium),
-                            textColor: Color.white.opacity(0.55),
-                            frameWidth: marqueeWidth
-                        )
                     }
+                    .frame(height: 12)
+                    .padding(.top, 1)
+
+                    CompactMusicProgressBar(accent: accent)
+                        .frame(width: textWidth)
                 }
 
-                if settings.get(SettingsDefaults.useMusicVisualizer) {
-                    // ✅ 移除 .gradient 光效，只使用纯色填充
-                    Rectangle()
-                        .fill((settings.get(SettingsDefaults.playerColorTinting) ? accent : .white).opacity(0.85))
-                        .frame(width: 18, height: 12)
-                        .matchedGeometryEffect(id: "spectrum", in: animation)
-                        .mask {
-                            AudioSpectrumView(isPlaying: $musicManager.isPlaying)
-                                .frame(width: 16, height: 12)
-                        }
-                        .accessibilityHidden(true)
-                } else {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(musicManager.isPlaying ? .green : Color.white.opacity(0.35))
-                        .symbolEffect(.bounce, options: .repeating, value: musicManager.isPlaying)
-                        .frame(width: 18)
+                Group {
+                    if settings.get(SettingsDefaults.useMusicVisualizer) {
+                        // ✅ 移除 .gradient 光效，只使用纯色填充
+                        Rectangle()
+                            .fill((settings.get(SettingsDefaults.playerColorTinting) ? accent : .white).opacity(0.85))
+                            .frame(width: 18, height: 12)
+                            .matchedGeometryEffect(id: "spectrum", in: animation)
+                            .mask {
+                                AudioSpectrumView(isPlaying: $musicManager.isPlaying)
+                                    .frame(width: 16, height: 12)
+                            }
+                            .accessibilityHidden(true)
+                    } else {
+                        Image(systemName: "waveform")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(musicManager.isPlaying ? .green : Color.white.opacity(0.35))
+                            .symbolEffect(.bounce, options: .repeating, value: musicManager.isPlaying)
+                    }
                 }
+                .frame(width: slot)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .overlay(alignment: .bottom) {
-                CompactMusicProgressBar(accent: accent)
-                    .padding(.leading, 24 + 8) // align under text
-                    .padding(.trailing, 2)
-                    .padding(.bottom, 2)
-            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(height: 28)
+        // Title 13, lyric 1 + 12, progress 4
+        .frame(height: 30)
     }
 
     private func compactLyricsLine(elapsed: Double) -> String {
@@ -479,6 +489,9 @@ private struct CompactMusicProgressBar: View {
                             .offset(x: x)
                     }
                 }
+                // A thin line, in a slightly taller strip that's easier to grab for seeking
+                .frame(height: 2)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
                 .gesture(
                     duration > 0
@@ -499,7 +512,7 @@ private struct CompactMusicProgressBar: View {
                 .animation(.spring(response: 0.25, dampingFraction: 0.85), value: isSeeking)
             }
         }
-        .frame(height: 6)
+        .frame(height: 4)
     }
 }
 

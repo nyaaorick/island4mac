@@ -14,11 +14,16 @@ struct IslandMarqueeText: View {
     var textColor: Color = .primary
     var minDuration: TimeInterval = 3.0
     var frameWidth: CGFloat
-    
+    /// Text that fits sits in the middle of the frame rather than at its leading edge
+    var centersWhenFitting = false
+
     @State private var offset: CGFloat = 0
     @State private var textWidth: CGFloat = 0
     @State private var isAnimating = false
     
+    /// Too long for the frame, so it scrolls
+    private var scrolls: Bool { textWidth > frameWidth }
+
     var body: some View {
         GeometryReader { geometry in
             Text(text)
@@ -26,6 +31,7 @@ struct IslandMarqueeText: View {
                 .foregroundColor(textColor)
                 .lineLimit(1)
                 .fixedSize()
+                .frame(width: frameWidth, alignment: centersWhenFitting && !scrolls ? .center : .leading)
                 .offset(x: offset)
                 .onAppear {
                     calculateTextWidth()
@@ -46,7 +52,13 @@ struct IslandMarqueeText: View {
         }
         .frame(width: frameWidth)
         .clipped()
-        .mask(
+        .mask { edgeMask }
+    }
+
+    /// Scrolling text fades in and out at the edges; text that fits keeps its first and last letters crisp
+    @ViewBuilder
+    private var edgeMask: some View {
+        if scrolls {
             HStack(spacing: 0) {
                 LinearGradient(gradient: Gradient(colors: [.clear, .black]), startPoint: .leading, endPoint: .trailing)
                     .frame(width: 8)
@@ -54,7 +66,9 @@ struct IslandMarqueeText: View {
                 LinearGradient(gradient: Gradient(colors: [.black, .clear]), startPoint: .leading, endPoint: .trailing)
                     .frame(width: 8)
             }
-        )
+        } else {
+            Rectangle().fill(Color.black)
+        }
     }
     
     private func calculateTextWidth() {
