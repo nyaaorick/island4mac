@@ -1,7 +1,7 @@
 import Foundation
 import OSLog
 
-/// 歌词服务 - 支持多个音乐平台获取歌词
+/// Lyrics service - fetches lyrics from multiple music platforms
 final class LyricsService {
     static let shared = LyricsService()
     
@@ -16,26 +16,26 @@ final class LyricsService {
     
     private init() {}
     
-    /// 获取歌词（根据设置选择来源）
+    /// Fetch lyrics (the source is chosen from settings)
     func fetchLyrics(title: String, artist: String, album: String? = nil) async -> LyricsResult? {
         let cacheKey = "\(title)_\(artist)".lowercased()
         
-        // 检查缓存
+        // Check the cache
         if let cached = cache[cacheKey] {
             #if DEBUG
-            print("🎵 [LyricsService] 使用缓存歌词: \(title)")
+            print("🎵 [LyricsService] Using cached lyrics: \(title)")
             #endif
             return cached
         }
         
-        // 获取用户设置的歌词源
+        // Get the lyrics source the user chose
         let source = SettingsDefaults.shared.get(SettingsDefaults.lyricsSource)
         
         #if DEBUG
-        print("🎵 [LyricsService] 开始获取歌词: \(title) - \(artist) [Source: \(source)]")
+        print("🎵 [LyricsService] Fetching lyrics: \(title) - \(artist) [Source: \(source)]")
         #endif
         
-        // 根据设置路由请求
+        // Route the request according to the setting
         switch source {
         case "lrclib":
             if let result = await fetchFromLrcLib(title: title, artist: artist, album: album) {
@@ -50,53 +50,53 @@ final class LyricsService {
             }
             
         case "auto":
-            fallthrough // 自动模式：尝试所有
+            fallthrough // Auto mode: try all sources
             
         default:
-            // 1️⃣ 优先使用 LrcLib（开源、免费、稳定）
+            // 1️⃣ Prefer LrcLib (open source, free, stable)
             if let result = await fetchFromLrcLib(title: title, artist: artist, album: album) {
                 cache[cacheKey] = result
                 #if DEBUG
-                print("🎵 [LyricsService] ✅ 从 LrcLib 获取成功")
+                print("🎵 [LyricsService] ✅ Fetched from LrcLib")
                 #endif
                 return result
             }
             
-            // 2️⃣ 尝试网易云音乐 API
+            // 2️⃣ Try the NetEase Cloud Music API
             if let result = await fetchFromNetease(title: title, artist: artist) {
                 cache[cacheKey] = result
                 #if DEBUG
-                print("🎵 [LyricsService] ✅ 从网易云获取成功")
+                print("🎵 [LyricsService] ✅ Fetched from NetEase")
                 #endif
                 return result
             }
             
-            // 3️⃣ 尝试 QQ 音乐 API
+            // 3️⃣ Try the QQ Music API
             if let result = await fetchFromQQMusic(title: title, artist: artist) {
                 cache[cacheKey] = result
                 #if DEBUG
-                print("🎵 [LyricsService] ✅ 从QQ音乐获取成功")
+                print("🎵 [LyricsService] ✅ Fetched from QQ Music")
                 #endif
                 return result
             }
         }
         
         #if DEBUG
-        print("🎵 [LyricsService] ❌ 未找到歌词: \(title) - \(artist)")
+        print("🎵 [LyricsService] ❌ No lyrics found: \(title) - \(artist)")
         #endif
         return nil
     }
     
-    // MARK: - 网易云音乐 API
+    // MARK: - NetEase Cloud Music API
     
     private func fetchFromNetease(title: String, artist: String) async -> LyricsResult? {
-        // 网易云音乐 API 调用（优先使用公共服务端，fallback 到本地 3000 端口）
-        // API 文档: https://neteasecloudmusicapi.vercel.app
-        // 步骤:
-        // 1. 搜索歌曲 ID: /search?keywords=xxx
-        // 2. 获取歌词: /lyric?id=xxx
+        // NetEase Cloud Music API call (prefer the public server, fall back to local port 3000)
+        // API docs: https://neteasecloudmusicapi.vercel.app
+        // Steps:
+        // 1. Search for the song ID: /search?keywords=xxx
+        // 2. Get the lyrics: /lyric?id=xxx
 
-        logger.debug("尝试从网易云音乐获取歌词: \(title) - \(artist)")
+        logger.debug("Trying to fetch lyrics from NetEase Cloud Music: \(title) - \(artist)")
 
         let bases = neteaseAPIBases()
         for apiBase in bases {
@@ -105,13 +105,13 @@ final class LyricsService {
             }
 
             do {
-                // 搜索歌曲
+                // Search for the song
                 let (searchData, _) = try await URLSession.shared.data(from: searchURL)
                 guard let songId = parseNeteaseSongId(from: searchData) else {
                     continue
                 }
 
-                // 获取歌词
+                // Get the lyrics
                 guard let lyricsURL = buildNeteaseLyricsURL(apiBase: apiBase, songId: songId) else {
                     continue
                 }
@@ -156,7 +156,7 @@ final class LyricsService {
                 return String(id)
             }
         } catch {
-            logger.error("解析网易云搜索结果失败: \(error.localizedDescription)")
+            logger.error("Failed to parse NetEase search results: \(error.localizedDescription)")
         }
         return nil
     }
@@ -167,7 +167,7 @@ final class LyricsService {
                let lrc = json["lrc"] as? [String: Any],
                let lyricText = lrc["lyric"] as? String {
                 
-                // 解析 LRC 格式歌词；一行都没解析出来就不算找到，交给下一个来源
+                // Parse the LRC lyrics; if not a single line parses it doesn't count as found, so hand over to the next source
                 let synced = Self.parseLRC(lyricText)
                 guard !synced.isEmpty else { return nil }
                 let plain = synced.map { $0.line }.joined(separator: "\n")
@@ -179,26 +179,26 @@ final class LyricsService {
                 )
             }
         } catch {
-            logger.error("解析网易云歌词失败: \(error.localizedDescription)")
+            logger.error("Failed to parse NetEase lyrics: \(error.localizedDescription)")
         }
         return nil
     }
     
-    // MARK: - QQ 音乐 API
+    // MARK: - QQ Music API
     
     private func fetchFromQQMusic(title: String, artist: String) async -> LyricsResult? {
-        // 🚧 TODO: 实现 QQ 音乐 API 调用
-        logger.debug("尝试从 QQ 音乐获取歌词: \(title) - \(artist)")
+        // 🚧 TODO: Implement the QQ Music API call
+        logger.debug("Trying to fetch lyrics from QQ Music: \(title) - \(artist)")
         return nil
     }
     
-    // MARK: - LrcLib API（开源免费）
-    // 与 Boring Notch 保持一致，使用 /api/search 端点
+    // MARK: - LrcLib API (open source, free)
+    // Consistent with Boring Notch, use the /api/search endpoint
     
     private func fetchFromLrcLib(title: String, artist: String, album: String?) async -> LyricsResult? {
-        logger.debug("尝试从 LrcLib 获取歌词: \(title) - \(artist)")
+        logger.debug("Trying to fetch lyrics from LrcLib: \(title) - \(artist)")
         
-        // 标准化查询参数（去除特殊字符）
+        // Normalize the query parameters (strip special characters)
         let cleanTitle = normalizedQuery(title)
         let cleanArtist = normalizedQuery(artist)
         
@@ -207,7 +207,7 @@ final class LyricsService {
             return nil
         }
         
-        // 使用 search API（与 Boring Notch 一致）
+        // Use the search API (as Boring Notch does)
         let urlString = "https://lrclib.net/api/search?track_name=\(encodedTitle)&artist_name=\(encodedArtist)"
         
         guard let url = URL(string: urlString) else {
@@ -217,37 +217,37 @@ final class LyricsService {
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
             
-            // 检查 HTTP 状态码
+            // Check the HTTP status code
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-                logger.error("LrcLib API 返回错误状态码: \(httpResponse.statusCode)")
+                logger.error("LrcLib API returned an error status code: \(httpResponse.statusCode)")
                 return nil
             }
             
             return parseLrcLibSearchResponse(from: data)
         } catch {
-            logger.error("LrcLib API 错误: \(error.localizedDescription)")
+            logger.error("LrcLib API error: \(error.localizedDescription)")
             return nil
         }
     }
     
-    /// 标准化查询字符串（去除变音符号和特殊字符）
+    /// Normalize the query string (strip diacritics and special characters)
     private func normalizedQuery(_ string: String) -> String {
         string
             .folding(options: .diacriticInsensitive, locale: .current)
             .replacingOccurrences(of: "\u{FFFD}", with: "")
     }
     
-    /// 解析 LrcLib search API 响应（返回数组）
+    /// Parse the LrcLib search API response (returns an array)
     private func parseLrcLibSearchResponse(from data: Data) -> LyricsResult? {
         do {
-            // Search API 返回的是数组；同一首歌常有好几个版本，优先选带同步歌词的
+            // The search API returns an array; a song often has several versions, so prefer one with synced lyrics
             if let jsonArray = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
                let first = jsonArray.first(where: { !($0["syncedLyrics"] as? String ?? "").isEmpty }) ?? jsonArray.first {
                 
                 let syncedLRC = first["syncedLyrics"] as? String ?? ""
                 let plainLyrics = first["plainLyrics"] as? String ?? ""
                 
-                // 优先使用同步歌词
+                // Prefer synced lyrics
                 let synced = Self.parseLRC(syncedLRC)
                 let resolvedPlain = plainLyrics.isEmpty ? syncedLRC : plainLyrics
                 
@@ -262,16 +262,16 @@ final class LyricsService {
                 )
             }
         } catch {
-            logger.error("解析 LrcLib 响应失败: \(error.localizedDescription)")
+            logger.error("Failed to parse the LrcLib response: \(error.localizedDescription)")
         }
         return nil
     }
     
-    // MARK: - LRC 格式解析
+    // MARK: - LRC Parsing
     
-    /// 解析 LRC 格式歌词
-    /// 时间戳支持 [mm:ss]、[mm:ss.x]、[mm:ss.xx] 和 [mm:ss.xxx]（网易云常用三位毫秒）；
-    /// 一行可以带好几个时间戳，副歌重复时常这样写
+    /// Parse LRC lyrics
+    /// Timestamps may be [mm:ss], [mm:ss.x], [mm:ss.xx] or [mm:ss.xxx] (NetEase often uses three-digit milliseconds);
+    /// a line can carry several timestamps, which is common when a chorus repeats
     static func parseLRC(_ lrcText: String) -> [(timeInSeconds: Double, line: String)] {
         guard let timestamp = try? NSRegularExpression(pattern: #"\[(\d{1,3}):(\d{2})(?:[.:](\d{1,3}))?\]"#) else {
             return []
@@ -282,14 +282,14 @@ final class LyricsService {
             let line = rawLine as NSString
             var times: [Double] = []
             var textStart = 0
-            // 第一个时间戳在哪都行，后面的要一个紧接一个
+            // The first timestamp can be anywhere; the rest must follow one right after another
             var options: NSRegularExpression.MatchingOptions = []
 
             while let match = timestamp.firstMatch(in: rawLine, options: options,
                                                    range: NSRange(location: textStart, length: line.length - textStart)) {
                 let minutes = Double(line.substring(with: match.range(at: 1))) ?? 0
                 let seconds = Double(line.substring(with: match.range(at: 2))) ?? 0
-                // 小数部分按位数算：.3 是 0.3 秒，.36 是 0.36 秒，.360 也是 0.36 秒
+                // The fractional part is read by digit count: .3 is 0.3s, .36 is 0.36s, and .360 is also 0.36s
                 let fraction = match.range(at: 3).location == NSNotFound
                     ? 0 : Double("0." + line.substring(with: match.range(at: 3))) ?? 0
                 times.append(minutes * 60 + seconds + fraction)
@@ -297,7 +297,7 @@ final class LyricsService {
                 options = .anchored
             }
 
-            // 提取歌词文本（时间戳之后的部分）；[ar:歌手] 这类标签行没有时间戳，自然跳过
+            // Extract the lyric text (the part after the timestamps); tag lines like [ar:artist] have no timestamp and are skipped naturally
             let text = line.substring(from: textStart).trimmingCharacters(in: .whitespaces)
             guard !text.isEmpty else { continue }
             result += times.map { (timeInSeconds: $0, line: text) }
@@ -306,7 +306,7 @@ final class LyricsService {
         return result.sorted { $0.timeInSeconds < $1.timeInSeconds }
     }
     
-    /// 清除缓存
+    /// Clear the cache
     func clearCache() {
         cache.removeAll()
     }

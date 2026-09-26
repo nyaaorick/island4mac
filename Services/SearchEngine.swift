@@ -1,6 +1,6 @@
 //
 //  SearchEngine.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  Fuzzy search and filtering engine for clipboard items
 //

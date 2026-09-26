@@ -52,7 +52,7 @@ struct ExpandedMusicView: View {
         }
         .background(Color.clear)
         .onChange(of: musicManager.songTitle) { oldTitle, newTitle in
-            // ✅ 歌曲切换时重置拖拽状态
+            // ✅ Reset drag state when the track changes
             if newTitle != oldTitle && !oldTitle.isEmpty {
                 isSeeking = false
                 seekTime = 0
@@ -166,14 +166,14 @@ struct ExpandedMusicView: View {
         return String(format: "%d:%02d", m, s)
     }
     
-    /// 📸 选择自定义专辑封面
+    /// 📸 Choose a custom album cover
     private func selectCustomAlbumArt() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
         panel.allowedContentTypes = [.image]
-        panel.message = "选择一张图片作为专辑封面"
+        panel.message = "Choose an image to use as the album cover"
         
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }

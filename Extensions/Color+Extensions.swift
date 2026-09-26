@@ -1,6 +1,6 @@
 //
 //  Color+Extensions.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  Stage 1: Color utilities from boringNotch
 //

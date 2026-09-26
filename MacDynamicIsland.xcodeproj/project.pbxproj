@@ -74,7 +74,7 @@
 		51F1B11A2F0E49FF00B89019 /* OverlayVisibilityReason.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B1192F0E49FF00B89019 /* OverlayVisibilityReason.swift */; };
 		51F1B11C2F0E4A1400B89019 /* NowPlayingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B11B2F0E4A1400B89019 /* NowPlayingManager.swift */; };
 		51F1B11E2F0E4A2500B89019 /* NowPlayingState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51F1B11D2F0E4A2500B89019 /* NowPlayingState.swift */; };
-		B604001DB9274EEAA702BD55 /* Mac灵动岛App.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0ABEFA9F80404A97C74C13 /* Mac灵动岛App.swift */; };
+		B604001DB9274EEAA702BD55 /* MacDynamicIslandApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0ABEFA9F80404A97C74C13 /* MacDynamicIslandApp.swift */; };
 		D32477692E35F4767B8B70001 /* FileVaultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE53D77E3580A4ABAD740001 /* FileVaultStore.swift */; };
 		31D8F0872E01F10E96AE9741 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 12E7EC74DFA82BC2C76B22C4 /* Assets.xcassets */; };
 		35C45DEF006A10FE546DCB37 /* ClipboardHubStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */; };
@@ -107,7 +107,7 @@
 			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 51E49FAA2F0B8D41002AD746;
-			remoteInfo = "Mac灵动岛";
+			remoteInfo = "MacDynamicIsland";
 		};
 		4D52410100000000000000AA /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -207,22 +207,21 @@
 		51E1CA662F2319F9009A87D2 /* AnimatedFaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedFaceView.swift; sourceTree = "<group>"; };
 		51E1CA9F2F245D83009A87D2 /* BoringAnimationPhysics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringAnimationPhysics.swift; sourceTree = "<group>"; };
 		51E1CAC82F24C517009A87D2 /* NotchHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotchHomeView.swift; sourceTree = "<group>"; };
-		51E49FAB2F0B8D41002AD746 /* Mac灵动岛.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Mac灵动岛.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		51E49FAB2F0B8D41002AD746 /* MacDynamicIsland.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MacDynamicIsland.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		51E49FBE2F0B8F8E002AD746 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		51E49FC62F0B8FF2002AD746 /* HotKeyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManager.swift; sourceTree = "<group>"; };
 		51E49FCD2F0B913D002AD746 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		51E49FCE2F0B9149002AD746 /* ClipboardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardManager.swift; sourceTree = "<group>"; };
 		51F1B0C52F0E0DB700B89019 /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
 		51F1B0C62F0E0DB700B89019 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
-		51F1B0D12F0E0DB700B89019 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = Localizable.strings; sourceTree = "<group>"; };
-		51F1B0EE2F0E142900B89019 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = ../en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		51F1B0EE2F0E142900B89019 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		51F1B0F32F0E159D00B89019 /* ScreenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManager.swift; sourceTree = "<group>"; };
 		51F1B1192F0E49FF00B89019 /* OverlayVisibilityReason.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayVisibilityReason.swift; sourceTree = "<group>"; };
 		51F1B11B2F0E4A1400B89019 /* NowPlayingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingManager.swift; sourceTree = "<group>"; };
 		51F1B11D2F0E4A2500B89019 /* NowPlayingState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingState.swift; sourceTree = "<group>"; };
-		CD0ABEFA9F80404A97C74C13 /* Mac灵动岛App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Mac灵动岛App.swift"; sourceTree = "<group>"; };
+		CD0ABEFA9F80404A97C74C13 /* MacDynamicIslandApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MacDynamicIslandApp.swift"; sourceTree = "<group>"; };
 		12E7EC74DFA82BC2C76B22C4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		16699883D1FCA93359C8C3D6 /* Mac灵动岛Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Mac灵动岛Tests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		16699883D1FCA93359C8C3D6 /* MacDynamicIslandTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MacDynamicIslandTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHubStoreTests.swift; sourceTree = "<group>"; };
 		0247955385A9AC7057FE0B3B /* OverlayWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayWindowTests.swift; sourceTree = "<group>"; };
 		4D52410100000000000000A1 /* MediaRemoteAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MediaRemoteAdapter.m; sourceTree = "<group>"; };
@@ -425,35 +424,35 @@
 				51F1B0E82F0E0EBE00B89019 /* Models */,
 				51F1B0EA2F0E0EBE00B89019 /* Services */,
 				51F1B0C92F0E0DB700B89019 /* Utilities */,
-				51F1B0D32F0E0DB700B89019 /* zh-Hans.lproj */,
+				51F1B0D22F0E0DB700B89019 /* Localizable.strings */,
 				51E49FD92F0B9E29002AD746 /* State */,
 				51E49FC72F0B8FFB002AD746 /* Views */,
 				51E49FC32F0B8FC4002AD746 /* Managers */,
 				51E49FBE2F0B8F8E002AD746 /* AppDelegate.swift */,
-				51E49FAD2F0B8D41002AD746 /* Mac灵动岛 */,
+				51E49FAD2F0B8D41002AD746 /* MacDynamicIsland */,
 				51E49FAC2F0B8D41002AD746 /* Products */,
-				7404FFD9BC3C50E640B54D9E /* Mac灵动岛Tests */,
+				7404FFD9BC3C50E640B54D9E /* MacDynamicIslandTests */,
 			);
 			sourceTree = "<group>";
 		};
 		51E49FAC2F0B8D41002AD746 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				51E49FAB2F0B8D41002AD746 /* Mac灵动岛.app */,
-				16699883D1FCA93359C8C3D6 /* Mac灵动岛Tests.xctest */,
+				51E49FAB2F0B8D41002AD746 /* MacDynamicIsland.app */,
+				16699883D1FCA93359C8C3D6 /* MacDynamicIslandTests.xctest */,
 				4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */,
 				4D5241020000000000000012 /* island-claude-hook */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		51E49FAD2F0B8D41002AD746 /* Mac灵动岛 */ = {
+		51E49FAD2F0B8D41002AD746 /* MacDynamicIsland */ = {
 			isa = PBXGroup;
 			children = (
-				CD0ABEFA9F80404A97C74C13 /* Mac灵动岛App.swift */,
+				CD0ABEFA9F80404A97C74C13 /* MacDynamicIslandApp.swift */,
 				12E7EC74DFA82BC2C76B22C4 /* Assets.xcassets */,
 			);
-			path = "Mac灵动岛";
+			path = "MacDynamicIsland";
 			sourceTree = "<group>";
 		};
 		51E49FC32F0B8FC4002AD746 /* Managers */ = {
@@ -513,14 +512,6 @@
 			path = Utilities;
 			sourceTree = "<group>";
 		};
-		51F1B0D32F0E0DB700B89019 /* zh-Hans.lproj */ = {
-			isa = PBXGroup;
-			children = (
-				51F1B0D22F0E0DB700B89019 /* Localizable.strings */,
-			);
-			path = "zh-Hans.lproj";
-			sourceTree = "<group>";
-		};
 		51F1B0E82F0E0EBE00B89019 /* Models */ = {
 			isa = PBXGroup;
 			children = (
@@ -548,7 +539,7 @@
 			path = Services;
 			sourceTree = "<group>";
 		};
-		7404FFD9BC3C50E640B54D9E /* Mac灵动岛Tests */ = {
+		7404FFD9BC3C50E640B54D9E /* MacDynamicIslandTests */ = {
 			isa = PBXGroup;
 			children = (
 				C7BE0131ABE052F320F68046 /* ClipboardHubStoreTests.swift */,
@@ -560,7 +551,7 @@
 				4D5241060000000000000003 /* LyricsServiceTests.swift */,
 				4D5241070000000000000003 /* FullScreenVideoTests.swift */,
 			);
-			path = "Mac灵动岛Tests";
+			path = "MacDynamicIslandTests";
 			sourceTree = "<group>";
 		};
 		4D52410100000000000000A5 /* MediaRemoteAdapter */ = {
@@ -605,9 +596,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		51E49FAA2F0B8D41002AD746 /* Mac灵动岛 */ = {
+		51E49FAA2F0B8D41002AD746 /* MacDynamicIsland */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 51E49FB62F0B8D44002AD746 /* Build configuration list for PBXNativeTarget "Mac灵动岛" */;
+			buildConfigurationList = 51E49FB62F0B8D44002AD746 /* Build configuration list for PBXNativeTarget "MacDynamicIsland" */;
 			buildPhases = (
 				51E49FA72F0B8D41002AD746 /* Sources */,
 				51E49FA82F0B8D41002AD746 /* Frameworks */,
@@ -621,14 +612,14 @@
 				4D52410100000000000000AB /* PBXTargetDependency */,
 				4D5241020000000000000019 /* PBXTargetDependency */,
 			);
-			name = "Mac灵动岛";
-			productName = "Mac灵动岛";
-			productReference = 51E49FAB2F0B8D41002AD746 /* Mac灵动岛.app */;
+			name = "MacDynamicIsland";
+			productName = "MacDynamicIsland";
+			productReference = 51E49FAB2F0B8D41002AD746 /* MacDynamicIsland.app */;
 			productType = "com.apple.product-type.application";
 		};
-		2013CF6D78CAA4315DA29D50 /* Mac灵动岛Tests */ = {
+		2013CF6D78CAA4315DA29D50 /* MacDynamicIslandTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 267CAFEC18DF207FD29D72F0 /* Build configuration list for PBXNativeTarget "Mac灵动岛Tests" */;
+			buildConfigurationList = 267CAFEC18DF207FD29D72F0 /* Build configuration list for PBXNativeTarget "MacDynamicIslandTests" */;
 			buildPhases = (
 				F51191A9A03FB5923DF89BC0 /* Sources */,
 				9D559604FAB6932EE5648ED8 /* Frameworks */,
@@ -639,9 +630,9 @@
 			dependencies = (
 				020B16BB8ED51250DF6147D9 /* PBXTargetDependency */,
 			);
-			name = "Mac灵动岛Tests";
-			productName = "Mac灵动岛Tests";
-			productReference = 16699883D1FCA93359C8C3D6 /* Mac灵动岛Tests.xctest */;
+			name = "MacDynamicIslandTests";
+			productName = "MacDynamicIslandTests";
+			productReference = 16699883D1FCA93359C8C3D6 /* MacDynamicIslandTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		4D52410100000000000000A6 /* MediaRemoteAdapter */ = {
@@ -701,13 +692,12 @@
 					};
 				};
 			};
-			buildConfigurationList = 51E49FA62F0B8D41002AD746 /* Build configuration list for PBXProject "Mac灵动岛" */;
+			buildConfigurationList = 51E49FA62F0B8D41002AD746 /* Build configuration list for PBXProject "MacDynamicIsland" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
-				"zh-Hans",
 			);
 			mainGroup = 51E49FA22F0B8D41002AD746;
 			minimizedProjectReferenceProxies = 1;
@@ -718,8 +708,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				51E49FAA2F0B8D41002AD746 /* Mac灵动岛 */,
-				2013CF6D78CAA4315DA29D50 /* Mac灵动岛Tests */,
+				51E49FAA2F0B8D41002AD746 /* MacDynamicIsland */,
+				2013CF6D78CAA4315DA29D50 /* MacDynamicIslandTests */,
 				4D52410100000000000000A6 /* MediaRemoteAdapter */,
 				4D5241020000000000000015 /* ClaudeHookBridge */,
 			);
@@ -760,7 +750,7 @@
 				4D5241020000000000000008 /* AgentHookInstaller.swift in Sources */,
 				4D5241020000000000000006 /* AgentHookEvent.swift in Sources */,
 				4D5241020000000000000004 /* AgentSessionStore.swift in Sources */,
-				B604001DB9274EEAA702BD55 /* Mac灵动岛App.swift in Sources */,
+				B604001DB9274EEAA702BD55 /* MacDynamicIslandApp.swift in Sources */,
 				51F1B11E2F0E4A2500B89019 /* NowPlayingState.swift in Sources */,
 				51D024632F16046D00B1FF0F /* SearchEngine.swift in Sources */,
 				51D024662F16046D00B1FF0F /* ClipboardHubStore.swift in Sources */,
@@ -867,7 +857,7 @@
 /* Begin PBXTargetDependency section */
 		020B16BB8ED51250DF6147D9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 51E49FAA2F0B8D41002AD746 /* Mac灵动岛 */;
+			target = 51E49FAA2F0B8D41002AD746 /* MacDynamicIsland */;
 			targetProxy = 3AC496CAE455ED04B550BBB2 /* PBXContainerItemProxy */;
 		};
 		4D52410100000000000000AB /* PBXTargetDependency */ = {
@@ -886,7 +876,6 @@
 		51F1B0D22F0E0DB700B89019 /* Localizable.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
-				51F1B0D12F0E0DB700B89019 /* zh-Hans */,
 				51F1B0EE2F0E142900B89019 /* en */,
 			);
 			name = Localizable.strings;
@@ -949,7 +938,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1007,7 +996,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -1020,7 +1009,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Mac灵动岛/Mac灵动岛.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "MacDynamicIsland/MacDynamicIsland.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1030,7 +1019,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "Mac灵动岛/Info.plist";
+				INFOPLIST_FILE = "MacDynamicIsland/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1053,7 +1042,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Mac灵动岛/Mac灵动岛.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "MacDynamicIsland/MacDynamicIsland.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -1064,7 +1053,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = "Mac灵动岛/Info.plist";
+				INFOPLIST_FILE = "MacDynamicIsland/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -1091,13 +1080,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 66233X8P8H;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mac灵动岛.app/Contents/MacOS/Mac灵动岛";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacDynamicIsland.app/Contents/MacOS/MacDynamicIsland";
 			};
 			name = Debug;
 		};
@@ -1109,13 +1098,13 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 66233X8P8H;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Mac灵动岛.app/Contents/MacOS/Mac灵动岛";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MacDynamicIsland.app/Contents/MacOS/MacDynamicIsland";
 			};
 			name = Release;
 		};
@@ -1174,7 +1163,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		51E49FA62F0B8D41002AD746 /* Build configuration list for PBXProject "Mac灵动岛" */ = {
+		51E49FA62F0B8D41002AD746 /* Build configuration list for PBXProject "MacDynamicIsland" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				51E49FB42F0B8D44002AD746 /* Debug */,
@@ -1183,7 +1172,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		51E49FB62F0B8D44002AD746 /* Build configuration list for PBXNativeTarget "Mac灵动岛" */ = {
+		51E49FB62F0B8D44002AD746 /* Build configuration list for PBXNativeTarget "MacDynamicIsland" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				51E49FB72F0B8D44002AD746 /* Debug */,
@@ -1192,7 +1181,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		267CAFEC18DF207FD29D72F0 /* Build configuration list for PBXNativeTarget "Mac灵动岛Tests" */ = {
+		267CAFEC18DF207FD29D72F0 /* Build configuration list for PBXNativeTarget "MacDynamicIslandTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				20DB8833730467E63D22FA03 /* Debug */,

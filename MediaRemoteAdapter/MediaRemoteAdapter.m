@@ -1,6 +1,6 @@
 //
 //  MediaRemoteAdapter.m
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  Since macOS 15.4, mediaremoted only answers now-playing queries from Apple-signed
 //  processes. This library is loaded into /usr/bin/perl (see NowPlayingManager) and

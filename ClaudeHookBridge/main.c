@@ -3,7 +3,7 @@
 //  island-claude-hook
 //
 //  Claude Code, Codex and ZCode run this for every hook event (AgentHookInstaller registers it
-//  in each agent's config file). It forwards the event JSON from stdin to Mac灵动岛 over the
+//  in each agent's config file). It forwards the event JSON from stdin to Mac Dynamic Island over the
 //  Unix socket given as the first argument, prefixed with one JSON line saying which agent ran
 //  it (the second argument) and where the session runs, so the island can bring its terminal
 //  to the front.

@@ -1,5 +1,5 @@
 import XCTest
-@testable import Mac灵动岛
+@testable import MacDynamicIsland
 
 /// Installing the hooks into throwaway config files, never the real ones
 final class AgentHookInstallerTests: XCTestCase {

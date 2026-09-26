@@ -25,11 +25,11 @@ struct AppInfo {
     // MARK: - App Info
     
     var appName: String {
-        return Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "Mac灵动岛"
+        return Bundle.main.infoDictionary?["CFBundleName"] as? String ?? "Mac Dynamic Island"
     }
     
     var bundleIdentifier: String {
-        return Bundle.main.bundleIdentifier ?? "com.mac灵动岛"
+        return Bundle.main.bundleIdentifier ?? "com.macdynamicisland.app"
     }
     
     var displayName: String {

@@ -3,17 +3,17 @@ import SwiftUI
 struct ShelfSettingsView: View {
     var body: some View {
         Form {
-            Section(header: Text("智能架子 (Smart Shelf)")) {
+            Section(header: Text("Smart Shelf")) {
                 ToggleSettingsRow(
                     key: SettingsDefaults.boringShelf,
-                    title: "启用临时存放架",
-                    help: "允许将文件拖拽到灵动岛区域进行临时存放"
+                    title: "Enable temporary shelf",
+                    help: "Allow dragging files onto the island to hold them temporarily"
                 )
                 
                 ToggleSettingsRow(
                     key: SettingsDefaults.expandedDragDetection,
-                    title: "扩大拖拽响应区域",
-                    help: "通过扩大感应范围，使拖放文件更加容易"
+                    title: "Enlarge drop area",
+                    help: "Make dropping files easier by enlarging the sensing area"
                 )
             }
         }

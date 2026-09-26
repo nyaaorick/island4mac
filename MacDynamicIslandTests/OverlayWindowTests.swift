@@ -1,6 +1,6 @@
 import XCTest
 import Combine
-@testable import Mac灵动岛
+@testable import MacDynamicIsland
 
 /// The island animates entirely in SwiftUI on a fixed-size canvas; the panel is only resized
 /// around it. These tests pin down that choreography.

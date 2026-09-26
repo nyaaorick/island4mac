@@ -61,7 +61,7 @@ final class AudioSpectrum: NSView {
 
     private func startAnimating() {
         guard animationTimer == nil else { return }
-        // ✅ 使用更长的间隔降低CPU占用
+        // ✅ Use a longer interval to reduce CPU usage
         animationTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             self?.updateBars()
         }
@@ -74,23 +74,23 @@ final class AudioSpectrum: NSView {
     }
 
     private func updateBars() {
-        // ✅ 优化：使用更平滑的动画，更长的持续时间，更低的帧率
+        // ✅ Optimized: smoother animation, longer duration, lower frame rate
         for (i, barLayer) in barLayers.enumerated() {
             let currentScale = barScales[i]
-            // ✅ 减少随机范围，让动画更自然
+            // ✅ Narrower random range for more natural animation
             let targetScale = CGFloat.random(in: 0.4...0.85)
             barScales[i] = targetScale
 
             let animation = CABasicAnimation(keyPath: "transform.scale.y")
             animation.fromValue = currentScale
             animation.toValue = targetScale
-            // ✅ 更长的动画时长
+            // ✅ Longer animation duration
             animation.duration = 0.5
             animation.autoreverses = true
             animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
             animation.fillMode = .forwards
             animation.isRemovedOnCompletion = false
-            // ✅ 降低帧率到 20fps
+            // ✅ Lower the frame rate to 20fps
             if #available(macOS 13.0, *) {
                 animation.preferredFrameRateRange = CAFrameRateRange(minimum: 15, maximum: 20, preferred: 18)
             }

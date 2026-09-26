@@ -101,8 +101,8 @@ struct NotchHomeView: View {
         .clipShape(NotchShape(topCornerRadius: topCornerRadius, bottomCornerRadius: bottomCornerRadius))
         .compositingGroup()
         // No outline: a stroke would trace the notch and give the island away
-        // ✅ 完全移除阴影以消除黑色像素残留
-        // SwiftUI 的 shadow 在边缘可能会产生黑色像素伪影，特别是在高分辨率屏幕上
+        // ✅ Shadow removed entirely to avoid leftover black pixels
+        // SwiftUI's shadow can leave black pixel artifacts at the edges, especially on high-resolution displays
         .contentShape(Rectangle())
         .onHover { hovering in
             handleHover(hovering)
@@ -406,7 +406,7 @@ private struct CompactMusicLiveActivityView: View {
 
                 Group {
                     if settings.get(SettingsDefaults.useMusicVisualizer) {
-                        // ✅ 移除 .gradient 光效，只使用纯色填充
+                        // ✅ Removed the .gradient effect; use a solid fill only
                         Rectangle()
                             .fill((settings.get(SettingsDefaults.playerColorTinting) ? accent : .white).opacity(0.85))
                             .frame(width: 18, height: 12)

@@ -1,6 +1,6 @@
 //
 //  Defaults+Keys.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  UserDefaults wrapper (replaces Defaults library)
 //

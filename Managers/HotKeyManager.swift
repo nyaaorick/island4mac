@@ -115,7 +115,7 @@ final class HotKeyManager {
     }
 
     private func handlePrimaryHotkey() {
-        // ✅ MainActor 隔离修复
+        // ✅ MainActor isolation fix
         Task { @MainActor in
             // Primary hotkey behavior: toggle between idle and active
             switch self.appState.interactionState {
@@ -128,7 +128,7 @@ final class HotKeyManager {
     }
 
     private func handleSecondaryHotkey() {
-        // ✅ MainActor 隔离修复
+        // ✅ MainActor isolation fix
         Task { @MainActor in
             // Secondary hotkey behavior: toggle visibility completely
             if self.appState.isOverlayVisible {
@@ -140,7 +140,7 @@ final class HotKeyManager {
     }
     
     private func handleClipboardHotkey() {
-        // ✅ MainActor 隔离修复
+        // ✅ MainActor isolation fix
         Task { @MainActor in
             // Clipboard hotkey: open the island on the clipboard tab
             self.appState.currentSection = .clipboard

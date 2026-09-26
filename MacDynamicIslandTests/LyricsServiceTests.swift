@@ -1,5 +1,5 @@
 import XCTest
-@testable import Mac灵动岛
+@testable import MacDynamicIsland
 
 @MainActor
 final class LyricsServiceTests: XCTestCase {
@@ -10,8 +10,8 @@ final class LyricsServiceTests: XCTestCase {
     }
 
     func testTimestampsWithOneToThreeDecimals() {
-        XCTAssertEqual(parse("[00:22.36]故事的小黄花"), ["22.36 故事的小黄花"], "LRCLIB writes hundredths")
-        XCTAssertEqual(parse("[00:25.360]从出生那年就飘着"), ["25.36 从出生那年就飘着"], "NetEase often writes milliseconds")
+        XCTAssertEqual(parse("[00:22.36]little yellow flowers"), ["22.36 little yellow flowers"], "LRCLIB writes hundredths")
+        XCTAssertEqual(parse("[00:25.360]drifting since the day we were born"), ["25.36 drifting since the day we were born"], "NetEase often writes milliseconds")
         XCTAssertEqual(parse("[00:12.3]one digit"), ["12.30 one digit"])
         XCTAssertEqual(parse("[01:02:50]a colon before the fraction"), ["62.50 a colon before the fraction"])
     }
@@ -22,7 +22,7 @@ final class LyricsServiceTests: XCTestCase {
     }
 
     func testTagsAndEmptyLinesAreSkipped() {
-        let lrc = "[ar:周杰伦]\n[ti:晴天]\n\n[00:40.00]\n\u{FEFF}[00:41.00]  the next line  "
+        let lrc = "[ar:Some Artist]\n[ti:Some Title]\n\n[00:40.00]\n\u{FEFF}[00:41.00]  the next line  "
         XCTAssertEqual(parse(lrc), ["41.00 the next line"])
     }
 

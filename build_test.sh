@@ -1,16 +1,16 @@
 #!/bin/bash
 
-# Build and Test Script for Mac灵动岛
+# Build and Test Script for MacDynamicIsland
 # This script validates the project can compile successfully
 
 set -e  # Exit on error
 
-echo "🚀 Mac灵动岛 Build Validation"
+echo "🚀 MacDynamicIsland Build Validation"
 echo "=============================="
 echo ""
 
-PROJECT_PATH="Mac灵动岛.xcodeproj"
-SCHEME="Mac灵动岛"
+PROJECT_PATH="MacDynamicIsland.xcodeproj"
+SCHEME="MacDynamicIsland"
 CONFIGURATION="Debug"
 DESTINATION="platform=macOS"
 

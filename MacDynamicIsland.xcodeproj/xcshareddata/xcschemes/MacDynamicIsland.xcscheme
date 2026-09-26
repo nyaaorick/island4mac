@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "51E49FAA2F0B8D41002AD746"
-               BuildableName = "Mac灵动岛.app"
-               BlueprintName = "Mac灵动岛"
-               ReferencedContainer = "container:Mac灵动岛.xcodeproj">
+               BuildableName = "MacDynamicIsland.app"
+               BlueprintName = "MacDynamicIsland"
+               ReferencedContainer = "container:MacDynamicIsland.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -36,9 +36,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "2013CF6D78CAA4315DA29D50"
-               BuildableName = "Mac灵动岛Tests.xctest"
-               BlueprintName = "Mac灵动岛Tests"
-               ReferencedContainer = "container:Mac灵动岛.xcodeproj">
+               BuildableName = "MacDynamicIslandTests.xctest"
+               BlueprintName = "MacDynamicIslandTests"
+               ReferencedContainer = "container:MacDynamicIsland.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -58,9 +58,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "51E49FAA2F0B8D41002AD746"
-            BuildableName = "Mac灵动岛.app"
-            BlueprintName = "Mac灵动岛"
-            ReferencedContainer = "container:Mac灵动岛.xcodeproj">
+            BuildableName = "MacDynamicIsland.app"
+            BlueprintName = "MacDynamicIsland"
+            ReferencedContainer = "container:MacDynamicIsland.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -75,9 +75,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "51E49FAA2F0B8D41002AD746"
-            BuildableName = "Mac灵动岛.app"
-            BlueprintName = "Mac灵动岛"
-            ReferencedContainer = "container:Mac灵动岛.xcodeproj">
+            BuildableName = "MacDynamicIsland.app"
+            BlueprintName = "MacDynamicIsland"
+            ReferencedContainer = "container:MacDynamicIsland.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

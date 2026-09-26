@@ -1,6 +1,6 @@
 //
 //  SettingsViews.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  Shared Settings Components
 //

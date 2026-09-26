@@ -23,7 +23,7 @@ struct AboutView: View {
                         .foregroundColor(.accentColor)
                 }
                 
-                Text("Mac灵动岛")
+                Text("Mac Dynamic Island")
                     .font(.title)
                     .fontWeight(.bold)
                 
@@ -36,7 +36,7 @@ struct AboutView: View {
             
             // Info
             VStack(alignment: .leading, spacing: 12) {
-                InfoRow(title: "Developer", value: "Mac灵动岛 Team")
+                InfoRow(title: "Developer", value: "Mac Dynamic Island Team")
                 InfoRow(title: "Based on", value: "boringNotch")
                 InfoRow(title: "macOS", value: SystemPreferencesManager.shared.osVersion)
             }
@@ -68,7 +68,7 @@ struct AboutView: View {
             Spacer()
             
             // Copyright
-            Text("© 2024 Mac灵动岛. All rights reserved.")
+            Text("© 2024 Mac Dynamic Island. All rights reserved.")
                 .font(.caption2)
                 .foregroundColor(.secondary)
         }

@@ -1,6 +1,6 @@
 //
 //  NSImage+Extensions.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  Stage 1: Image utilities for color extraction
 //

@@ -1,6 +1,6 @@
 //
 //  NSScreen+Extensions.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  Stage 1: Screen utilities for multi-display support
 //

@@ -1,5 +1,5 @@
 import XCTest
-@testable import Mac灵动岛
+@testable import MacDynamicIsland
 
 @MainActor
 final class FullScreenVideoTests: XCTestCase {

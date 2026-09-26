@@ -1,6 +1,6 @@
 //
 //  ClipboardSettingsWindow.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  Clipboard Hub Settings Panel
 //  Based on the requested Clipboard Hub configurations

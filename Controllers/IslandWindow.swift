@@ -20,15 +20,15 @@ final class IslandWindow {
     }
 
     // MARK: - Frame Management
-    // 所有动效都由 SwiftUI 弹簧驱动：SwiftUI 画布尺寸固定、在屏幕上的位置固定，
-    // 面板只是它的取景框。展开前面板先瞬间变大，收起时等弹簧停稳再瞬间缩回，
-    // 所以 AppKit 既不做动画，也不会在动画中途触发 SwiftUI 重新布局。
+    // All motion is driven by SwiftUI springs: the SwiftUI canvas has a fixed size and a fixed position on screen,
+    // and the panel is just its viewfinder. The panel grows instantly before expanding and shrinks back instantly once the spring settles on collapse,
+    // so AppKit neither animates nor triggers a SwiftUI relayout mid-animation.
     private var pendingShrink: DispatchWorkItem?
     private var pendingShrinkTarget: NSRect?
     private var windowUpdateScheduled = false
-    /// 岛当前所在的显示器
+    /// The display the island is currently on
     private(set) var currentDisplayID: CGDirectDisplayID?
-    /// 收起弹簧（response 0.45，临界阻尼）在这个时间内停稳
+    /// The collapse spring (response 0.45, critically damped) settles within this time
     private let settleDelay: TimeInterval = 0.6
 
     init(appState: AppState, nowPlayingManager: NowPlayingManager, preferredScreen: @escaping () -> NSScreen?) {
@@ -37,12 +37,12 @@ final class IslandWindow {
 
         panel = OverlayPanel(
             contentRect: .zero,
-            styleMask: [.borderless],  // ✅ 移除 .nonactivatingPanel
+            styleMask: [.borderless],  // ✅ Removed .nonactivatingPanel
             backing: .buffered,
             defer: false
         )
 
-        // 先告诉视图当前屏幕的刘海尺寸和大小，避免首帧按无刘海、非大屏布局
+        // Tell the view the current display's notch and size first, so the first frame isn't laid out as a no-notch, non-large display
         if let screen = preferredScreen() {
             appState.notchSize = screen.notchSize
             appState.isOnLargeDisplay = screen.isLargeDisplay
@@ -50,7 +50,7 @@ final class IslandWindow {
         }
 
         let rootView = NotchHomeView()
-            // App 在后台时，点岛的第一下会激活窗口；默认这一下不交给按钮和点按手势，要点两次才有反应
+            // When the app is in the background, the first click on the island activates the window; by default that click isn't passed to buttons or tap gestures, so it would take two clicks to respond
             .allowsWindowActivationEvents()
             .environmentObject(appState)
             .environmentObject(appState.clipboardHub)
@@ -61,18 +61,18 @@ final class IslandWindow {
         hostingView.wantsLayer = true
         hostingView.layer?.backgroundColor = NSColor.clear.cgColor
 
-        // ✅ 确保 NSHostingView 及其 layer 不产生阴影
+        // ✅ Make sure the NSHostingView and its layer cast no shadow
         hostingView.shadow = nil
         hostingView.layer?.shadowOpacity = 0
         hostingView.layer?.shadowRadius = 0
         hostingView.layer?.shadowOffset = .zero
 
-        // ✅ 关键：画布尺寸固定，不让 SwiftUI 内容反过来约束窗口，也就不会有 AutoLayout ↔︎ setFrame 递归
+        // ✅ Key: the canvas size is fixed, so SwiftUI content doesn't constrain the window in turn, and there's no AutoLayout ↔︎ setFrame recursion
         hostingView.sizingOptions = []
         hostingView.translatesAutoresizingMaskIntoConstraints = true
-        // 面板可能左右不对称地变大变小，画布由 layoutCanvas 按屏幕位置摆放，不随面板自动伸缩
+        // The panel may grow and shrink asymmetrically; the canvas is placed by layoutCanvas according to screen position and doesn't resize with the panel
         hostingView.autoresizingMask = []
-        // 挂进窗口之前就定好尺寸：此时容器宽高为 0，画布贴顶居中
+        // Size it before it's attached to the window: the container is 0×0 at that point, and the canvas sits top-centered
         let canvas = NotchMetrics.canvasSize(notch: appState.notchSize, largeDisplay: appState.isOnLargeDisplay)
         hostingView.frame = NSRect(x: -canvas.width / 2, y: -canvas.height, width: canvas.width, height: canvas.height)
 
@@ -96,8 +96,8 @@ final class IslandWindow {
     }
 
     private func setupObservers() {
-        // 新值存好后（didSet）同步调整面板，保证 SwiftUI 渲染展开（或切到更大的分区）的第一帧时面板已经够大。
-        // 不能用 @Published 的发布者：它在 willSet 发出，此时改面板会让 SwiftUI 按旧值布局，新值要等下一个事件才显示出来
+        // Adjust the panel synchronously once the new value is stored (didSet), so the panel is already big enough when SwiftUI renders the first frame of the expansion (or a switch to a larger section).
+        // The @Published publisher can't be used: it fires at willSet, so resizing the panel then makes SwiftUI lay out with the old value and the new value only shows on the next event
         appState.islandSizeDidChange
             .compactMap { [weak appState] in appState.map { ($0.overlayMode, $0.currentSection) } }
             .removeDuplicates { $0 == $1 }
@@ -106,7 +106,7 @@ final class IslandWindow {
             }
             .store(in: &cancellables)
 
-        // 延到下一轮 runloop，新值已经存好
+        // Defer to the next runloop turn, when the new value is already stored
         appState.$isOverlayVisible
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -114,14 +114,14 @@ final class IslandWindow {
             }
             .store(in: &cancellables)
 
-        // 正在播放的视频在岛所在的屏幕上全屏时，岛让开
+        // The island steps aside when the playing video is full screen on the island's display
         FullScreenVideo.shared.didChange
             .sink { [weak self] in
                 self?.updatePanelVisibility()
             }
             .store(in: &cancellables)
 
-        // 暂停的音乐只在鼠标停在刘海上时露出来
+        // Paused music only shows while the mouse rests on the notch
         appState.$isPeekingNotch
             .removeDuplicates()
             .sink { [weak self] _ in
@@ -129,7 +129,7 @@ final class IslandWindow {
             }
             .store(in: &cancellables)
 
-        // 点岛会把本 App 带到前台，抢走你在用的 App 的键盘；岛收起后还给它
+        // Clicking the island brings this app to the front and takes the keyboard from the app you're using; give it back once the island collapses
         appState.didCollapse
             .sink { [weak self] in
                 guard let self else { return }
@@ -142,7 +142,7 @@ final class IslandWindow {
         updateWindowFrame(for: appState.overlayMode, section: appState.currentSection)
     }
 
-    /// 面板只在你没隐藏岛、而且岛所在的屏幕没在全屏放视频时显示
+    /// The panel only shows when you haven't hidden the island and the island's display isn't playing full-screen video
     private func updatePanelVisibility() {
         let coveredByVideo = currentDisplayID.map { FullScreenVideo.shared.displays.contains($0) } ?? false
         let shows = appState.isOverlayVisible && !coveredByVideo
@@ -156,7 +156,7 @@ final class IslandWindow {
 
     // MARK: - Panel Frame
 
-    /// 合并 willSet 阶段发出的变化，等新值生效后再算一次
+    /// Coalesce changes fired during willSet and recompute once the new value has taken effect
     func scheduleWindowUpdate() {
         guard !windowUpdateScheduled else { return }
         windowUpdateScheduled = true
@@ -167,14 +167,14 @@ final class IslandWindow {
         }
     }
 
-    /// 变大立即生效，给岛留出动画空间；变小等岛的弹簧停稳后再执行
+    /// Growing takes effect immediately to leave room for the island's animation; shrinking waits until the island's spring settles
     private func updateWindowFrame(for mode: AppState.OverlayMode, section: AppState.IslandSection) {
         guard let screen = targetScreen(for: mode) else { return }
         currentDisplayID = screen.displayID
-        // 换到的屏幕上可能正全屏放着视频（或者刚离开这样的屏幕）；面板挪好之后再决定显示与否
+        // The display it moved to may be playing full-screen video (or it just left such a display); decide whether to show the panel after it has been moved
         defer { updatePanelVisibility() }
         let notchSize = screen.notchSize
-        // 大外接屏上的岛更宽，画布也跟着变
+        // The island is wider on a large external display, and the canvas changes with it
         let largeDisplay = screen.isLargeDisplay
         if appState.notchSize != notchSize || appState.isOnLargeDisplay != largeDisplay {
             appState.notchSize = notchSize
@@ -184,13 +184,13 @@ final class IslandWindow {
         let showsMusic = MusicManager.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch)
         let showsLiveActivity = showsMusic || AgentSessionStore.shared.showsCompactLiveActivity
         let wings = showsLiveActivity ? liveActivityWings(on: screen) : .none
-        // 有东西要显示在刘海旁时持续测量：状态栏图标会变宽、会增减（只有带刘海的屏幕要让位）
+        // Keep measuring while something is shown beside the notch: status bar icons widen and come and go (only displays with a notch need to make room)
         if notchSize != .zero {
             MenuBarSpace.shared.isWatching = showsLiveActivity
         }
         let target = windowFrame(for: mode, section: section, wings: wings, screen: screen)
 
-        // 目标没变：别打断已经排好的缩小，否则频繁的更新会让面板一直缩不回去
+        // Target unchanged: don't interrupt a shrink that's already scheduled, or frequent updates would keep the panel from ever shrinking back
         if let pending = pendingShrinkTarget, framesAreEffectivelyEqual(pending, target) {
             return
         }
@@ -198,12 +198,12 @@ final class IslandWindow {
         pendingShrink = nil
         pendingShrinkTarget = nil
 
-        // 同一块屏幕上：先覆盖岛现在和将要占的全部区域
+        // Same display: first cover all the area the island occupies now and will occupy
         let current = panel.frame
         let immediate = current.intersects(screen.frame) ? current.union(target) : target
         setPanelFrame(immediate)
 
-        // 面板已经够大，再让视图伸出播放两翼
+        // The panel is big enough now; let the view extend the playback wings
         if appState.liveActivityWings != wings {
             appState.liveActivityWings = wings
         }
@@ -214,7 +214,7 @@ final class IslandWindow {
             self.pendingShrink = nil
             self.pendingShrinkTarget = nil
             self.setPanelFrame(target)
-            // 收起期间鼠标可能已经换了屏幕，现在停稳了再跟过去
+            // The mouse may have moved to another display during the collapse; follow it now that things have settled
             self.scheduleWindowUpdate()
         }
         pendingShrink = shrink
@@ -224,15 +224,15 @@ final class IslandWindow {
 
     private func setPanelFrame(_ frame: NSRect) {
         if !framesAreEffectivelyEqual(frame, panel.frame) {
-            // 不强制立即重绘：画布在屏幕上的位置不变，下一次正常刷新即可
+            // No forced immediate redraw: the canvas keeps its position on screen, so the next normal refresh is enough
             panel.setFrame(frame, display: false)
             layoutCanvas()
         }
         appState.updateNotchRegion(frame)
     }
 
-    /// 画布：展开后的岛加上弹簧回弹余量，贴住面板顶边，水平方向正对刘海（屏幕中线）；
-    /// 收起的岛两翼宽度不一时面板左右不对称，所以不能按面板居中
+    /// The canvas: the expanded island plus spring-bounce headroom, pinned to the panel's top edge and horizontally centered on the notch (the screen's center line);
+    /// when the collapsed island's wings differ in width the panel is asymmetric, so it can't be centered on the panel
     private func layoutCanvas() {
         guard let container = panel.contentView else { return }
         let size = NotchMetrics.canvasSize(notch: appState.notchSize, largeDisplay: appState.isOnLargeDisplay)
@@ -250,7 +250,7 @@ final class IslandWindow {
     }
 
     private func framesAreEffectivelyEqual(_ a: NSRect, _ b: NSRect) -> Bool {
-        // 允许 0.5pt 的浮动，避免浮点抖动导致重复 setFrame
+        // Allow 0.5pt of slack so floating-point jitter doesn't cause repeated setFrame calls
         abs(a.origin.x - b.origin.x) < 0.5 &&
         abs(a.origin.y - b.origin.y) < 0.5 &&
         abs(a.size.width - b.size.width) < 0.5 &&
@@ -261,7 +261,7 @@ final class IslandWindow {
         NSScreen.screens.first { $0.displayID == currentDisplayID }
     }
 
-    /// 展开中、已展开或正在收起时留在当前屏幕，免得动画跳到另一块屏幕上
+    /// Stay on the current display while expanding, expanded, or collapsing, so the animation doesn't jump to another display
     private func targetScreen(for mode: AppState.OverlayMode) -> NSScreen? {
         let isOpenOrClosing = mode == .expanded || appState.overlayMode == .expanded || pendingShrink != nil
         if isOpenOrClosing, let screen = currentScreen {
@@ -270,13 +270,13 @@ final class IslandWindow {
         return preferredScreen()
     }
 
-    /// 两翼只占菜单和状态栏图标在刘海两边留下的空位：它们归别的 App，系统只会绕开刘海排，推不开
+    /// The wings only take the space menus and status bar icons leave on either side of the notch: those belong to other apps, and the system only lays them out around the notch and can't be pushed aside
     private func liveActivityWings(on screen: NSScreen) -> IslandWings {
         let room = MenuBarSpace.shared.roomBesideNotch(on: screen)
         return NotchMetrics.liveActivityWings(leadingRoom: room.leading, trailingRoom: room.trailing, notch: screen.notchSize)
     }
 
-    /// 面板位置：紧贴屏幕顶边、水平居中；有刘海时岛的上半部分正好藏在刘海里
+    /// Panel position: flush with the top edge of the screen, horizontally centered; with a notch, the top half of the island hides right inside it
     private func windowFrame(for mode: AppState.OverlayMode, section: AppState.IslandSection, wings: IslandWings, screen: NSScreen) -> NSRect {
         var size = NotchMetrics.islandSize(
             expanded: mode == .expanded,
@@ -287,14 +287,14 @@ final class IslandWindow {
             nonNotchHeight: settingsStore.get(SettingsDefaults.nonNotchHeight)
         )
         if mode == .expanded {
-            // 留出展开弹簧回弹的余量，避免回弹被面板边缘截掉
+            // Leave headroom for the expansion spring's bounce so it isn't clipped by the panel edge
             size.width += 2 * NotchMetrics.overshootMargin
             size.height += NotchMetrics.overshootMargin
         }
 
-        // ✅ 使用 screen.frame 而不是 visibleFrame：screen.frame 包含刘海和菜单栏区域
+        // ✅ Use screen.frame rather than visibleFrame: screen.frame includes the notch and menu bar area
         let fullFrame = screen.frame
-        // 收起时两翼宽度不一，面板随之偏向宽的一边
+        // When collapsed the wings differ in width, so the panel shifts toward the wider side
         let offset = NotchMetrics.islandOffset(expanded: mode == .expanded, notch: screen.notchSize, wings: wings)
         return NSRect(
             x: fullFrame.midX + offset - size.width / 2,

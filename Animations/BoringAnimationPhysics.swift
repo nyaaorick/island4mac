@@ -1,6 +1,6 @@
 //
 //  BoringAnimationPhysics.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  Reverse-engineered from Boring.notch codebase
 //  This file contains the EXACT animation physics parameters extracted from the source

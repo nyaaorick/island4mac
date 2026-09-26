@@ -107,7 +107,7 @@
 "export.success_message" = "Diagnostics saved to %@";
 "export.error_title" = "Export Failed";
 "export.error_message" = "Could not save diagnostics: %@";
-"export.filename" = "Mac灵动岛-Diagnostics.txt";
+"export.filename" = "MacDynamicIsland-Diagnostics.txt";
 
 /* ===== Reset Settings ===== */
 "reset.settings_title" = "Reset Settings?";
@@ -136,14 +136,14 @@
 
 /* ===== Accessibility Permission ===== */
 "accessibility_required_title" = "Accessibility Permission Required";
-"accessibility_required_message" = "Mac灵动岛 needs Accessibility permission to enable global hotkeys (⌘⇧Space to toggle, ⌘⌥V for clipboard) and seamless drag-drop across apps.\n\nPlease enable it in System Settings > Privacy & Security > Accessibility.";
+"accessibility_required_message" = "Mac Dynamic Island needs Accessibility permission to enable global hotkeys (⌘⇧Space to toggle, ⌘⌥V for clipboard) and seamless drag-drop across apps.\n\nPlease enable it in System Settings > Privacy & Security > Accessibility.";
 "open_settings" = "Open Settings";
 "later" = "Later";
 "accessibility.banner.title" = "Enable Global Hotkeys";
 "accessibility.banner.message" = "Grant Accessibility permission to use keyboard shortcuts";
 
 /* ===== Onboarding ===== */
-"onboarding.welcome.title" = "Welcome to Mac灵动岛";
+"onboarding.welcome.title" = "Welcome to Mac Dynamic Island";
 "onboarding.welcome.subtitle" = "Your Dynamic Island for macOS";
 "onboarding.permissions.title" = "Required Permissions";
 "onboarding.permissions.accessibility" = "Accessibility";
@@ -156,7 +156,7 @@
 
 /* ===== About ===== */
 "about.version" = "Version %@ (%@)";
-"about.copyright" = "© 2026 Mac灵动岛. All rights reserved.";
+"about.copyright" = "© 2026 Mac Dynamic Island. All rights reserved.";
 "about.acknowledgements" = "Acknowledgements";
 "about.privacy_policy" = "Privacy Policy";
 "about.terms_of_service" = "Terms of Service";
