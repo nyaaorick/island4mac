@@ -106,15 +106,18 @@ final class IslandWindow {
             }
             .store(in: &cancellables)
 
+        // 延到下一轮 runloop，新值已经存好
         appState.$isOverlayVisible
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] visible in
-                guard let self else { return }
-                if visible {
-                    self.panel.orderFront(nil)
-                } else {
-                    self.panel.orderOut(nil)
-                }
+            .sink { [weak self] _ in
+                self?.updatePanelVisibility()
+            }
+            .store(in: &cancellables)
+
+        // 正在播放的视频在岛所在的屏幕上全屏时，岛让开
+        FullScreenVideo.shared.didChange
+            .sink { [weak self] in
+                self?.updatePanelVisibility()
             }
             .store(in: &cancellables)
 
@@ -139,6 +142,18 @@ final class IslandWindow {
         updateWindowFrame(for: appState.overlayMode, section: appState.currentSection)
     }
 
+    /// 面板只在你没隐藏岛、而且岛所在的屏幕没在全屏放视频时显示
+    private func updatePanelVisibility() {
+        let coveredByVideo = currentDisplayID.map { FullScreenVideo.shared.displays.contains($0) } ?? false
+        let shows = appState.isOverlayVisible && !coveredByVideo
+        guard shows != panel.isVisible else { return }
+        if shows {
+            panel.orderFront(nil)
+        } else {
+            panel.orderOut(nil)
+        }
+    }
+
     // MARK: - Panel Frame
 
     /// 合并 willSet 阶段发出的变化，等新值生效后再算一次
@@ -156,6 +171,8 @@ final class IslandWindow {
     private func updateWindowFrame(for mode: AppState.OverlayMode, section: AppState.IslandSection) {
         guard let screen = targetScreen(for: mode) else { return }
         currentDisplayID = screen.displayID
+        // 换到的屏幕上可能正全屏放着视频（或者刚离开这样的屏幕）；面板挪好之后再决定显示与否
+        defer { updatePanelVisibility() }
         let notchSize = screen.notchSize
         // 大外接屏上的岛更宽，画布也跟着变
         let largeDisplay = screen.isLargeDisplay

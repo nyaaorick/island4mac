@@ -66,6 +66,8 @@ final class SettingsDefaults: ObservableObject {
     static let preferredDisplayUUID = SettingsKey(key: "preferredDisplayUUID", defaultValue: "")
     static let automaticallySwitchDisplay = SettingsKey(key: "automaticallySwitchDisplay", defaultValue: true)
     static let expandedDragDetection = SettingsKey(key: "expandedDragDetection", defaultValue: true)
+    /// Hide the island on a display while the app that's playing shows its video there in full screen
+    static let hideForFullScreenVideo = SettingsKey(key: "hideForFullScreenVideo", defaultValue: true)
 
     // MARK: - Advanced
     static let settingsIconInNotch = SettingsKey(key: "settingsIconInNotch", defaultValue: true)

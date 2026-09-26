@@ -99,6 +99,12 @@ struct GeneralSettingsView: View {
                 )
                 // 每块屏幕都有岛时不用跟随
                 .disabled(SettingsDefaults.shared.get(SettingsDefaults.showOnAllDisplays))
+
+                ToggleSettingsRow(
+                    key: SettingsDefaults.hideForFullScreenVideo,
+                    title: "全屏看视频时隐藏",
+                    help: "正在播放的 App（播放器，或放网页视频的浏览器）全屏时，那块屏幕上的灵动岛自动隐藏，退出全屏后再出现。终端、编辑器等其他全屏 App 不受影响"
+                )
             }
             
             // 3. Notch Behavior

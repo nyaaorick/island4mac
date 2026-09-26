@@ -48,6 +48,7 @@
 		511D74312F18DA0B00163A46 /* ShelfItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D74282F18DA0B00163A46 /* ShelfItem.swift */; };
 		5163623F2F2871320014744B /* DragDetectorManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5163623E2F2871320014744B /* DragDetectorManager.swift */; };
 		4D5241020000000000000031 /* MenuBarSpace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000030 /* MenuBarSpace.swift */; };
+		4D5241070000000000000002 /* FullScreenVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241070000000000000001 /* FullScreenVideo.swift */; };
 		519CDAFD2F124DD70011DA8A /* IslandInteractionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 519CDAFC2F124DD70011DA8A /* IslandInteractionState.swift */; };
 		519FCFBD2F1F683D00E6EE33 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51E49FBE2F0B8F8E002AD746 /* AppDelegate.swift */; };
 		51D024632F16046D00B1FF0F /* SearchEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51D024602F16046D00B1FF0F /* SearchEngine.swift */; };
@@ -81,6 +82,7 @@
 		4D52410100000000000000B1 /* ScreenManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000B2 /* ScreenManagerTests.swift */; };
 		4D5241060000000000000002 /* HotKeyManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000001 /* HotKeyManagerTests.swift */; };
 		4D5241060000000000000004 /* LyricsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000003 /* LyricsServiceTests.swift */; };
+		4D5241070000000000000004 /* FullScreenVideoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241070000000000000003 /* FullScreenVideoTests.swift */; };
 		4D52410100000000000000A3 /* MediaRemoteAdapter.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A1 /* MediaRemoteAdapter.m */; };
 		4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D5241020000000000000004 /* AgentSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000003 /* AgentSessionStore.swift */; };
@@ -190,6 +192,7 @@
 		511D74292F18DA0B00163A46 /* ShelfItem+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShelfItem+Extensions.swift"; sourceTree = "<group>"; };
 		5163623E2F2871320014744B /* DragDetectorManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragDetectorManager.swift; sourceTree = "<group>"; };
 		4D5241020000000000000030 /* MenuBarSpace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarSpace.swift; sourceTree = "<group>"; };
+		4D5241070000000000000001 /* FullScreenVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenVideo.swift; sourceTree = "<group>"; };
 		519CDAFC2F124DD70011DA8A /* IslandInteractionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandInteractionState.swift; sourceTree = "<group>"; };
 		51D0245A2F16046D00B1FF0F /* ClipboardHubStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardHubStore.swift; sourceTree = "<group>"; };
 		51D024602F16046D00B1FF0F /* SearchEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchEngine.swift; sourceTree = "<group>"; };
@@ -227,6 +230,7 @@
 		4D52410100000000000000B2 /* ScreenManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenManagerTests.swift; sourceTree = "<group>"; };
 		4D5241060000000000000001 /* HotKeyManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKeyManagerTests.swift; sourceTree = "<group>"; };
 		4D5241060000000000000003 /* LyricsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LyricsServiceTests.swift; sourceTree = "<group>"; };
+		4D5241070000000000000003 /* FullScreenVideoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenVideoTests.swift; sourceTree = "<group>"; };
 		4D5241020000000000000003 /* AgentSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSessionStore.swift; sourceTree = "<group>"; };
 		4D5241020000000000000005 /* AgentHookEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHookEvent.swift; sourceTree = "<group>"; };
 		4D5241020000000000000007 /* AgentHookInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentHookInstaller.swift; sourceTree = "<group>"; };
@@ -457,6 +461,7 @@
 			children = (
 				5163623E2F2871320014744B /* DragDetectorManager.swift */,
 				4D5241020000000000000030 /* MenuBarSpace.swift */,
+				4D5241070000000000000001 /* FullScreenVideo.swift */,
 				511D734C2F18D92700163A46 /* AnalyticsManager.swift */,
 				511D735C2F18D92700163A46 /* SystemPreferencesManager.swift */,
 				51F1B0F32F0E159D00B89019 /* ScreenManager.swift */,
@@ -553,6 +558,7 @@
 				4D5241030000000000000001 /* AgentSessionStoreTests.swift */,
 				4D5241060000000000000001 /* HotKeyManagerTests.swift */,
 				4D5241060000000000000003 /* LyricsServiceTests.swift */,
+				4D5241070000000000000003 /* FullScreenVideoTests.swift */,
 			);
 			path = "Mac灵动岛Tests";
 			sourceTree = "<group>";
@@ -801,6 +807,7 @@
 				51E1CAA12F245D83009A87D2 /* BoringAnimationPhysics.swift in Sources */,
 				5163623F2F2871320014744B /* DragDetectorManager.swift in Sources */,
 				4D5241020000000000000031 /* MenuBarSpace.swift in Sources */,
+				4D5241070000000000000002 /* FullScreenVideo.swift in Sources */,
 				51F1B11A2F0E49FF00B89019 /* OverlayVisibilityReason.swift in Sources */,
 				51E49FD12F0B93E9002AD746 /* AppState.swift in Sources */,
 				511D73AD2F18D94200163A46 /* AboutView.swift in Sources */,
@@ -835,6 +842,7 @@
 				4D5241030000000000000002 /* AgentSessionStoreTests.swift in Sources */,
 				4D5241060000000000000002 /* HotKeyManagerTests.swift in Sources */,
 				4D5241060000000000000004 /* LyricsServiceTests.swift in Sources */,
+				4D5241070000000000000004 /* FullScreenVideoTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

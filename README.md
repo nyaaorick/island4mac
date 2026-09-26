@@ -15,6 +15,7 @@ A macOS menu bar app that turns the area around the MacBook notch into an intera
 - macOS 27 or later. The island sits under the notch on MacBooks that have one and at the top center of other screens.
 - With several displays, the island follows the mouse to whichever display it's on (Settings → General → 自动切换显示器). With that off it stays on the built-in display.
 - On an external display at least 1920 points wide the island is wider: it opens 760 points wide instead of 640, and while it shows now playing or an agent session the collapsed pill widens from 185 to 360 points, enough for the whole title and lyric line, or for what the agent is doing. The built-in display keeps its island as it is.
+- While the app that's playing (the one Now Playing shows: a video player, or the browser a web video plays in) is in full screen, the island on that display hides until it leaves full screen (Settings → General → 全屏看视频时隐藏). Other full-screen apps, like a terminal or an editor, keep the island. On the built-in display the island needs Accessibility permission to tell full screen from a window that's merely as large.
 - Xcode 27 or later to build.
 
 ## Build and run
@@ -43,7 +44,7 @@ The unit tests in `Mac灵动岛Tests` are hosted by the app. When it runs as a t
 
 | Permission | Used for |
 |---|---|
-| Accessibility | Global keyboard shortcuts. Settings → General has a button to request it. |
+| Accessibility | Global keyboard shortcuts, and telling a video in full screen on the built-in display from a window that's merely as large. Settings → General has a button to request it. |
 | Automation (Apple Events) | Reading lyrics from Music, pasting clipboard items through System Events, and selecting an agent session's tab in Terminal or iTerm2. |
 
 ## Keyboard shortcuts
