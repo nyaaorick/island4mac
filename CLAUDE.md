@@ -21,6 +21,7 @@ macOS menu bar app (Swift, SwiftUI + AppKit) that turns the MacBook notch into a
 
 <!-- END AUTO-GENERATED -->
 
+- `Launch.command` (double-click in Finder) builds into `build/` and opens the app. It is a Swift script (`#!/usr/bin/env swift`), not shell.
 - Deployment target is macOS 26.0.
 - Tests (`MacDynamicIslandTests`) are hosted by the app. When running as a test host the app skips launch setup (hotkeys, clipboard polling, menu bar item, music module).
 - Bundle id: `com.macdynamicisland.app`. Product name: `MacDynamicIsland`.

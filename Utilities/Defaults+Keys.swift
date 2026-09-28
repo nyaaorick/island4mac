@@ -34,7 +34,6 @@ final class SettingsDefaults: ObservableObject {
     // MARK: - Appearance
     static let cornerRadiusScaling = SettingsKey(key: "cornerRadiusScaling", defaultValue: 1.0)
     static let lightingEffect = SettingsKey(key: "lightingEffect", defaultValue: true)
-    static let enableBlur = SettingsKey(key: "enableBlur", defaultValue: true)
     static let enableGradient = SettingsKey(key: "enableGradient", defaultValue: true)
     
     // MARK: - Music
@@ -52,8 +51,6 @@ final class SettingsDefaults: ObservableObject {
     
     // MARK: - Gestures
     static let enableGestures = SettingsKey(key: "enableGestures", defaultValue: true)
-    static let closeGestureEnabled = SettingsKey(key: "closeGestureEnabled", defaultValue: true)
-    static let gestureSensitivity = SettingsKey(key: "gestureSensitivity", defaultValue: CGFloat(50.0))
     
     // MARK: - Claude Code
     static let showAgentLiveActivity = SettingsKey(key: "showAgentLiveActivity", defaultValue: true)

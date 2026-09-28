@@ -52,6 +52,24 @@ struct NotchHomeView: View {
             // so resizing the panel never moves or re-lays out the island
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .ignoresSafeArea()
+            .background(SwipeMonitor { handleSwipe($0) })
+    }
+
+    /// A two-finger swipe down opens the island, one up closes it
+    private func handleSwipe(_ direction: SwipeDirection) {
+        guard settings.get(SettingsDefaults.enableGestures) else { return }
+        switch direction {
+        case .down where !isExpanded:
+            openIsland()
+        case .up where isExpanded && !appState.isDraggingOver:
+            hoverTask?.cancel()
+            appState.isPeekingNotch = false
+            withAnimation(closeAnimation) {
+                appState.deactivateOverlay()
+            }
+        default:
+            break
+        }
     }
 
     private var island: some View {
@@ -87,17 +105,8 @@ struct NotchHomeView: View {
             }
         }
         .frame(width: islandSize.width, height: islandSize.height, alignment: .top)
-        // 🎨 UPDATED VISUALS: Pure Black base + Customizable Core
-        .background {
-            ZStack {
-                appState.islandBackgroundColor
-                // Collapsed, the island has to be as dark as the notch it hides in, so the blur fades with it
-                if settings.get(SettingsDefaults.enableBlur) {
-                    VisualEffectView(material: .hudWindow, blendingMode: .withinWindow)
-                        .opacity(isExpanded ? 1 : 0)
-                }
-            }
-        }
+        // Solid color, never a material: the island has to be exactly as black as the notch it grows out of
+        .background(appState.islandBackgroundColor)
         .clipShape(NotchShape(topCornerRadius: topCornerRadius, bottomCornerRadius: bottomCornerRadius))
         .compositingGroup()
         // No outline: a stroke would trace the notch and give the island away

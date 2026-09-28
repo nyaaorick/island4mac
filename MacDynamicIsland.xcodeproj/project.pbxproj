@@ -29,6 +29,8 @@
 		511D73B82F18D94200163A46 /* ShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73A52F18D94200163A46 /* ShelfView.swift */; };
 		511D73CA2F18D94200163A46 /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D739A2F18D94200163A46 /* AdvancedSettingsView.swift */; };
 		511D73CE2F18D94200163A46 /* MarqueeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73812F18D94200163A46 /* MarqueeText.swift */; };
+		4D5241080000000000000002 /* SwipeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241080000000000000001 /* SwipeMonitor.swift */; };
+		4D5241080000000000000004 /* SwipeTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241080000000000000003 /* SwipeTrackerTests.swift */; };
 		511D73CF2F18D94200163A46 /* ExpandedMusicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73902F18D94200163A46 /* ExpandedMusicView.swift */; };
 		511D73D02F18D94200163A46 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D739B2F18D94200163A46 /* GeneralSettingsView.swift */; };
 		511D73D42F18D94200163A46 /* AudioSpectrumView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73702F18D94200163A46 /* AudioSpectrumView.swift */; };
@@ -171,6 +173,8 @@
 		511D735C2F18D92700163A46 /* SystemPreferencesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPreferencesManager.swift; sourceTree = "<group>"; };
 		511D73702F18D94200163A46 /* AudioSpectrumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSpectrumView.swift; sourceTree = "<group>"; };
 		511D73812F18D94200163A46 /* MarqueeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueeText.swift; sourceTree = "<group>"; };
+		4D5241080000000000000001 /* SwipeMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeMonitor.swift; sourceTree = "<group>"; };
+		4D5241080000000000000003 /* SwipeTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeTrackerTests.swift; sourceTree = "<group>"; };
 		511D73902F18D94200163A46 /* ExpandedMusicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandedMusicView.swift; sourceTree = "<group>"; };
 		511D73992F18D94200163A46 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		511D739A2F18D94200163A46 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
@@ -355,6 +359,7 @@
 			children = (
 				51E1CA662F2319F9009A87D2 /* AnimatedFaceView.swift */,
 				511D73812F18D94200163A46 /* MarqueeText.swift */,
+				4D5241080000000000000001 /* SwipeMonitor.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -550,6 +555,7 @@
 				4D5241060000000000000001 /* HotKeyManagerTests.swift */,
 				4D5241060000000000000003 /* LyricsServiceTests.swift */,
 				4D5241070000000000000003 /* FullScreenVideoTests.swift */,
+				4D5241080000000000000003 /* SwipeTrackerTests.swift */,
 			);
 			path = "MacDynamicIslandTests";
 			sourceTree = "<group>";
@@ -804,6 +810,7 @@
 				511D73B82F18D94200163A46 /* ShelfView.swift in Sources */,
 				511D73CA2F18D94200163A46 /* AdvancedSettingsView.swift in Sources */,
 				511D73CE2F18D94200163A46 /* MarqueeText.swift in Sources */,
+				4D5241080000000000000002 /* SwipeMonitor.swift in Sources */,
 				511D73CF2F18D94200163A46 /* ExpandedMusicView.swift in Sources */,
 				511D73D02F18D94200163A46 /* GeneralSettingsView.swift in Sources */,
 				51E1CA672F2319F9009A87D2 /* AnimatedFaceView.swift in Sources */,
@@ -833,6 +840,7 @@
 				4D5241060000000000000002 /* HotKeyManagerTests.swift in Sources */,
 				4D5241060000000000000004 /* LyricsServiceTests.swift in Sources */,
 				4D5241070000000000000004 /* FullScreenVideoTests.swift in Sources */,
+				4D5241080000000000000004 /* SwipeTrackerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -26,12 +26,6 @@ struct AppearanceSettingsView: View {
                 )
                 
                 ToggleSettingsRow(
-                    key: SettingsDefaults.enableBlur,
-                    title: "Background blur",
-                    help: "Apply a Gaussian blur to the island background"
-                )
-                
-                ToggleSettingsRow(
                     key: SettingsDefaults.enableGradient,
                     title: "Gradient background",
                     help: "Add a subtle color gradient to the background"

@@ -164,31 +164,12 @@ struct GeneralSettingsView: View {
             }
             
             // 5. Gestures
-            Section(header: Text("Gestures (Beta)")) {
+            Section(header: Text("Gestures")) {
                 ToggleSettingsRow(
                     key: SettingsDefaults.enableGestures,
-                    title: "Enable gesture control",
-                    help: "Allow swipe up or down to expand or collapse the island"
+                    title: "Swipe to open and close",
+                    help: "Swipe down with two fingers on the trackpad to open the island, and up to close it"
                 )
-                
-                ToggleSettingsRow(
-                    key: SettingsDefaults.closeGestureEnabled,
-                    title: "Swipe up to collapse",
-                    help: "Collapse the island quickly with an upward swipe"
-                )
-                
-                HStack {
-                    Text("Gesture sensitivity")
-                    Spacer()
-                    Slider(
-                        value: Binding(
-                            get: { SettingsDefaults.shared.get(SettingsDefaults.gestureSensitivity) },
-                            set: { SettingsDefaults.shared.set(SettingsDefaults.gestureSensitivity, value: $0) }
-                        ),
-                        in: 20...200
-                    )
-                    .frame(width: 150)
-                }
             }
         }
         .formStyle(.grouped)
