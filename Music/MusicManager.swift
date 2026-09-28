@@ -72,7 +72,7 @@ class MusicManager: ObservableObject {
         lastAvgColorImageID = id
 
         avgColorTask?.cancel()
-        // ✅ 在主线程获取颜色，然后异步更新
+        // ✅ Fetch the color on the main thread, then update asynchronously
         let color = image.averageColor
         avgColorTask = Task { [weak self] in
             self?.avgColor = color
@@ -266,29 +266,29 @@ class MusicManager: ObservableObject {
     
     // MARK: - Fetch Lyrics
     
-    /// 获取歌词：先查在线的同步歌词（能跟着歌走），查不到同步歌词时再用 Apple Music 自带的歌词
+    /// Fetch lyrics: try online synced lyrics first (they follow the song), and fall back to Apple Music's built-in lyrics when none are found
     private func fetchLyrics(title: String, artist: String) async {
         isFetchingLyrics = true
 
-        // 1️⃣ 在线 API（LrcLib、网易云等），任何播放器都适用
+        // 1️⃣ Online APIs (LrcLib, NetEase, etc.) work with any player
         var lyrics = await fetchLyricsFromAPI(title: title, artist: artist)
 
-        // 2️⃣ Apple Music 自带的歌词只有纯文本，而且流媒体歌曲大多没有（读到的是空字符串，不能当成找到了）
+        // 2️⃣ Apple Music's built-in lyrics are plain text only, and most streamed songs have none (an empty string comes back and must not count as found)
         if lyrics?.synced.isEmpty ?? true, !Task.isCancelled, bundleIdentifier == "com.apple.Music",
            let own = await fetchLyricsFromAppleMusic(), !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             lyrics = (own, [])
         }
 
-        // 切歌后，旧请求的结果作废
+        // After a track change, the result of the old request is discarded
         guard !Task.isCancelled else { return }
 
-        // 3️⃣ 没有找到歌词时清空
+        // 3️⃣ Clear when no lyrics are found
         currentLyrics = lyrics?.plainText ?? ""
         syncedLyrics = lyrics?.synced ?? []
         isFetchingLyrics = false
     }
     
-    /// 从 Apple Music 获取歌词
+    /// Fetch lyrics from Apple Music
     private func fetchLyricsFromAppleMusic() async -> String? {
         let script = """
         tell application "Music"
@@ -301,22 +301,22 @@ class MusicManager: ObservableObject {
         return await AppleScriptHelper.execute(script)
     }
     
-    /// 从在线 API 获取歌词
+    /// Fetch lyrics from online APIs
     private func fetchLyricsFromAPI(title: String, artist: String) async -> (plainText: String, synced: [(timeInSeconds: Double, line: String)])? {
-        // 使用 LyricsService 获取歌词
+        // Use LyricsService to fetch lyrics
         if let result = await LyricsService.shared.fetchLyrics(
             title: title,
             artist: artist,
             album: albumTitle.isEmpty ? nil : albumTitle
         ) {
             #if DEBUG
-            print("✅ [MusicManager] 获取到歌词，来源: \(result.source)")
+            print("✅ [MusicManager] Got lyrics, source: \(result.source)")
             #endif
             return (result.plainText, result.syncedLyrics)
         }
         
         #if DEBUG
-        print("❌ [MusicManager] 未找到歌词: \(title) - \(artist)")
+        print("❌ [MusicManager] No lyrics found: \(title) - \(artist)")
         #endif
         return nil
     }
@@ -472,14 +472,14 @@ class MusicManager: ObservableObject {
     
     // MARK: - Network Artwork Fetching
     
-    /// 从网络(iTunes API)获取专辑封面
+    /// Fetch the album cover from the network (iTunes API)
     private func fetchArtworkFromNetwork(title: String, artist: String) async {
         let query = "\(title) \(artist)"
         #if DEBUG
-        print("🎶 [MusicManager] 🖼️ 尝试网络获取封面: \(query)")
+        print("🎶 [MusicManager] 🖼️ Trying to fetch the cover from the network: \(query)")
         #endif
         
-        // 构建 iTunes Search API URL
+        // Build the iTunes Search API URL
         var components = URLComponents(string: "https://itunes.apple.com/search")
         components?.queryItems = [
             URLQueryItem(name: "term", value: query),
@@ -490,42 +490,42 @@ class MusicManager: ObservableObject {
         guard let url = components?.url else { return }
         
         do {
-            // 请求 API
+            // Request the API
             let (data, _) = try await URLSession.shared.data(from: url)
             
-            // 解析 JSON
+            // Parse the JSON
             if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
                let results = json["results"] as? [[String: Any]],
                let first = results.first,
                let artworkUrlString = first["artworkUrl100"] as? String {
                 
-                // 获取更高清的图片 (100x100 -> 600x600)
+                // Get a higher-resolution image (100x100 -> 600x600)
                 let highResUrlString = artworkUrlString.replacingOccurrences(of: "100x100bb", with: "600x600bb")
                 
-                // 获取歌曲时长 (毫秒 -> 秒)
+                // Get the track duration (milliseconds -> seconds)
                 let trackDurationMs = first["trackTimeMillis"] as? Double ?? 0
                 let trackDuration = trackDurationMs / 1000.0
                 
                 if let artworkUrl = URL(string: highResUrlString) {
-                    // 下载图片
+                    // Download the image
                     let (imageData, _) = try await URLSession.shared.data(from: artworkUrl)
                     if let image = NSImage(data: imageData) {
                         await MainActor.run {
-                            // 再次检查是否还需要更新（防止已经切歌）
+                            // Check again whether the update is still needed (in case the track changed)
                             if self.songTitle == title && self.usingAppIconForArtwork {
                                 self.albumArt = image
                                 self.usingAppIconForArtwork = false
                                 
-                                // 🆕 如果当前时长为0，使用网络获取的时长
+                                // 🆕 If the current duration is 0, use the duration from the network
                                 if self.songDuration == 0 && trackDuration > 0 {
                                     self.songDuration = trackDuration
                                     #if DEBUG
-                                    print("🎶 [MusicManager] ✅ 网络获取时长: \(trackDuration)s")
+                                    print("🎶 [MusicManager] ✅ Duration from network: \(trackDuration)s")
                                     #endif
                                 }
                                 
                                  #if DEBUG
-                                 print("🎶 [MusicManager] ✅ 网络封面已更新")
+                                 print("🎶 [MusicManager] ✅ Network cover updated")
                                  #endif
                             }
                         }
@@ -533,12 +533,12 @@ class MusicManager: ObservableObject {
                 }
             } else {
                  #if DEBUG
-                 print("🎶 [MusicManager] ❌ 未找到网络封面")
+                 print("🎶 [MusicManager] ❌ No network cover found")
                  #endif
             }
         } catch {
             #if DEBUG
-            print("🎶 [MusicManager] 网络封面获取错误: \(error)")
+            print("🎶 [MusicManager] Network cover fetch error: \(error)")
             #endif
         }
     }

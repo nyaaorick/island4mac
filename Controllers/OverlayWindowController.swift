@@ -10,15 +10,19 @@ final class OverlayPanel: NSPanel {
         backing backingStoreType: NSWindow.BackingStoreType,
         defer flag: Bool
     ) {
-        // ✅ 移除 .nonactivatingPanel 以支持完整的用户交互（包括拖放）
+        // ✅ Removed .nonactivatingPanel to support full user interaction (including drag and drop)
         super.init(contentRect: contentRect, styleMask: [.borderless], backing: backingStoreType, defer: flag)
 
         self.isOpaque = false
         self.backgroundColor = .clear
         self.hasShadow = false
         self.ignoresMouseEvents = false
+        // The island is dark in every system appearance: white text on black or on the Glass theme's glass.
+        // Under a light system appearance the glass would otherwise come back light (washed out, the text
+        // unreadable) from the second time the island opens
+        self.appearance = NSAppearance(named: .darkAqua)
 
-        // ✅ 彻底移除阴影：确保所有层都不渲染阴影
+        // ✅ Shadow removed entirely: make sure no layer renders one
         self.invalidateShadow()
 
         self.level = .screenSaver
@@ -31,7 +35,7 @@ final class OverlayPanel: NSPanel {
         self.acceptsMouseMovedEvents = true
     }
 
-    // ✅ 关键修复：允许窗口接收键盘焦点以支持拖放操作
+    // ✅ Key fix: allow the window to receive keyboard focus so drag and drop works
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
     override var acceptsFirstResponder: Bool { true }
@@ -62,7 +66,7 @@ final class OverlayWindowController: NSObject {
 
     private var islandSyncScheduled = false
     private var lastMouseCheckTime: Date = .distantPast
-    /// 正在播放（暂停超过 1 秒才算停）
+    /// Now playing (only counts as stopped after being paused for over 1 second)
     private var musicIsPlaying = false
 
     /// The app you were using before a click on an island brought this one to the front (the panel has to become
@@ -76,8 +80,8 @@ final class OverlayWindowController: NSObject {
             self?.mainIslandScreen()
         }
         setupObservers()
-        // 首次摆放推迟到下一轮 runloop：init 发生在 App 的 @StateObject 初始化里，也就是 SwiftUI 更新途中，
-        // 此时改动 hosting view 或 appState 会触发 “setting value during update” 崩溃
+        // First placement is deferred to the next runloop turn: init runs inside the app's @StateObject initialization, i.e. in the middle of a SwiftUI update,
+        // and changing the hosting view or appState then triggers a "setting value during update" crash
         scheduleIslandSync()
     }
 
@@ -126,7 +130,7 @@ final class OverlayWindowController: NSObject {
         // Initialize NowPlaying Stream
         nowPlayingManager = NowPlayingManager()
 
-        // 单元测试寄宿在 App 里运行：不连接音乐模块，免得测试给播放器发 Apple Event、弹授权框
+        // Unit tests are hosted inside the app: don't connect the music module, so tests don't send Apple Events to the player or pop up an authorization dialog
         guard !BuildConfig.isRunningUnitTests else { return }
 
         // Connect to MusicManager
@@ -143,7 +147,7 @@ final class OverlayWindowController: NSObject {
             }
             .store(in: &cancellables)
 
-        // 暂停就收起播放两翼（停 1 秒再收，切歌时的短暂停顿不算），鼠标移到刘海上时再露出来
+        // Collapse the playback wings when paused (after 1 second, so the brief pause when switching tracks doesn't count); show them again when the mouse moves onto the notch
         MusicManager.shared.$isPlaying
             .removeDuplicates()
             .map { playing -> AnyPublisher<Bool, Never> in
@@ -160,8 +164,8 @@ final class OverlayWindowController: NSObject {
             }
             .store(in: &cancellables)
 
-        // 有无播放内容变化时，收起状态的岛要伸出或收回
-        // 播放信息会被周期性地重复赋值，只关心“有没有内容”是否变化
+        // The collapsed island extends or retracts its wings when playback content appears or disappears
+        // Playback info is reassigned periodically; only whether there is any content matters
         MusicManager.shared.$songTitle
             .combineLatest(MusicManager.shared.$artistName)
             .map { title, artist in !(title.isEmpty && artist.isEmpty) }
@@ -171,7 +175,7 @@ final class OverlayWindowController: NSObject {
             }
             .store(in: &cancellables)
 
-        // Claude Code 开始工作、等你授权或刚完成时，两翼同样要伸出；结束后收回
+        // The wings also extend while Claude Code is working, waiting for your approval, or just finished, and retract afterwards
         AgentSessionStore.shared.$liveSession
             .map { $0 != nil }
             .removeDuplicates()
@@ -180,21 +184,21 @@ final class OverlayWindowController: NSObject {
             }
             .store(in: &cancellables)
 
-        // 前台 App 的菜单或状态栏图标变了，两翼重新按刘海两边留下的空位伸出
+        // When the frontmost app's menus or status bar icons change, re-extend the wings into the space left on either side of the notch
         MenuBarSpace.shared.didChange
             .sink { [weak self] _ in
                 self?.updateAllIslands()
             }
             .store(in: &cancellables)
 
-        // 接上或拔掉显示器
+        // A display is connected or disconnected
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .sink { [weak self] _ in
                 self?.scheduleIslandSync()
             }
             .store(in: &cancellables)
 
-        // Agent 的问题或权限确认处理完（在岛上或终端里）后，把因它展开的岛收回去
+        // Once an agent's question or permission prompt is handled (on the island or in the terminal), collapse the island it expanded
         AgentSessionStore.shared.$pendingPrompts
             .map(\.isEmpty)
             .removeDuplicates()
@@ -204,7 +208,7 @@ final class OverlayWindowController: NSObject {
             }
             .store(in: &cancellables)
 
-        // 记下你在用的 App：点岛会把本 App 带到前台，岛收起时要把键盘还给它
+        // Remember the app you're using: clicking the island brings this app to the front, and the keyboard goes back to that app when the island collapses
         let ownPID = ProcessInfo.processInfo.processIdentifier
         previousApp = NSWorkspace.shared.frontmostApplication.flatMap { $0.processIdentifier == ownPID ? nil : $0 }
         NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didActivateApplicationNotification)
@@ -215,12 +219,12 @@ final class OverlayWindowController: NSObject {
             }
             .store(in: &cancellables)
 
-        // 多屏：鼠标移到另一块屏幕时，岛跟过去（“自动切换显示器”设置在回调里判断，改设置不用重启）
+        // Multiple displays: when the mouse moves to another display, the island follows (the "Follow mouse across displays" setting is checked in the callback, so changing it needs no restart)
         setupMouseTracking()
     }
 
     private func setupMouseTracking() {
-        // 全局监听收不到本 App 窗口上的事件，所以本地也监听一份；拖文件时只有 dragged 事件
+        // Global monitors don't receive events on this app's own windows, so listen locally too; while dragging files only dragged events arrive
         let events: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged]
         globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: events) { [weak self] _ in
             self?.followMouseToScreen()
@@ -249,7 +253,7 @@ final class OverlayWindowController: NSObject {
         settingsStore.get(SettingsDefaults.automaticallySwitchDisplay) && !settingsStore.get(SettingsDefaults.showOnAllDisplays)
     }
 
-    /// 开着“自动切换显示器”时跟随鼠标所在的屏幕，否则放在设置里选的屏幕；没选或它没接上时放在有刘海的内建屏幕（没有就用主屏）
+    /// With "Follow mouse across displays" on, follows the display the mouse is on; otherwise uses the display chosen in Settings, or the built-in display with the notch (the main display if there is none) when none is chosen or it isn't connected
     private func mainIslandScreen() -> NSScreen? {
         let screens = NSScreen.screens
         let chosenUUID = settingsStore.get(SettingsDefaults.preferredDisplayUUID)
@@ -264,7 +268,7 @@ final class OverlayWindowController: NSObject {
         return screens.first { $0.displayID == display } ?? NSScreen.main
     }
 
-    /// 设置和显示器变化在 willSet 时通知，等新值生效后再重新安排各块屏幕上的岛
+    /// Settings and display changes fire at willSet; wait for the new value to take effect, then rearrange the islands on each display
     private func scheduleIslandSync() {
         guard !islandSyncScheduled else { return }
         islandSyncScheduled = true
@@ -276,7 +280,7 @@ final class OverlayWindowController: NSObject {
         }
     }
 
-    /// 打开“所有屏幕”时，主岛以外的每块屏幕各放一个岛；关掉或屏幕拔掉时收走
+    /// With "All displays" on, every display besides the main island's gets its own island; they're removed when it's turned off or a display is unplugged
     private func syncOtherIslands() {
         let wanted = Set(ScreenManager.otherIslandDisplays(
             allScreens: settingsStore.get(SettingsDefaults.showOnAllDisplays),

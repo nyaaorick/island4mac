@@ -38,7 +38,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             return
         }
         
-        // Configure button with two circles icon (一大一小)
+        // Configure button with two circles icon (one large, one small)
         if let button = statusItem.button {
             // Create custom icon with two filled circles
             let icon = createTwoCirclesIcon()
@@ -46,7 +46,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             button.imagePosition = .imageOnly
             
             // Set accessibility
-            button.toolTip = "Mac灵动岛"
+            button.toolTip = "Mac Dynamic Island"
             
             print("[STATUS-BAR] Button configured with two circles icon")
         } else {
@@ -84,13 +84,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.autoenablesItems = false
         
         // Show Overlay
-        let showItem = NSMenuItem(title: "显示灵动岛", action: #selector(onShow), keyEquivalent: "s")
+        let showItem = NSMenuItem(title: "Show Island", action: #selector(onShow), keyEquivalent: "s")
         showItem.target = self
         showItem.isEnabled = true
         menu.addItem(showItem)
         
         // Hide Overlay
-        let hideItem = NSMenuItem(title: "隐藏灵动岛", action: #selector(onHide), keyEquivalent: "h")
+        let hideItem = NSMenuItem(title: "Hide Island", action: #selector(onHide), keyEquivalent: "h")
         hideItem.target = self
         hideItem.isEnabled = true
         menu.addItem(hideItem)
@@ -98,7 +98,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(NSMenuItem.separator())
         
         // Settings
-        let settingsItem = NSMenuItem(title: "设置…", action: #selector(onSettings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: "Settings…", action: #selector(onSettings), keyEquivalent: ",")
         settingsItem.target = self
         settingsItem.isEnabled = true
         menu.addItem(settingsItem)
@@ -106,20 +106,20 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(NSMenuItem.separator())
         
         // Debug
-        let debugMenu = NSMenu(title: "调试与开发")
+        let debugMenu = NSMenu(title: "Debug & Development")
         
-        let centerItem = NSMenuItem(title: "居中显示 (重置位置)", action: #selector(onCenterDebugOverlay), keyEquivalent: "d")
+        let centerItem = NSMenuItem(title: "Center (Reset Position)", action: #selector(onCenterDebugOverlay), keyEquivalent: "d")
         centerItem.target = self
         debugMenu.addItem(centerItem)
         
-        let debugItem = NSMenuItem(title: "调试模式", action: nil, keyEquivalent: "")
+        let debugItem = NSMenuItem(title: "Debug Mode", action: nil, keyEquivalent: "")
         debugItem.submenu = debugMenu
         menu.addItem(debugItem)
         
         menu.addItem(NSMenuItem.separator())
         
         // Quit
-        let quitItem = NSMenuItem(title: "退出 Mac灵动岛", action: #selector(onQuit), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit Mac Dynamic Island", action: #selector(onQuit), keyEquivalent: "q")
         quitItem.target = self
         quitItem.isEnabled = true
         menu.addItem(quitItem)

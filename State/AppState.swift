@@ -61,6 +61,9 @@ final class AppState: ObservableObject {
     var islandBackgroundColor: Color {
         settingsStore.resolveBackgroundColor()
     }
+    var islandTheme: IslandTheme {
+        settingsStore.resolveTheme()
+    }
 
     private var settingsCancellable: AnyCancellable?
     private var autoCloseTimer: Timer?
@@ -80,7 +83,7 @@ final class AppState: ObservableObject {
         // Clipboard polling is started by AppIntegration; only load history here
         clipVault.loadFromDisk()
 
-        // 启动全局拖拽检测器（Boring Notch 风格）
+        // Start the global drag detector (Boring Notch style)
         setupGlobalDragDetector()
     }
 
@@ -160,13 +163,13 @@ final class AppState: ObservableObject {
     private func setupGlobalDragDetector() {
         let detector = DragDetectorManager.shared
 
-        // 当拖拽进入刘海区域时
+        // When a drag enters the notch region
         detector.onDragEntersNotchRegion = { [weak self] in
             Task { @MainActor in
                 self?.isDraggingOver = true
                 self?.logEvent("🎯 Drag entered notch region")
 
-                // 如果在收起状态，展开到文件区
+                // If collapsed, expand to the files section
                 if self?.overlayMode == .compact {
                     self?.activateOverlay(reason: .dragDetected)
                     self?.currentSection = .files
@@ -174,7 +177,7 @@ final class AppState: ObservableObject {
             }
         }
 
-        // 当拖拽离开刘海区域时
+        // When a drag leaves the notch region
         detector.onDragExitsNotchRegion = { [weak self] in
             Task { @MainActor in
                 self?.isDraggingOver = false
@@ -203,7 +206,7 @@ final class AppState: ObservableObject {
             }
         }
 
-        // 启动监听
+        // Start listening
         detector.startMonitoring()
     }
 

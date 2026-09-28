@@ -1,6 +1,6 @@
 //
 //  Defaults+Keys.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  UserDefaults wrapper (replaces Defaults library)
 //
@@ -34,7 +34,6 @@ final class SettingsDefaults: ObservableObject {
     // MARK: - Appearance
     static let cornerRadiusScaling = SettingsKey(key: "cornerRadiusScaling", defaultValue: 1.0)
     static let lightingEffect = SettingsKey(key: "lightingEffect", defaultValue: true)
-    static let enableBlur = SettingsKey(key: "enableBlur", defaultValue: true)
     static let enableGradient = SettingsKey(key: "enableGradient", defaultValue: true)
     
     // MARK: - Music
@@ -52,8 +51,6 @@ final class SettingsDefaults: ObservableObject {
     
     // MARK: - Gestures
     static let enableGestures = SettingsKey(key: "enableGestures", defaultValue: true)
-    static let closeGestureEnabled = SettingsKey(key: "closeGestureEnabled", defaultValue: true)
-    static let gestureSensitivity = SettingsKey(key: "gestureSensitivity", defaultValue: CGFloat(50.0))
     
     // MARK: - Claude Code
     static let showAgentLiveActivity = SettingsKey(key: "showAgentLiveActivity", defaultValue: true)
@@ -82,6 +79,8 @@ final class SettingsDefaults: ObservableObject {
     
     // MARK: - App Customization
     static let islandBackgroundColor = SettingsKey(key: "islandBackgroundColor", defaultValue: "black")
+    /// IslandTheme raw value
+    static let islandTheme = SettingsKey(key: "islandTheme", defaultValue: IslandTheme.standard.rawValue)
     static let launchAtLogin = SettingsKey(key: "launchAtLogin", defaultValue: false)
 
     // Getters/setters for non-primitive types
@@ -118,6 +117,10 @@ final class SettingsDefaults: ObservableObject {
         }
     }
     
+    func resolveTheme() -> IslandTheme {
+        IslandTheme(rawValue: get(SettingsDefaults.islandTheme)) ?? .standard
+    }
+
     // Resolve color string to SwiftUI Color
     func resolveBackgroundColor() -> Color {
         let colorName = get(SettingsDefaults.islandBackgroundColor)

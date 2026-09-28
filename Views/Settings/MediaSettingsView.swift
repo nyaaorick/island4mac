@@ -2,77 +2,71 @@ import SwiftUI
 
 struct MediaSettingsView: View {
     @State private var slotLimit: Double = Double(SettingsDefaults.shared.get(SettingsDefaults.musicControlSlotLimit))
-    
+
     var body: some View {
-        Form {
-            Section(header: Text("正在播放")) {
+        SettingsForm {
+            Section(header: Text("Now playing")) {
                 ToggleSettingsRow(
                     key: SettingsDefaults.showMusicLiveActivity,
-                    title: "启用实时活动",
-                    help: "收起状态时在灵动岛显示歌曲信息"
+                    title: "Enable live activity",
+                    help: "Show track info in the island when collapsed"
                 )
-                
+
                 ToggleSettingsRow(
                     key: SettingsDefaults.coloredSpectrogram,
-                    title: "多彩频谱仪",
-                    help: "从专辑封面提取颜色生成音频频谱动画"
+                    title: "Colorful spectrum",
+                    help: "Extract colors from the album cover for the audio spectrum animation"
                 )
-                
+
                 ToggleSettingsRow(
                     key: SettingsDefaults.playerColorTinting,
-                    title: "控件着色",
-                    help: "使用专辑封面颜色为控制按钮和背景着色"
+                    title: "Tint controls",
+                    help: "Tint the control buttons and background with the album cover colors"
                 )
-                
+
                 ToggleSettingsRow(
                     key: SettingsDefaults.useMusicVisualizer,
-                    title: "启用音乐动效",
-                    help: "在灵动岛展开时显示播放动效"
+                    title: "Enable music animation",
+                    help: "Show a playback animation when the island is expanded"
                 )
             }
-            
-            Section(header: Text("歌词设置")) {
+
+            Section(header: Text("Lyrics")) {
                 ToggleSettingsRow(
                     key: SettingsDefaults.enableLyrics,
-                    title: "显示歌词",
-                    help: "如果可用，在歌曲下方显示同步歌词"
+                    title: "Show lyrics",
+                    help: "Show synced lyrics below the track when available"
                 )
-                
-                Picker("歌词来源", selection: Binding(
+
+                Picker("Lyrics source", selection: Binding(
                     get: { SettingsDefaults.shared.get(SettingsDefaults.lyricsSource) },
                     set: { SettingsDefaults.shared.set(SettingsDefaults.lyricsSource, value: $0) }
                 )) {
-                    Text("自动 (最佳匹配)").tag("auto")
+                    Text("Auto (best match)").tag("auto")
                     Text("LrcLib").tag("lrclib")
-                    Text("网易云音乐").tag("netease")
+                    Text("NetEase Cloud Music").tag("netease")
                 }
                 .pickerStyle(.menu)
             }
-            
-            Section(header: Text("控制按钮配置")) {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Text("显示的控制槽位数量")
-                        Spacer()
-                        Text("\(Int(slotLimit))")
-                            .foregroundStyle(.secondary)
+
+            Section {
+                // Saved when the slider is let go, so the island doesn't relayout on every step
+                SliderSettingsRow(
+                    title: "Control slots shown",
+                    value: $slotLimit,
+                    range: 3...7,
+                    step: 1,
+                    valueText: "\(Int(slotLimit))"
+                ) { editing in
+                    if !editing {
+                        SettingsDefaults.shared.set(SettingsDefaults.musicControlSlotLimit, value: Int(slotLimit))
                     }
-                    
-                    Slider(value: $slotLimit, in: 3...7, step: 1) {
-                        EmptyView()
-                    } onEditingChanged: { editing in
-                        if !editing {
-                            SettingsDefaults.shared.set(SettingsDefaults.musicControlSlotLimit, value: Int(slotLimit))
-                        }
-                    }
-                    
-                    Text("可以调整灵动岛展开后显示的媒体控制按钮数量。")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
+            } header: {
+                Text("Control buttons")
+            } footer: {
+                SettingsNote("How many media control buttons the expanded island shows.")
             }
         }
-        .formStyle(.grouped)
-        .padding()
     }
 }

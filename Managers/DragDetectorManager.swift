@@ -1,8 +1,8 @@
 import Cocoa
 import UniformTypeIdentifiers
 
-/// 全局拖拽检测器 - 借鉴 Boring Notch 实现
-/// 用于检测系统级别的文件拖拽，当拖拽进入刘海区域时触发回调
+/// Global drag detector, modeled on Boring Notch
+/// Detects system-wide file drags and fires a callback when a drag enters the notch region
 final class DragDetectorManager {
     
     static let shared = DragDetectorManager()
@@ -36,9 +36,9 @@ final class DragDetectorManager {
     private var notchRegion: CGRect = .zero
     private let dragPasteboard = NSPasteboard(name: .drag)
     
-    // 节流相关
+    // Throttling
     private var lastProcessedTime: TimeInterval = 0
-    private let throttleInterval: TimeInterval = 0.05 // 50ms 节流，从每次处理降低到 20fps
+    private let throttleInterval: TimeInterval = 0.05 // 50ms throttle, down from handling every event to 20fps
     
     private init() {}
     
@@ -51,7 +51,7 @@ final class DragDetectorManager {
     func startMonitoring() {
         stopMonitoring()
         
-        // 监听鼠标按下 - 记录剪贴板状态
+        // Watch mouse down - record the pasteboard state
         mouseDownMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] _ in
             guard let self = self else { return }
             self.pasteboardChangeCount = self.dragPasteboard.changeCount
@@ -61,29 +61,29 @@ final class DragDetectorManager {
             self.didFireDropForCurrentDrag = false
         }
         
-        // 监听拖拽移动 - 检测是否进入刘海区域 (已优化:节流)
+        // Watch drag movement - detect entering the notch region (optimized: throttled)
         mouseDraggedMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] _ in
             guard let self = self else { return }
             guard self.isDragging else { return }
             
-            // ✅ 节流: 避免每次 mouseDragged 都处理
+            // ✅ Throttle: don't handle every mouseDragged
             let now = Date().timeIntervalSinceReferenceDate
             guard now - self.lastProcessedTime >= self.throttleInterval else { return }
             self.lastProcessedTime = now
             
             let newContent = self.dragPasteboard.changeCount != self.pasteboardChangeCount
             
-            // 检测是否真的在拖拽内容（剪贴板变化 + 内容有效）
+            // Check that content is really being dragged (pasteboard changed + content valid)
             if newContent && !self.isContentDragging && self.hasValidDragContent() {
                 self.isContentDragging = true
             }
             
-            // 只在拖拽内容时处理位置
+            // Only handle position while content is being dragged
             if self.isContentDragging {
                 let mouseLocation = NSEvent.mouseLocation
                 self.onDragMove?(mouseLocation)
                 
-                // 检测是否进入/退出刘海区域
+                // Detect entering/leaving the notch region
                 let containsMouse = self.notchRegion.contains(mouseLocation)
                 if containsMouse && !self.hasEnteredNotchRegion {
                     self.hasEnteredNotchRegion = true
@@ -95,7 +95,7 @@ final class DragDetectorManager {
             }
         }
         
-        // 监听鼠标释放 - 触发 fallback drop（如果松手在刘海区域内）
+        // Watch mouse up - trigger the fallback drop (if released inside the notch region)
         mouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] _ in
             guard let self = self else { return }
             guard self.isDragging else { return }
@@ -118,7 +118,7 @@ final class DragDetectorManager {
             self.isDragging = false
             self.isContentDragging = false
             
-            // 延迟重置 region 状态，给后续 UI 处理时间
+            // Reset the region state after a delay to give the UI time to react
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.hasEnteredNotchRegion = false
             }
@@ -143,7 +143,7 @@ final class DragDetectorManager {
     
     // MARK: - Private Helpers
     
-    /// 检查拖拽的剪贴板是否包含有效内容
+    /// Check whether the drag pasteboard holds valid content
     private func hasValidDragContent() -> Bool {
         let validTypes: [NSPasteboard.PasteboardType] = [
             .fileURL,

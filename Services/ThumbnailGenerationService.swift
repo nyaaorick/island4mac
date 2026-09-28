@@ -8,7 +8,7 @@ class ThumbnailGenerationService {
     
     private let cache = NSCache<NSURL, NSImage>()
     private let thumbnailSize = CGSize(width: 256, height: 256)
-    private let queue = DispatchQueue(label: "com.mac灵动岛.thumbnail", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "com.macdynamicisland.thumbnail", qos: .userInitiated)
     
     private init() {
         cache.countLimit = 100

@@ -2,30 +2,30 @@ import SwiftUI
 
 struct AgentSettingsView: View {
     var body: some View {
-        Form {
+        SettingsForm {
             ForEach(AgentKind.allCases, id: \.self) { agent in
                 Section(header: Text(agent.displayName)) {
                     AgentConnectionRow(installer: .standard(agent))
                 }
             }
 
-            Section(header: Text("通用")) {
+            Section(header: Text("General")) {
                 ToggleSettingsRow(
                     key: SettingsDefaults.showAgentLiveActivity,
-                    title: "在刘海旁显示进度",
-                    help: "Agent 工作中、等你授权或刚完成时，在收起的灵动岛旁显示状态和进度"
+                    title: "Show progress next to the notch",
+                    help: "Show status and progress beside the collapsed island while an agent is working, waiting for your approval, or just finished"
                 )
 
                 ToggleSettingsRow(
                     key: SettingsDefaults.agentPromptsOpenIsland,
-                    title: "需要你确认或回答时自动展开",
-                    help: "Claude 请求权限、让你回答问题或做选择时，自动展开灵动岛，可以直接在岛上处理（也仍可在终端里操作）"
+                    title: "Expand automatically when input is needed",
+                    help: "When Claude asks for permission or needs an answer or a choice, the island expands so you can handle it right there (the terminal still works too)"
                 )
 
                 ToggleSettingsRow(
                     key: SettingsDefaults.agentSoundsEnabled,
-                    title: "提示音",
-                    help: "Agent 需要你授权、完成或出错时播放系统提示音"
+                    title: "Alert sound",
+                    help: "Play a system sound when an agent needs approval, finishes, or hits an error"
                 )
             }
         }
@@ -39,39 +39,28 @@ private struct AgentConnectionRow: View {
     @State private var errorText: String?
 
     var body: some View {
-        HStack {
-            Image(systemName: isInstalled ? "checkmark.circle.fill" : "circle.dashed")
-                .foregroundColor(isInstalled ? .green : .secondary)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(isInstalled ? "已接入" : "未接入")
-                Text(help)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button(isInstalled ? "断开" : "接入 \(installer.agent.displayName)") {
+        StatusSettingsRow(title: isInstalled ? "Connected" : "Not connected", isOK: isInstalled, note: help) {
+            Button(isInstalled ? "Disconnect" : "Connect \(installer.agent.displayName)") {
                 toggleInstallation()
             }
         }
         .onAppear { isInstalled = installer.isInstalled }
 
         if let errorText {
-            Text(errorText)
-                .font(.caption)
-                .foregroundStyle(.red)
+            SettingsNote(errorText, color: .red)
         }
     }
 
     private var help: String {
         let file = (installer.settingsURL.path as NSString).abbreviatingWithTildeInPath
-        let base = "接入后会在 \(file) 里添加钩子（首次修改前会备份），已有的钩子不受影响"
+        let base = "Connecting adds hooks to \(file) (backed up before the first change); existing hooks are left alone"
         switch installer.agent {
         case .claude:
             return base
         case .codex:
-            return base + "。Codex 要你信任新钩子后才会运行：接入后在 Codex 里输入 /hooks 确认"
+            return base + ". Codex only runs new hooks once you trust them: after connecting, type /hooks in Codex to confirm"
         case .zcode:
-            return base + "，并打开配置文件钩子（hooks.enabled）"
+            return base + ", and turns on config-file hooks (hooks.enabled)"
         }
     }
 

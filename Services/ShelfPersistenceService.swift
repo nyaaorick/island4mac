@@ -10,7 +10,7 @@ class ShelfPersistenceService {
     
     private var shelfFileURL: URL {
         let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let appDirectory = appSupport.appendingPathComponent("Mac灵动岛", isDirectory: true)
+        let appDirectory = appSupport.appendingPathComponent("MacDynamicIsland", isDirectory: true)
         try? fileManager.createDirectory(at: appDirectory, withIntermediateDirectories: true)
         return appDirectory.appendingPathComponent("shelf_items_v2.json")
     }

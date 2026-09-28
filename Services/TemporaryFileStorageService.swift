@@ -11,7 +11,7 @@ class TemporaryFileStorageService {
     private init() {
         // Create app-specific temp directory
         tempDirectory = fileManager.temporaryDirectory
-            .appendingPathComponent("Mac灵动岛", isDirectory: true)
+            .appendingPathComponent("MacDynamicIsland", isDirectory: true)
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         
         try? fileManager.createDirectory(at: tempDirectory, withIntermediateDirectories: true)

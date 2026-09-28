@@ -25,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - State Access
 
-    // ✅ MainActor 隔离修复 - nonisolated 使得该属性可以在非 MainActor 上下文中调用
+    // ✅ MainActor isolation fix - nonisolated lets this property be called from non-MainActor contexts
     nonisolated var appState: AppState {
         MainActor.assumeIsolated {
             overlayController.getAppState()
@@ -123,7 +123,7 @@ class AppIntegration {
     // MARK: - Lifecycle
 
     func start() {
-        let appState = MainActor.assumeIsolated { // ✅ MainActor 隔离修复
+        let appState = MainActor.assumeIsolated { // ✅ MainActor isolation fix
             OverlayWindowController.shared.getAppState()
         }
 

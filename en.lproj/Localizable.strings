@@ -18,6 +18,7 @@
 "settings.tab.general" = "General";
 "settings.tab.appearance" = "Appearance";
 "settings.tab.media" = "Media";
+"settings.tab.agents" = "Agents";
 "settings.tab.clipboard" = "Clipboard";
 "settings.tab.shelf" = "Shelf";
 "settings.tab.shortcuts" = "Shortcuts";
@@ -40,6 +41,12 @@
 "settings.appearance.panel_width" = "Panel width";
 "settings.appearance.panel_width_unit" = "px";
 "settings.appearance.corner_radius" = "Corner radius scale";
+"settings.appearance.theme" = "Theme";
+"settings.appearance.theme.default" = "Default";
+"settings.appearance.theme.default_help" = "Solid background, as black as the notch";
+"settings.appearance.theme.glass" = "Glass";
+"settings.appearance.theme.glass_help" = "Black level with the camera, then Liquid Glass like Control Center";
+"settings.appearance.background_color_help" = "Used by the Default theme";
 "settings.appearance.lighting_effect" = "Enable lighting effect";
 "settings.appearance.lighting_effect_help" = "Show a dynamic ambient glow behind album art and content";
 "settings.media.timeout_unit" = "s";
@@ -107,7 +114,7 @@
 "export.success_message" = "Diagnostics saved to %@";
 "export.error_title" = "Export Failed";
 "export.error_message" = "Could not save diagnostics: %@";
-"export.filename" = "Mac灵动岛-Diagnostics.txt";
+"export.filename" = "MacDynamicIsland-Diagnostics.txt";
 
 /* ===== Reset Settings ===== */
 "reset.settings_title" = "Reset Settings?";
@@ -136,14 +143,14 @@
 
 /* ===== Accessibility Permission ===== */
 "accessibility_required_title" = "Accessibility Permission Required";
-"accessibility_required_message" = "Mac灵动岛 needs Accessibility permission to enable global hotkeys (⌘⇧Space to toggle, ⌘⌥V for clipboard) and seamless drag-drop across apps.\n\nPlease enable it in System Settings > Privacy & Security > Accessibility.";
+"accessibility_required_message" = "Mac Dynamic Island needs Accessibility permission to enable global hotkeys (⌘⇧Space to toggle, ⌘⌥V for clipboard) and seamless drag-drop across apps.\n\nPlease enable it in System Settings > Privacy & Security > Accessibility.";
 "open_settings" = "Open Settings";
 "later" = "Later";
 "accessibility.banner.title" = "Enable Global Hotkeys";
 "accessibility.banner.message" = "Grant Accessibility permission to use keyboard shortcuts";
 
 /* ===== Onboarding ===== */
-"onboarding.welcome.title" = "Welcome to Mac灵动岛";
+"onboarding.welcome.title" = "Welcome to Mac Dynamic Island";
 "onboarding.welcome.subtitle" = "Your Dynamic Island for macOS";
 "onboarding.permissions.title" = "Required Permissions";
 "onboarding.permissions.accessibility" = "Accessibility";
@@ -156,7 +163,7 @@
 
 /* ===== About ===== */
 "about.version" = "Version %@ (%@)";
-"about.copyright" = "© 2026 Mac灵动岛. All rights reserved.";
+"about.copyright" = "© 2026 Mac Dynamic Island. All rights reserved.";
 "about.acknowledgements" = "Acknowledgements";
 "about.privacy_policy" = "Privacy Policy";
 "about.terms_of_service" = "Terms of Service";

@@ -2,18 +2,16 @@ import SwiftUI
 
 struct ShortcutsSettingsView: View {
     var body: some View {
-        Form {
-            Section(header: Text("全局快捷键")) {
-                LabeledContent("切换灵动岛显示", value: "⌘ ⇧ Space")
-                LabeledContent("强制收起", value: "⌘ ⌥ Space")
-                LabeledContent("剪贴板历史", value: "⌘ ⌥ V")
-            }
-            
-            Section(footer: Text("目前快捷键是固定的，暂不支持自定义修改。")) {
-                EmptyView()
+        SettingsForm {
+            Section {
+                LabeledContent("Toggle island", value: "⌘ ⇧ Space")
+                LabeledContent("Force collapse", value: "⌘ ⌥ Space")
+                LabeledContent("Clipboard history", value: "⌘ ⌥ V")
+            } header: {
+                Text("Global shortcuts")
+            } footer: {
+                SettingsNote("Shortcuts are fixed for now and can't be customized.")
             }
         }
-        .formStyle(.grouped)
-        .padding()
     }
 }

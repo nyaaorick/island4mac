@@ -1,6 +1,6 @@
 //
 //  MusicControlButton.swift
-//  Mac灵动岛
+//  MacDynamicIsland
 //
 //  Stage 1: Music control button types for configurable toolbar
 //
