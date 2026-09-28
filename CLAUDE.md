@@ -6,7 +6,7 @@ macOS menu bar app (Swift, SwiftUI + AppKit) that turns the MacBook notch into a
 
 - English only: code, comments, log messages, UI strings and test fixtures. The only localization is `en.lproj/Localizable.strings` (read through `L("key")` in `Utilities/Localization.swift`).
 - Swift only: no C, Objective-C or shell files, including the two helpers (`ClaudeHookBridge/main.swift`, `MediaRemoteAdapter/MediaRemoteAdapter.swift`). The hook helper runs on every agent hook event, so keep it to `import Darwin` and check its startup time (about 27 ms per run, same as the old C version) after changing it.
-- Docs are limited to this file, `roadmap.md` and `backup.md`. Do not add a `docs/` folder or a README.
+- Docs are limited to this file, `README.md`, `roadmap.md` and `backup.md`. Do not add a `docs/` folder. Keep the README short.
 - The app is not sandboxed (MediaRemote and AppleScript need that). Distribution is Developer ID + notarization, outside the Mac App Store.
 
 ## Build and test

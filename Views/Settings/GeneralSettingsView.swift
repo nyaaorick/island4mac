@@ -2,6 +2,8 @@ import SwiftUI
 
 struct GeneralSettingsView: View {
     @EnvironmentObject private var appState: AppState
+    // Redraws the hover delay's value as the slider moves
+    @ObservedObject private var settings = SettingsDefaults.shared
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var chosenDisplay = SettingsDefaults.shared.get(SettingsDefaults.preferredDisplayUUID)
     @State private var displays = ConnectedDisplay.all
@@ -11,41 +13,22 @@ struct GeneralSettingsView: View {
     @State private var nonNotchHeightValue: Double = SettingsDefaults.shared.get(SettingsDefaults.nonNotchHeight)
     
     var body: some View {
-        Form {
+        SettingsForm {
             // 0. Permissions
             Section(header: Text("Permissions")) {
-                HStack {
-                    Image(systemName: "accessibility")
-                        .font(.system(size: 24))
-                        .foregroundColor(appState.isAXAuthorized ? .green : .orange)
-                        .frame(width: 30)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Accessibility")
-                            .font(.headline)
-                        Text(appState.isAXAuthorized ? "Authorized" : "Not authorized")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                    
+                StatusSettingsRow(
+                    title: "Accessibility",
+                    isOK: appState.isAXAuthorized,
+                    note: appState.isAXAuthorized
+                        ? "Authorized"
+                        : "Not authorized. Required to read now-playing state from third-party apps such as QQ Music and NetEase Cloud Music."
+                ) {
                     if !appState.isAXAuthorized {
-                        Button("Grant Access") {
+                        Button("Grant access") {
                             appState.requestAXPermission()
                         }
                         .buttonStyle(.borderedProminent)
-                    } else {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
                     }
-                }
-                .padding(.vertical, 4)
-                
-                if !appState.isAXAuthorized {
-                    Text("Required to read now-playing state from third-party apps such as QQ Music and NetEase Cloud Music.")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
                 }
             }
             
@@ -115,18 +98,16 @@ struct GeneralSettingsView: View {
                     help: L("settings.behavior.show_on_hover_help")
                 )
                 
-                HStack {
-                    Text(L("settings.behavior.hover_delay"))
-                    Spacer()
-                    Slider(
-                        value: Binding(
-                            get: { SettingsDefaults.shared.get(SettingsDefaults.minimumHoverDuration) },
-                            set: { SettingsDefaults.shared.set(SettingsDefaults.minimumHoverDuration, value: $0) }
-                        ),
-                        in: 0.0...1.0
-                    )
-                    .frame(width: 150)
-                }
+                SliderSettingsRow(
+                    title: L("settings.behavior.hover_delay"),
+                    value: Binding(
+                        get: { settings.get(SettingsDefaults.minimumHoverDuration) },
+                        set: { settings.set(SettingsDefaults.minimumHoverDuration, value: $0) }
+                    ),
+                    range: 0.0...1.0,
+                    step: 0.05,
+                    valueText: String(format: "%.2f s", settings.get(SettingsDefaults.minimumHoverDuration))
+                )
                 
                 ToggleSettingsRow(
                     key: SettingsDefaults.enableHaptics,
@@ -149,17 +130,19 @@ struct GeneralSettingsView: View {
                     help: "Collapse the island after a period of inactivity"
                 )
                 
-                HStack {
-                    Text("Collapse delay")
-                    Spacer()
-                    TextField("", value: Binding(
-                        get: { SettingsDefaults.shared.get(SettingsDefaults.autoCloseTimeout) },
-                        set: { SettingsDefaults.shared.set(SettingsDefaults.autoCloseTimeout, value: $0) }
-                    ), formatter: NumberFormatter())
-                        .frame(width: 50)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                    Text(L("settings.media.timeout_unit"))
-                        .foregroundStyle(.secondary)
+                LabeledContent("Collapse delay") {
+                    HStack(spacing: 8) {
+                        TextField("", value: Binding(
+                            get: { SettingsDefaults.shared.get(SettingsDefaults.autoCloseTimeout) },
+                            set: { SettingsDefaults.shared.set(SettingsDefaults.autoCloseTimeout, value: $0) }
+                        ), formatter: NumberFormatter())
+                            .labelsHidden()
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 50)
+                            .textFieldStyle(.roundedBorder)
+                        Text(L("settings.media.timeout_unit"))
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             
@@ -172,8 +155,6 @@ struct GeneralSettingsView: View {
                 )
             }
         }
-        .formStyle(.grouped)
-        .padding()
     }
 }
 

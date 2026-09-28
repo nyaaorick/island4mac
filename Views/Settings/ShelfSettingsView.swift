@@ -2,14 +2,14 @@ import SwiftUI
 
 struct ShelfSettingsView: View {
     var body: some View {
-        Form {
-            Section(header: Text("Smart Shelf")) {
+        SettingsForm {
+            Section(header: Text("Smart shelf")) {
                 ToggleSettingsRow(
                     key: SettingsDefaults.boringShelf,
                     title: "Enable temporary shelf",
                     help: "Allow dragging files onto the island to hold them temporarily"
                 )
-                
+
                 ToggleSettingsRow(
                     key: SettingsDefaults.expandedDragDetection,
                     title: "Enlarge drop area",
@@ -17,7 +17,5 @@ struct ShelfSettingsView: View {
                 )
             }
         }
-        .formStyle(.grouped)
-        .padding()
     }
 }

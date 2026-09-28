@@ -30,6 +30,7 @@
 		511D73CA2F18D94200163A46 /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D739A2F18D94200163A46 /* AdvancedSettingsView.swift */; };
 		511D73CE2F18D94200163A46 /* MarqueeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73812F18D94200163A46 /* MarqueeText.swift */; };
 		4D5241080000000000000002 /* SwipeMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241080000000000000001 /* SwipeMonitor.swift */; };
+		4D5241090000000000000002 /* IslandBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241090000000000000001 /* IslandBackground.swift */; };
 		4D5241080000000000000004 /* SwipeTrackerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5241080000000000000003 /* SwipeTrackerTests.swift */; };
 		511D73CF2F18D94200163A46 /* ExpandedMusicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D73902F18D94200163A46 /* ExpandedMusicView.swift */; };
 		511D73D02F18D94200163A46 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 511D739B2F18D94200163A46 /* GeneralSettingsView.swift */; };
@@ -174,6 +175,7 @@
 		511D73702F18D94200163A46 /* AudioSpectrumView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSpectrumView.swift; sourceTree = "<group>"; };
 		511D73812F18D94200163A46 /* MarqueeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueeText.swift; sourceTree = "<group>"; };
 		4D5241080000000000000001 /* SwipeMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeMonitor.swift; sourceTree = "<group>"; };
+		4D5241090000000000000001 /* IslandBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandBackground.swift; sourceTree = "<group>"; };
 		4D5241080000000000000003 /* SwipeTrackerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeTrackerTests.swift; sourceTree = "<group>"; };
 		511D73902F18D94200163A46 /* ExpandedMusicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExpandedMusicView.swift; sourceTree = "<group>"; };
 		511D73992F18D94200163A46 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
@@ -359,6 +361,7 @@
 			children = (
 				51E1CA662F2319F9009A87D2 /* AnimatedFaceView.swift */,
 				511D73812F18D94200163A46 /* MarqueeText.swift */,
+				4D5241090000000000000001 /* IslandBackground.swift */,
 				4D5241080000000000000001 /* SwipeMonitor.swift */,
 			);
 			path = Components;
@@ -811,6 +814,7 @@
 				511D73CA2F18D94200163A46 /* AdvancedSettingsView.swift in Sources */,
 				511D73CE2F18D94200163A46 /* MarqueeText.swift in Sources */,
 				4D5241080000000000000002 /* SwipeMonitor.swift in Sources */,
+				4D5241090000000000000002 /* IslandBackground.swift in Sources */,
 				511D73CF2F18D94200163A46 /* ExpandedMusicView.swift in Sources */,
 				511D73D02F18D94200163A46 /* GeneralSettingsView.swift in Sources */,
 				51E1CA672F2319F9009A87D2 /* AnimatedFaceView.swift in Sources */,
@@ -1032,7 +1036,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = NO;
@@ -1066,7 +1070,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = NO;
@@ -1089,7 +1093,7 @@
 				DEVELOPMENT_TEAM = 66233X8P8H;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -1107,7 +1111,7 @@
 				DEVELOPMENT_TEAM = 66233X8P8H;
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.0;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.macdynamicisland.app.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;

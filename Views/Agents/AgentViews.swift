@@ -231,7 +231,7 @@ struct AgentsView: View {
     }
 }
 
-/// Sound toggle and settings, in the tab bar while the Agents tab is open
+/// Sound toggle and settings for the Agents tab: in the tab bar, or its corner when the tabs sit beside the camera
 struct AgentTabControls: View {
     @ObservedObject private var settings = SettingsDefaults.shared
 

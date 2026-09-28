@@ -18,6 +18,7 @@
 "settings.tab.general" = "General";
 "settings.tab.appearance" = "Appearance";
 "settings.tab.media" = "Media";
+"settings.tab.agents" = "Agents";
 "settings.tab.clipboard" = "Clipboard";
 "settings.tab.shelf" = "Shelf";
 "settings.tab.shortcuts" = "Shortcuts";
@@ -40,6 +41,12 @@
 "settings.appearance.panel_width" = "Panel width";
 "settings.appearance.panel_width_unit" = "px";
 "settings.appearance.corner_radius" = "Corner radius scale";
+"settings.appearance.theme" = "Theme";
+"settings.appearance.theme.default" = "Default";
+"settings.appearance.theme.default_help" = "Solid background, as black as the notch";
+"settings.appearance.theme.glass" = "Glass";
+"settings.appearance.theme.glass_help" = "Black level with the camera, then Liquid Glass like Control Center";
+"settings.appearance.background_color_help" = "Used by the Default theme";
 "settings.appearance.lighting_effect" = "Enable lighting effect";
 "settings.appearance.lighting_effect_help" = "Show a dynamic ambient glow behind album art and content";
 "settings.media.timeout_unit" = "s";

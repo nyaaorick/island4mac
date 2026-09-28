@@ -45,9 +45,44 @@ enum SwipeZone {
     }
 }
 
-/// Reports two-finger trackpad swipes made in this island's swipe zone, over its panel or over another app.
-/// Events pass through untouched (over another app it scrolls as usual), and a swipe that starts on one of the
-/// island's own scrolling lists is left to the list
+/// What is under the pointer when a swipe starts. Scrolling whatever is there comes first: a swipe over another
+/// app's window is left to that window, so the island only answers over the desktop, Dock, menu bar or itself
+enum SwipeArea {
+    /// Ordinary windows (layer 0), this app's own included (Settings), and the floating panels, dialogs and menus
+    /// around them can scroll. The desktop (below 0) and the Dock, menu bar and status items (20 to 25) can't.
+    /// Swipes over the island's own panel never get here: the app receives those itself
+    static func isFree(layer: Int) -> Bool {
+        layer < 0 || (20...25).contains(layer)
+    }
+
+    /// Whether the topmost window at `point` (AppKit screen coordinates) leaves the swipe to the island
+    static func isFree(at point: CGPoint) -> Bool {
+        guard let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] else {
+            return false
+        }
+        // Window bounds count down from the top of the main display; AppKit's points count up from its bottom
+        let primaryHeight = NSScreen.screens.first?.frame.maxY ?? 0
+        let cgPoint = CGPoint(x: point.x, y: primaryHeight - point.y)
+        let displays = NSScreen.screens.compactMap { $0.displayID.map(CGDisplayBounds) }
+        // Front to back: the first window containing the point is the one you'd be scrolling
+        for window in windows {
+            guard (window[kCGWindowAlpha as String] as? Double ?? 1) > 0.01,
+                  let boundsInfo = window[kCGWindowBounds as String] as? NSDictionary,
+                  let bounds = CGRect(dictionaryRepresentation: boundsInfo as CFDictionary),
+                  bounds.contains(cgPoint) else { continue }
+            let layer = window[kCGWindowLayer as String] as? Int ?? 0
+            // The Dock keeps a display-sized window above every app to catch clicks; it isn't something you scroll.
+            // A real full-screen window is an ordinary one (layer 0)
+            if layer > 0, displays.contains(where: { bounds.contains($0) }) { continue }
+            return isFree(layer: layer)
+        }
+        return true
+    }
+}
+
+/// Reports two-finger trackpad swipes made in this island's swipe zone, over its panel or over an empty part of
+/// the screen. Events pass through untouched. A swipe that would scroll something (another app's window, or one
+/// of the island's own lists) is left to that and doesn't open or close the island
 struct SwipeMonitor: NSViewRepresentable {
     let onSwipe: (SwipeDirection) -> Void
 
@@ -73,7 +108,7 @@ struct SwipeMonitor: NSViewRepresentable {
         /// Scrolls sent to this app's windows, and to other apps (which the island can watch but not take)
         private var monitors: [Any] = []
         private var tracker = SwipeTracker()
-        /// The swipe in progress began outside the zone or on a list, so it isn't ours
+        /// The swipe in progress began outside the zone or where it scrolls something, so it isn't ours
         private var ignored = false
 
         init(onSwipe: @escaping (SwipeDirection) -> Void) {
@@ -110,7 +145,9 @@ struct SwipeMonitor: NSViewRepresentable {
 
             if event.phase.contains(.began) {
                 tracker.begin()
-                ignored = !Self.inZone(of: window) || (isLocal && Self.isOverScrollView(event, in: window))
+                // Scrolls sent to this app are over the island: only its lists can scroll. The others go to whatever is there
+                let wouldScroll = isLocal ? Self.isOverScrollView(event, in: window) : !SwipeArea.isFree(at: NSEvent.mouseLocation)
+                ignored = wouldScroll || !Self.inZone(of: window)
             }
             guard !ignored else { return }
 

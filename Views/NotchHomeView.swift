@@ -76,9 +76,7 @@ struct NotchHomeView: View {
         // THE UNIFIED CAPSULE (The Mother Hull)
         ZStack(alignment: .top) {
             if isExpanded {
-                ExpandedIslandRegion(animation: islandAnimation)
-                    // Start the content below the camera housing
-                    .padding(.top, notch.height)
+                ExpandedIslandRegion(animation: islandAnimation, notch: notch)
                     // Lay out at the final size so nothing reflows while the island grows around it
                     .frame(
                         width: islandSize.width - 2 * NotchMetrics.expandedTopRadius,
@@ -105,10 +103,26 @@ struct NotchHomeView: View {
             }
         }
         .frame(width: islandSize.width, height: islandSize.height, alignment: .top)
-        // Solid color, never a material: the island has to be exactly as black as the notch it grows out of
-        .background(appState.islandBackgroundColor)
+        // Black at least as far down as the camera housing: the island has to be exactly as black as the notch
+        // it grows out of. Only the Glass theme lets the glass through below it
+        .background(IslandBackground(
+            theme: appState.islandTheme,
+            color: appState.islandBackgroundColor,
+            solidHeight: notch.height > 0 ? notch.height : settings.get(SettingsDefaults.nonNotchHeight)
+        ))
         .clipShape(NotchShape(topCornerRadius: topCornerRadius, bottomCornerRadius: bottomCornerRadius))
         .compositingGroup()
+        // Liquid Glass under the Glass theme: the island's body, without the top flares, which stay black.
+        // Outside the compositing group, which would render it offscreen where it can't sample the screen.
+        // Only while open: the collapsed island is all camera housing and stays as black as the notch
+        .background(alignment: .top) {
+            if appState.islandTheme == .glass {
+                IslandGlass(cornerRadius: bottomCornerRadius)
+                    .frame(width: max(0, islandSize.width - 2 * topCornerRadius), height: islandSize.height)
+                    .opacity(isExpanded ? 1 : 0)
+                    .allowsHitTesting(false)
+            }
+        }
         // No outline: a stroke would trace the notch and give the island away
         // ✅ Shadow removed entirely to avoid leftover black pixels
         // SwiftUI's shadow can leave black pixel artifacts at the edges, especially on high-resolution displays
@@ -529,68 +543,110 @@ private struct CompactMusicProgressBar: View {
 struct ExpandedIslandRegion: View {
     @EnvironmentObject var appState: AppState
     var animation: Namespace.ID
-    
+    /// Camera housing. With a notch the tabs sit either side of it, level with the camera, and the content
+    /// starts right below it; without one they get their own tab bar
+    var notch: CGSize
+
     @State private var hoveredSection: AppState.IslandSection? = nil
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            // Header: Tabs
-            HStack(spacing: 12) {
-                HStack(spacing: 4) {
-                    ForEach(AppState.IslandSection.allCases, id: \.self) { section in
-                        tabItem(for: section)
-                    }
-                }
-
-                Spacer()
-
-                if appState.currentSection == .agents {
-                    AgentTabControls()
-                }
-                
-                // Close Button - Using custom view to ensure clickability
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundColor(.white.opacity(0.3))
-                    .frame(width: 32, height: 32)
-                    .contentShape(Circle())
-                    .onHover { h in if h { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() } }
-                    .onTapGesture {
-                        withAnimation(boringInteractiveSpring) {
-                            appState.deactivateOverlay()
-                        }
-                    }
+            if notch == .zero {
+                tabBar
+                Divider().background(Color.white.opacity(0.1))
+            } else {
+                cameraRow
             }
-            .padding(.horizontal, 14)
-            .padding(.top, 12)
-            .padding(.bottom, 8)
-            .frame(height: NotchMetrics.tabBarHeight - 1)
-            
-            Divider().background(Color.white.opacity(0.1))
-            
-            // Content Anchor
-            ZStack {
-                // Invisible background to capture events in the whole content area
-                Color.black.opacity(0.001)
-                
-                Group {
-                    switch appState.currentSection {
-                    case .music:
-                        ExpandedMusicView(musicManager: MusicManager.shared, animation: animation)
-                    case .clipboard:
-                        ClipboardHubView(vault: appState.clipVault)
-                    case .files:
-                        ShelfView()
-                    case .agents:
-                        AgentsView()
-                    }
-                }
-            }
-            // The rest of the open island, sized per tab by NotchMetrics.expandedSize(for:largeDisplay:)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            content
         }
     }
-    
+
+    /// Music and Clipboard left of the camera, Files and Agents right of it, each pair centered on its side.
+    /// No close button up here: the island closes when the pointer leaves it, on a swipe up or with ⇧⌘Space
+    private var cameraRow: some View {
+        let sections = AppState.IslandSection.allCases
+        let leading = (sections.count + 1) / 2
+        return HStack(spacing: 0) {
+            tabGroup(sections.prefix(leading))
+            Color.clear
+                .frame(width: notch.width)
+            tabGroup(sections.dropFirst(leading))
+        }
+        .frame(height: notch.height)
+    }
+
+    private func tabGroup(_ sections: ArraySlice<AppState.IslandSection>) -> some View {
+        HStack(spacing: 4) {
+            ForEach(sections, id: \.self) { section in
+                tabItem(for: section)
+            }
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// Tabs row on a display without a notch, with the close button and the Agents tab's controls
+    private var tabBar: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 4) {
+                ForEach(AppState.IslandSection.allCases, id: \.self) { section in
+                    tabItem(for: section)
+                }
+            }
+
+            Spacer()
+
+            if appState.currentSection == .agents {
+                AgentTabControls()
+            }
+            
+            // Close Button - Using custom view to ensure clickability
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 18))
+                .foregroundColor(.white.opacity(0.3))
+                .frame(width: 32, height: 32)
+                .contentShape(Circle())
+                .onHover { h in if h { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() } }
+                .onTapGesture {
+                    withAnimation(boringInteractiveSpring) {
+                        appState.deactivateOverlay()
+                    }
+                }
+        }
+        .padding(.horizontal, 14)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .frame(height: NotchMetrics.tabBarHeight - 1)
+    }
+
+    private var content: some View {
+        ZStack {
+            // Invisible background to capture events in the whole content area
+            Color.black.opacity(0.001)
+
+            Group {
+                switch appState.currentSection {
+                case .music:
+                    ExpandedMusicView(musicManager: MusicManager.shared, animation: animation)
+                case .clipboard:
+                    ClipboardHubView(vault: appState.clipVault)
+                case .files:
+                    ShelfView()
+                case .agents:
+                    AgentsView()
+                }
+            }
+        }
+        // The rest of the open island, sized per tab by NotchMetrics.expandedSize(for:largeDisplay:notch:)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // With the tabs beside the camera there's no tab bar, so the Agents tab's controls float in its corner
+        .overlay(alignment: .bottomTrailing) {
+            if notch != .zero && appState.currentSection == .agents {
+                AgentTabControls()
+                    .padding(6)
+            }
+        }
+    }
+
     private func tabItem(for section: AppState.IslandSection) -> some View {
         let isSelected = appState.currentSection == section
         let isHovered = hoveredSection == section
@@ -640,8 +696,9 @@ enum NotchMetrics {
     /// Width of the open island on a large display, again the same for every tab
     static let largeDisplayExpandedWidth: CGFloat = 760
 
-    /// Open island below the camera housing: the tab bar plus a content area as tall as what each tab shows
-    static func expandedSize(for section: AppState.IslandSection, largeDisplay: Bool) -> CGSize {
+    /// Open island below the camera housing: a content area as tall as what each tab shows, under the tab bar
+    /// on a display without a notch (with one, the tabs sit beside the camera, above this)
+    static func expandedSize(for section: AppState.IslandSection, largeDisplay: Bool, notch: CGSize) -> CGSize {
         let contentHeight: CGFloat
         switch section {
         case .music:
@@ -657,7 +714,8 @@ enum NotchMetrics {
             // A couple of session rows with their task lists; the list scrolls
             contentHeight = 270
         }
-        return CGSize(width: largeDisplay ? largeDisplayExpandedWidth : expandedWidth, height: tabBarHeight + contentHeight)
+        let tabs = notch == .zero ? tabBarHeight : 0
+        return CGSize(width: largeDisplay ? largeDisplayExpandedWidth : expandedWidth, height: tabs + contentHeight)
     }
     /// Collapsed pill on displays without a notch
     static let nonNotchWidth: CGFloat = 185
@@ -714,7 +772,7 @@ enum NotchMetrics {
                            largeDisplay: Bool, nonNotchHeight: CGFloat) -> CGSize {
         if expanded {
             // Content starts below the camera housing
-            let open = expandedSize(for: section, largeDisplay: largeDisplay)
+            let open = expandedSize(for: section, largeDisplay: largeDisplay, notch: notch)
             return CGSize(width: open.width, height: open.height + notch.height)
         }
         // No notch (external display): a small pill at the top center. On a large display it widens
@@ -730,7 +788,7 @@ enum NotchMetrics {
 
     /// Fixed size of the SwiftUI canvas: the largest open island plus its overshoot margin
     static func canvasSize(notch: CGSize, largeDisplay: Bool) -> CGSize {
-        let openSizes = AppState.IslandSection.allCases.map { expandedSize(for: $0, largeDisplay: largeDisplay) }
+        let openSizes = AppState.IslandSection.allCases.map { expandedSize(for: $0, largeDisplay: largeDisplay, notch: notch) }
         return CGSize(
             width: (openSizes.map(\.width).max() ?? 0) + 2 * overshootMargin,
             height: (openSizes.map(\.height).max() ?? 0) + notch.height + overshootMargin

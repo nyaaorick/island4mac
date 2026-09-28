@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AgentSettingsView: View {
     var body: some View {
-        Form {
+        SettingsForm {
             ForEach(AgentKind.allCases, id: \.self) { agent in
                 Section(header: Text(agent.displayName)) {
                     AgentConnectionRow(installer: .standard(agent))
@@ -39,16 +39,7 @@ private struct AgentConnectionRow: View {
     @State private var errorText: String?
 
     var body: some View {
-        HStack {
-            Image(systemName: isInstalled ? "checkmark.circle.fill" : "circle.dashed")
-                .foregroundColor(isInstalled ? .green : .secondary)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(isInstalled ? "Connected" : "Not connected")
-                Text(help)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
+        StatusSettingsRow(title: isInstalled ? "Connected" : "Not connected", isOK: isInstalled, note: help) {
             Button(isInstalled ? "Disconnect" : "Connect \(installer.agent.displayName)") {
                 toggleInstallation()
             }
@@ -56,9 +47,7 @@ private struct AgentConnectionRow: View {
         .onAppear { isInstalled = installer.isInstalled }
 
         if let errorText {
-            Text(errorText)
-                .font(.caption)
-                .foregroundStyle(.red)
+            SettingsNote(errorText, color: .red)
         }
     }
 

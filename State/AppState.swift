@@ -61,6 +61,9 @@ final class AppState: ObservableObject {
     var islandBackgroundColor: Color {
         settingsStore.resolveBackgroundColor()
     }
+    var islandTheme: IslandTheme {
+        settingsStore.resolveTheme()
+    }
 
     private var settingsCancellable: AnyCancellable?
     private var autoCloseTimer: Timer?

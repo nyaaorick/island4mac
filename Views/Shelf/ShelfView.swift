@@ -17,9 +17,10 @@ struct ShelfView: View {
     var body: some View {
         ZStack {
             ZStack {
-                // Solid black like the island around it; a material here would show the wallpaper through the panel
+                // Solid black like the island around it; a material here would show the wallpaper through the panel.
+                // The Glass theme's island is already Liquid Glass, so only darken it a little
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(Color.black)
+                    .fill(appState.islandTheme == .glass ? Color.black.opacity(0.25) : Color.black)
 
                 // Content Layer
                 VStack(spacing: 0) {

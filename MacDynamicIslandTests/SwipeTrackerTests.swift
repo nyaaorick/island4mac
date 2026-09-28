@@ -59,6 +59,21 @@ final class SwipeTrackerTests: XCTestCase {
         XCTAssertTrue(SwipeZone.rect(on: screen, covering: wide).contains(CGPoint(x: 420, y: 1100)))
     }
 
+    func testSwipesOverWindowsThatScrollAreLeftToThem() {
+        XCTAssertFalse(SwipeArea.isFree(layer: 0), "an ordinary window: a page, a document, Settings")
+        XCTAssertFalse(SwipeArea.isFree(layer: 3), "a floating panel")
+        XCTAssertFalse(SwipeArea.isFree(layer: 8), "a dialog")
+        XCTAssertFalse(SwipeArea.isFree(layer: 101), "a menu that can scroll")
+    }
+
+    func testSwipesOverNothingThatScrollsAreTheIslands() {
+        XCTAssertTrue(SwipeArea.isFree(layer: -2_147_483_623), "the wallpaper")
+        XCTAssertTrue(SwipeArea.isFree(layer: -2_147_483_603), "desktop icons")
+        XCTAssertTrue(SwipeArea.isFree(layer: 20), "the Dock")
+        XCTAssertTrue(SwipeArea.isFree(layer: 24), "the menu bar")
+        XCTAssertTrue(SwipeArea.isFree(layer: 25), "status items")
+    }
+
     func testBeginDiscardsWhatWasAddedBefore() {
         var tracker = SwipeTracker()
         tracker.begin()

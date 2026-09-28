@@ -18,7 +18,7 @@ public final class SettingsWindowController: NSObject {
             let hostingController = NSHostingController(rootView: settingsView)
             
             // Fixed size window for settings, standard macOS style
-            let windowSize = NSSize(width: 750, height: 500)
+            let windowSize = NSSize(width: 820, height: 560)
 
             let w = NSWindow(
                 contentRect: NSRect(origin: .zero, size: windowSize),
@@ -45,58 +45,75 @@ public final class SettingsWindowController: NSObject {
     }
 }
 
-// MARK: - Main Settings View (The Tabbed Interface)
+// MARK: - Main Settings View (Sidebar, like System Settings)
 
-struct MainSettingsView: View {
-    var body: some View {
-        TabView {
-            GeneralSettingsView()
-                .tabItem {
-                    Label(L("settings.tab.general"), systemImage: "gear")
-                }
-            
-            AppearanceSettingsView()
-                .tabItem {
-                    Label(L("settings.tab.appearance"), systemImage: "paintpalette")
-                }
-            
-            MediaSettingsView()
-                .tabItem {
-                    Label(L("settings.tab.media"), systemImage: "music.note")
-                }
-            
-            AgentSettingsView()
-                .tabItem {
-                    Label("Agents", systemImage: "terminal")
-                }
+/// One page of the settings window
+enum SettingsPane: String, CaseIterable, Identifiable {
+    case general, appearance, media, agents, clipboard, shelf, shortcuts, advanced, about
 
-            ClipboardSettingsWindow(hubStore: OverlayWindowController.shared.getAppState().clipVault)
-                .tabItem {
-                    Label(L("settings.tab.clipboard"), systemImage: "doc.on.clipboard")
-                }
+    var id: String { rawValue }
 
-            ShelfSettingsView()
-                .tabItem {
-                    Label(L("settings.tab.shelf"), systemImage: "shippingbox")
-                }
-            
-            ShortcutsSettingsView()
-                .tabItem {
-                    Label(L("settings.tab.shortcuts"), systemImage: "keyboard")
-                }
-            
-            AdvancedSettingsView()
-                .tabItem {
-                    Label(L("settings.tab.advanced"), systemImage: "slider.horizontal.3")
-                }
-             
-             AboutView()
-                 .tabItem {
-                     Label(L("settings.tab.about"), systemImage: "info.circle")
-                 }
+    var title: String {
+        switch self {
+        case .general: return L("settings.tab.general")
+        case .appearance: return L("settings.tab.appearance")
+        case .media: return L("settings.tab.media")
+        case .agents: return L("settings.tab.agents")
+        case .clipboard: return L("settings.tab.clipboard")
+        case .shelf: return L("settings.tab.shelf")
+        case .shortcuts: return L("settings.tab.shortcuts")
+        case .advanced: return L("settings.tab.advanced")
+        case .about: return L("settings.tab.about")
         }
-        .frame(minWidth: 750, minHeight: 500)
-        .padding()
+    }
+
+    var iconName: String {
+        switch self {
+        case .general: return "gear"
+        case .appearance: return "paintpalette"
+        case .media: return "music.note"
+        case .agents: return "terminal"
+        case .clipboard: return "doc.on.clipboard"
+        case .shelf: return "shippingbox"
+        case .shortcuts: return "keyboard"
+        case .advanced: return "slider.horizontal.3"
+        case .about: return "info.circle"
+        }
     }
 }
 
+/// A sidebar rather than tabs: the window's content runs under its transparent title bar, which hid the tab row
+struct MainSettingsView: View {
+    @State private var selection: SettingsPane = .general
+
+    var body: some View {
+        NavigationSplitView {
+            List(SettingsPane.allCases, selection: $selection) { pane in
+                Label(pane.title, systemImage: pane.iconName)
+                    .tag(pane)
+            }
+            .navigationSplitViewColumnWidth(min: 170, ideal: 190, max: 240)
+            .toolbar(removing: .sidebarToggle)
+        } detail: {
+            detail(for: selection)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .navigationTitle(selection.title)
+        }
+        .frame(minWidth: 820, minHeight: 520)
+    }
+
+    @ViewBuilder
+    private func detail(for pane: SettingsPane) -> some View {
+        switch pane {
+        case .general: GeneralSettingsView()
+        case .appearance: AppearanceSettingsView()
+        case .media: MediaSettingsView()
+        case .agents: AgentSettingsView()
+        case .clipboard: ClipboardSettingsWindow(hubStore: OverlayWindowController.shared.getAppState().clipVault)
+        case .shelf: ShelfSettingsView()
+        case .shortcuts: ShortcutsSettingsView()
+        case .advanced: AdvancedSettingsView()
+        case .about: AboutView()
+        }
+    }
+}

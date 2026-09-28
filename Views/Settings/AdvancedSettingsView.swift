@@ -2,25 +2,25 @@ import SwiftUI
 
 struct AdvancedSettingsView: View {
     @State private var showingResetConfirmation = false
-    
+
     var body: some View {
-        Form {
+        SettingsForm {
             Section(header: Text("Troubleshooting")) {
-                Button("Restart App") {
+                Button("Restart app") {
                      let url = URL(fileURLWithPath: Bundle.main.bundlePath)
                      NSWorkspace.shared.open(url)
                      NSApp.terminate(nil)
                 }
-                
+
                 ToggleSettingsRow(
                     key: SettingsDefaults.settingsIconInNotch,
                     title: "Show settings icon in the island",
                     help: "Show a gear icon inside the island for quick access to Settings"
                 )
             }
-            
-            Section(header: Text("Danger Zone")) {
-                Button("Reset All Settings") {
+
+            Section(header: Text("Danger zone")) {
+                Button("Reset all settings") {
                     showingResetConfirmation = true
                 }
                 .foregroundStyle(.red)
@@ -34,14 +34,12 @@ struct AdvancedSettingsView: View {
                 }
             }
         }
-        .formStyle(.grouped)
-        .padding()
     }
-    
+
     private func resetSettings() {
         if let bundleID = Bundle.main.bundleIdentifier {
             UserDefaults.standard.removePersistentDomain(forName: bundleID)
-            
+
             // Restart
             let url = URL(fileURLWithPath: Bundle.main.bundlePath)
             NSWorkspace.shared.open(url)

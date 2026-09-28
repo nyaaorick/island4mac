@@ -17,6 +17,10 @@ final class OverlayPanel: NSPanel {
         self.backgroundColor = .clear
         self.hasShadow = false
         self.ignoresMouseEvents = false
+        // The island is dark in every system appearance: white text on black or on the Glass theme's glass.
+        // Under a light system appearance the glass would otherwise come back light (washed out, the text
+        // unreadable) from the second time the island opens
+        self.appearance = NSAppearance(named: .darkAqua)
 
         // ✅ Shadow removed entirely: make sure no layer renders one
         self.invalidateShadow()
