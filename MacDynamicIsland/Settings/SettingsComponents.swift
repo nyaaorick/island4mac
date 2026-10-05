@@ -1,5 +1,5 @@
 //
-//  SettingsViews.swift
+//  SettingsComponents.swift
 //  MacDynamicIsland
 //
 //  Shared Settings Components

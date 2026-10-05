@@ -30,13 +30,13 @@ macOS menu bar app (Swift, SwiftUI + AppKit) that turns the MacBook notch into a
 
 ```text
 MacDynamicIsland/              App target. Folders are synced with Xcode: add or move files on disk, no project edits
-  App/                         @main entry, AppDelegate + AppIntegration (starts background managers), StatusBarController
-  Island/                      The island itself: OverlayWindowController, IslandWindow (the panel), NotchHomeView
-                               (root view, NotchMetrics), AppState, interaction/visibility enums, background, swipes
+  App/                         @main entry, AppDelegate, AppIntegration (starts the monitors and the agent hook server), StatusBarController
+  Island/                      The island itself: IslandController (one IslandWindow per display), NotchHomeView (root view)
+                               and its regions, NotchMetrics, AppState, interaction/visibility enums, background, swipes
   Features/
-    Music/                     MusicManager, NowPlayingManager (MediaRemote via adapter), LyricsService, music views
+    Music/                     MusicStore, NowPlayingClient (MediaRemote via adapter), LyricsClient, music views
     Agents/                    Hook events, socket server, session store, hook installer, terminal focusing, agent views
-    Clipboard/                 Clipboard polling, ClipboardHubStore, clipboard views
+    Clipboard/                 ClipboardMonitor (pasteboard polling), ClipboardStore, clipboard views
     Shelf/                     Shelf items, view model, persistence, thumbnails, Quick Look, drag detection
   Settings/                    Settings window and one view per tab
   System/                      macOS integration: hotkeys, screens, menu bar space, full-screen video, login item, AppleScript
@@ -48,9 +48,20 @@ Helpers/
   MediaRemoteAdapter/          Library loaded into perl by the now-playing helper process (exports mediaremote_adapter_stream)
 ```
 
+## Conventions
+
+- One main type per file, named after the type. A small private subview used by only that type may stay in its file.
+- Type suffixes say what a type is for:
+  - `Store`: state the UI observes (`ObservableObject`), e.g. `MusicStore`, `ClipboardStore`, `AgentSessionStore`
+  - `Service`: does work without holding UI state, e.g. `ThumbnailService`, `ShelfPersistenceService`
+  - `Client`: talks to another process, a private API or the network, e.g. `NowPlayingClient`, `LyricsClient`, `AppleScriptClient`
+  - `Monitor`: watches system events and reports them, e.g. `ClipboardMonitor`, `HotKeyMonitor`, `DragMonitor`
+  - `Controller`: AppKit window and menu controllers only, e.g. `IslandController`, `StatusBarController`
+- The product word is "island" (not overlay), and clipboard history is "clipboard" (not hub or vault).
+
 ## How it starts
 
-`MacDynamicIslandApp` (@main) has an empty Settings scene; `AppDelegate.applicationDidFinishLaunching` creates `OverlayWindowController.shared` (borderless panel hosting `NotchHomeView`, owns `AppState` and `NowPlayingManager` -> `MusicManager`), `AppIntegration.start()` (ClipboardManager, HotKeyManager) and `StatusBarController`.
+`MacDynamicIslandApp` (@main) has an empty Settings scene; `AppDelegate.applicationDidFinishLaunching` creates `IslandController.shared` (borderless `IslandPanel` hosting `NotchHomeView`, owns `AppState` and `NowPlayingClient` -> `MusicStore`), `AppIntegration.start()` (ClipboardMonitor, HotKeyMonitor, AgentHookServer) and `StatusBarController`.
 
 ## Things that are easy to break
 

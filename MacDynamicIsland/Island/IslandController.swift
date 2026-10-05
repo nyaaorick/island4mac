@@ -75,7 +75,7 @@ final class IslandController: NSObject {
 
     private override init() {
         super.init()
-        setupManagers() // INITIALIZE MUSIC STREAM
+        setupNowPlaying()
         mainIsland = IslandWindow(appState: appState, nowPlayingClient: nowPlayingClient) { [weak self] in
             self?.mainIslandScreen()
         }
@@ -126,7 +126,7 @@ final class IslandController: NSObject {
         return islands.first { $0.currentDisplayID == display }
     }
 
-    private func setupManagers() {
+    private func setupNowPlaying() {
         // Initialize NowPlaying Stream
         nowPlayingClient = NowPlayingClient()
 

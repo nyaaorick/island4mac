@@ -1,17 +1,15 @@
+# macOS
 .DS_Store
-.vscode/
-.xcode_env_suppress_xpc
+
+# Xcode
 build/
-dist/
 DerivedData/
-results.txt
-*.backup
-*.backup.*
-*.backup_*
-*.bak
 *.xcuserstate
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
+
+# Editors
+.vscode/
 
 # Coverage data an instrumented build writes into the directory it runs in
 *.profraw
