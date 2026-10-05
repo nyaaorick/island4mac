@@ -73,7 +73,10 @@ final class AppState: ObservableObject {
     /// State of one island. The main one owns the clipboard history and watches for dragged files;
     /// islands on the other displays (with "all screens" on) share its history
     init(sharingWith main: AppState? = nil) {
-        clipboardStore = main?.clipboardStore ?? ClipboardStore(settings: ClipboardStore.Settings(
+        clipboardStore = main?.clipboardStore ?? ClipboardStore(
+            // The Clipboard plugin's data folder
+            folder: PluginStore.defaultDataFolder.appendingPathComponent("clipboard", isDirectory: true),
+            settings: ClipboardStore.Settings(
             maxItems: SettingsDefaults.shared.get(SettingsDefaults.clipboardMaxItems),
             keepHours: SettingsDefaults.shared.get(SettingsDefaults.clipboardKeepHours)))
         tracksDrags = main == nil

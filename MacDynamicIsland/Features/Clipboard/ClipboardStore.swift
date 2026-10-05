@@ -35,9 +35,7 @@ final class ClipboardStore: ObservableObject {
     private let legacyDefaults: UserDefaults?
     static let legacyKey = "mac_island_clipvault_v1"
 
-    nonisolated static var defaultFolder: URL { PluginStore.defaultDataFolder.appendingPathComponent("clipboard", isDirectory: true) }
-
-    init(folder: URL = ClipboardStore.defaultFolder, settings: Settings = Settings(), legacyDefaults: UserDefaults? = .standard,
+    init(folder: URL, settings: Settings = Settings(), legacyDefaults: UserDefaults? = .standard,
          frontmostApps: FrontmostAppMonitor? = nil) {
         self.folder = folder
         self.settings = settings
