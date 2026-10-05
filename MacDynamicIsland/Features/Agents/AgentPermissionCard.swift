@@ -33,7 +33,7 @@ struct AgentPermissionCard: View {
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
-                    .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.black.opacity(0.35)))
+                    .islandInset(cornerRadius: 6)
             }
 
             if prompt.canAnswer {
@@ -42,7 +42,7 @@ struct AgentPermissionCard: View {
                     .font(.system(size: 11))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
-                    .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.06)))
+                    .islandInset(cornerRadius: 6)
                     .onSubmit { if hasNote { respond { $0.deny(prompt.id, note: note) } } }
 
                 HStack(spacing: 8) {

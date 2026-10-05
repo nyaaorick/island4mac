@@ -42,14 +42,7 @@ struct AgentSessionRow: View {
                 }
             }
             .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.white.opacity(isHovering ? 0.09 : 0.04))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Color.white.opacity(isHovering ? 0.1 : 0), lineWidth: 1)
-                    )
-            )
+            .islandTile(cornerRadius: 14, highlighted: isHovering)
             .contentShape(Rectangle())
             .onTapGesture { TerminalFocuser.focus(session.terminal) }
             .onHover { isHovering = $0 }

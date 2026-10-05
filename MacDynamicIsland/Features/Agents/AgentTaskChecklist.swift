@@ -43,6 +43,6 @@ struct AgentTaskChecklist: View {
         }
         .padding(8)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.04)))
+        .islandInset(cornerRadius: 8)
     }
 }

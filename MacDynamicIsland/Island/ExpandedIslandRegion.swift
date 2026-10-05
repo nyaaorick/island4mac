@@ -125,10 +125,13 @@ struct ExpandedIslandRegion: View {
         }
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
-        .background(
-            Capsule()
-                .fill(isSelected ? Color.white.opacity(0.15) : (isHovered ? Color.white.opacity(0.08) : Color.clear))
-        )
+        .background {
+            if isSelected {
+                IslandSurface(level: .tile, cornerRadius: 999, isHighlighted: isHovered)
+            } else if isHovered {
+                IslandSurface(level: .inset, cornerRadius: 999)
+            }
+        }
         .foregroundColor(isSelected ? .white : .white.opacity(0.6))
         .contentShape(Capsule())
         .onHover { h in

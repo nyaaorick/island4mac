@@ -47,10 +47,12 @@ struct ExpandedMusicView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .islandTile(cornerRadius: 22)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
         }
-        .background(Color.clear)
         .onChange(of: musicStore.songTitle) { oldTitle, newTitle in
             // ✅ Reset drag state when the track changes
             if newTitle != oldTitle && !oldTitle.isEmpty {

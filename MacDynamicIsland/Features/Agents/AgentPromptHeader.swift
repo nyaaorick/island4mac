@@ -40,13 +40,6 @@ extension View {
     /// Yellow card behind a prompt the island can answer (permission or question)
     func agentPromptCard() -> some View {
         padding(12)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color.yellow.opacity(0.08))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(Color.yellow.opacity(0.35), lineWidth: 1)
-                    )
-            )
+            .islandTile(cornerRadius: 14, tint: .yellow)
     }
 }

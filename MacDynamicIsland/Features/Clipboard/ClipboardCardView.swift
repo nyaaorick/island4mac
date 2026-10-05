@@ -48,8 +48,7 @@ struct ClipboardCardView: View {
                 }
                 .frame(height: 80)
                 .padding(10)
-                .background(Color.white.opacity(0.06))
-                .cornerRadius(10)
+                .islandInset(cornerRadius: 10)
                 
                 // FOOTER
                 Text("Click to Paste")
@@ -59,12 +58,7 @@ struct ClipboardCardView: View {
             }
             .padding(12)
             .frame(width: 170, height: 160)
-            .background(Color.white.opacity(isHovered ? 0.12 : 0.05))
-            .cornerRadius(16)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.white.opacity(isHovered ? 0.25 : 0.1), lineWidth: 0.5)
-            )
+            .islandTile(cornerRadius: 16, highlighted: isHovered)
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }

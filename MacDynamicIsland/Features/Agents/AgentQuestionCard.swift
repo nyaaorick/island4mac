@@ -70,7 +70,7 @@ struct AgentQuestionCard: View {
                 .font(.system(size: 11))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 5)
-                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.06)))
+                .islandInset(cornerRadius: 6)
                 .disabled(!prompt.canAnswer)
                 .onSubmit { if answers != nil { submit() } }
         }
@@ -103,10 +103,7 @@ struct AgentQuestionCard: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(Color.white.opacity(isPicked ? 0.12 : 0.05))
-            )
+            .islandInset(cornerRadius: 6, highlighted: isPicked)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

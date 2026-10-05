@@ -17,11 +17,8 @@ struct ShelfView: View {
     var body: some View {
         ZStack {
             ZStack {
-                // Solid black like the island around it; a material here would show the wallpaper through the panel.
-                // The Glass theme's island is already Liquid Glass with its own dimming (IslandBackground), so the
-                // card adds none: darkening it again made this tab heavier than the others
-                RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(appState.islandTheme == .glass ? Color.clear : Color.black)
+                // One raised pane of glass, like the other tabs' modules (IslandSurface)
+                IslandSurface(level: .tile, cornerRadius: 22)
 
                 // Content Layer
                 VStack(spacing: 0) {
@@ -38,7 +35,8 @@ struct ShelfView: View {
                 // PRO-LEVEL INTEGRATED DASHED BORDER
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
                     .strokeBorder(
-                        isDragging ? Color.accentColor : Color.white.opacity(0.18),
+                        // The tile has its own rim; this only shows where to drop
+                        isDragging ? Color.accentColor : Color.clear,
                         style: StrokeStyle(
                             lineWidth: isDragging ? 4 : 1,
                             lineCap: .round,
@@ -140,7 +138,6 @@ struct ShelfView: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)
-        .background(Color.black.opacity(0.25))
         .overlay(
             Rectangle()
                 .frame(height: 1)
@@ -231,10 +228,9 @@ struct ShelfItemCell: View {
                 .frame(width: 80)
         }
         .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(isHovering ? Color.white.opacity(0.08) : Color.clear)
-        )
+        .background {
+            if isHovering { IslandSurface(level: .inset, cornerRadius: 18, isHighlighted: true) }
+        }
         .onHover { hovering in
             withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
                 isHovering = hovering
