@@ -4,14 +4,16 @@ import XCTest
 @MainActor
 final class ClipboardStoreTests: XCTestCase {
 
-    /// A store backed by a throwaway defaults domain, so tests never touch the real history.
+    /// A store backed by a throwaway defaults domain and image folder, so tests never touch the real history.
     private func makeStore() -> (ClipboardStore, UserDefaults) {
         let suiteName = "ClipboardStoreTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
+        let images = FileManager.default.temporaryDirectory.appendingPathComponent(suiteName, isDirectory: true)
         addTeardownBlock {
             UserDefaults().removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: images)
         }
-        return (ClipboardStore(defaults: defaults), defaults)
+        return (ClipboardStore(defaults: defaults, imageFolder: images), defaults)
     }
 
     private func addText(_ text: String, to store: ClipboardStore) {
@@ -65,8 +67,43 @@ final class ClipboardStoreTests: XCTestCase {
         let (store, defaults) = makeStore()
         addText("persisted", to: store)
 
-        let reloaded = ClipboardStore(defaults: defaults)
+        let reloaded = ClipboardStore(defaults: defaults, imageFolder: store.imageFolder)
         reloaded.loadFromDisk()
         XCTAssertEqual(reloaded.items.map(\.content), ["persisted"])
+    }
+
+    // MARK: - The tab, in the plugin protocol
+
+    func testEachItemIsACardWithItsTextOrPicture() throws {
+        let (store, _) = makeStore()
+        store.addItem(content: "let x = 1", type: .code, sourceBundleID: "com.apple.dt.Xcode", sourceAppName: "Xcode", imageData: nil)
+        addImage([1, 2, 3], to: store)
+
+        let content = store.islandContent
+        XCTAssertEqual(content.cards.count, 2)
+        let image = try XCTUnwrap(content.cards.first)
+        let file = try XCTUnwrap(store.imageFile(for: store.items[0]))
+        XCTAssertEqual(image.preview, .image(.file(file.path)), "the picture is shown from its file")
+        XCTAssertEqual(try Data(contentsOf: file), Data([1, 2, 3]))
+        let text = content.cards[1]
+        XCTAssertEqual(text.title, "Xcode")
+        XCTAssertEqual(text.image, .app("com.apple.dt.Xcode"))
+        XCTAssertEqual(text.preview, .text("let x = 1"))
+        XCTAssertEqual(content.buttons.map(\.id), ["clear"])
+
+        store.removeItem(store.items[0])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path), "a removed picture's file goes too")
+    }
+
+    func testTapsDeleteAndClear() throws {
+        let (store, _) = makeStore()
+        addText("a", to: store)
+        addText("b", to: store)
+        let delete = try XCTUnwrap(store.islandContent.cards.first?.actions?.first?.id)
+        XCTAssertFalse(store.handle(.action(delete), pastingInto: nil))
+        XCTAssertEqual(store.items.map(\.content), ["a"])
+        store.handle(.action("clear"), pastingInto: nil)
+        XCTAssertTrue(store.items.isEmpty)
+        XCTAssertEqual(store.islandContent, PluginStore.Content(), "nothing: the tab shows its empty state")
     }
 }

@@ -18,7 +18,6 @@
 "settings.tab.general" = "General";
 "settings.tab.appearance" = "Appearance";
 "settings.tab.media" = "Media";
-"settings.tab.agents" = "Agents";
 "settings.tab.clipboard" = "Clipboard";
 "settings.tab.shelf" = "Shelf";
 "settings.tab.shortcuts" = "Shortcuts";
@@ -74,6 +73,8 @@
 "plugins.tab.missing" = "This plugin isn't installed";
 "plugins.tab.needs_setup" = "%@ needs setting up";
 "plugins.tab.open_settings" = "Open Settings";
+"plugins.tab.settings" = "%@ settings";
+"plugins.tab.turned_off" = "%@ is turned off";
 "plugins.tab.loading" = "Loading";
 "plugins.tab.failed" = "Couldn't load";
 "settings.tabs.limit" = "Hide a tab first: the island shows at most 6.";

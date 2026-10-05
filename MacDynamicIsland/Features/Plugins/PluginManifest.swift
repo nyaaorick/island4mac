@@ -31,8 +31,9 @@ struct PluginManifest: Decodable, Equatable, Identifiable {
     /// The newest PluginMessage version this app understands
     /// 2: preferences (plugin.json) and PluginEvent.preferences.
     /// 3: lifecycle "onDemand", the timeline, done and status messages, and PluginEvent.wake.
-    /// 4: images on rows and compact content, row actions, and "background" and "priority" in plugin.json
-    static let supportedProtocol = 4
+    /// 4: images on rows and compact content, row actions, and "background" and "priority" in plugin.json.
+    /// 5: cards (PluginCard)
+    static let supportedProtocol = 5
     static let fileName = "plugin.json"
 
     enum LoadError: Error, Equatable, CustomStringConvertible {

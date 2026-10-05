@@ -111,14 +111,14 @@ final class IslandControllerTests: XCTestCase {
         let compact = panel.frame
         let canvas = try canvasOnScreen(panel)
 
-        AgentSessionStore.shared.apply(AgentHookEvent(kind: .userPromptSubmit, sessionID: "grows-left"))
+        PluginStore.shared.apply(.popup(PluginPopup(text: "Live", seconds: 10)), from: "test")
         runMainLoop(for: 0.2)
         let live = panel.frame
         XCTAssertLessThan(live.minX, compact.minX, "the live activity grows left of the notch")
         XCTAssertEqual(live.maxX, compact.maxX, accuracy: 0.5, "nothing covers the menu bar icons right of the notch")
         assertEqual(try canvasOnScreen(panel), canvas, "an uneven panel must not move the SwiftUI canvas")
 
-        AgentSessionStore.shared.archive("grows-left")
+        PluginStore.shared.dismissPopup()
         runMainLoop(for: settleTime)
         assertEqual(panel.frame, compact, "the panel shrinks back once the activity is gone")
     }
@@ -171,7 +171,7 @@ final class IslandControllerTests: XCTestCase {
         collapseAndSettle(state)
         let compact = panel.frame
 
-        AgentSessionStore.shared.apply(AgentHookEvent(kind: .userPromptSubmit, sessionID: "menus"))
+        PluginStore.shared.apply(.popup(PluginPopup(text: "Live", seconds: 10)), from: "test")
         runMainLoop(for: 0.2)
         XCTAssertEqual(compact.minX - panel.frame.minX, 2 * wing, accuracy: 0.5, "room unknown: both items left of the notch")
         XCTAssertEqual(panel.frame.maxX, compact.maxX, accuracy: 0.5)
@@ -194,9 +194,9 @@ final class IslandControllerTests: XCTestCase {
 
         menuBar.menuSpans = nil
         menuBar.statusItemFrames = nil
-        AgentSessionStore.shared.archive("menus")
+        PluginStore.shared.dismissPopup()
         runMainLoop(for: settleTime)
-        assertEqual(panel.frame, compact, "and it folds away once the session is gone")
+        assertEqual(panel.frame, compact, "and it folds away once it's gone")
     }
 
     func testPausedMusicShowsOnlyWhileThePointerIsOnTheNotch() throws {
@@ -247,7 +247,10 @@ final class IslandControllerTests: XCTestCase {
         XCTAssertEqual(clipboard.midX, music.midX, accuracy: 0.5, "the island stays centered")
 
         state.currentSection = .files
-        XCTAssertGreaterThan(panel.frame.height, clipboard.height, "the files tab is the tallest")
+        XCTAssertEqual(panel.frame.height, clipboard.height, accuracy: 0.5, "files and clipboard are the same row of cards")
+
+        state.currentSection = .agents
+        XCTAssertGreaterThan(panel.frame.height, clipboard.height, "the agents tab is the tallest")
 
         state.currentSection = .music
         runMainLoop(for: settleTime)
@@ -327,13 +330,13 @@ final class IslandControllerTests: XCTestCase {
         collapseAndSettle(state)
         XCTAssertEqual(panel.frame.width, NotchMetrics.nonNotchWidth, accuracy: 0.5, "idle, the pill keeps its size")
 
-        AgentSessionStore.shared.apply(AgentHookEvent(kind: .userPromptSubmit, sessionID: "wide-pill"))
+        PluginStore.shared.apply(.popup(PluginPopup(text: "Live", seconds: 10)), from: "test")
         runMainLoop(for: 0.2)
-        XCTAssertEqual(panel.frame.width, NotchMetrics.largeDisplayLiveActivityWidth, accuracy: 0.5, "a session at work widens it")
+        XCTAssertEqual(panel.frame.width, NotchMetrics.largeDisplayLiveActivityWidth, accuracy: 0.5, "something beside the notch widens it")
         XCTAssertEqual(panel.frame.midX, screen.frame.midX, accuracy: 0.5, "and it stays centered")
 
-        AgentSessionStore.shared.archive("wide-pill")
+        PluginStore.shared.dismissPopup()
         runMainLoop(for: settleTime)
-        XCTAssertEqual(panel.frame.width, NotchMetrics.nonNotchWidth, accuracy: 0.5, "it narrows again once the session is gone")
+        XCTAssertEqual(panel.frame.width, NotchMetrics.nonNotchWidth, accuracy: 0.5, "it narrows again once it's gone")
     }
 }

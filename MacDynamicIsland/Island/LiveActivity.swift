@@ -4,9 +4,7 @@ import Foundation
 /// it in AppState; CompactIslandRegion only draws it, so the wings and what fills them never disagree
 enum LiveActivity: Equatable {
     case none
-    /// An agent session working, waiting for you or just finished
-    case agent
-    /// A high-priority plugin's compact content (plugin.json "priority": "high")
+    /// A high-priority plugin's compact content (plugin.json "priority": "high"): an agent at work
     case priorityPlugin
     /// A plugin's popup, for its few seconds
     case pluginPopup
@@ -15,9 +13,8 @@ enum LiveActivity: Equatable {
     /// A plugin's countdown or status
     case pluginCompact
 
-    /// Agents first, then a high-priority plugin, then a plugin's popup, then music, then a plugin's compact content
-    static func pick(agent: Bool, priorityPlugin: Bool = false, pluginPopup: Bool, music: Bool, pluginCompact: Bool) -> LiveActivity {
-        if agent { return .agent }
+    /// A high-priority plugin (Agents) first, then a plugin's popup, then music, then a plugin's compact content
+    static func pick(priorityPlugin: Bool, pluginPopup: Bool, music: Bool, pluginCompact: Bool) -> LiveActivity {
         if priorityPlugin { return .priorityPlugin }
         if pluginPopup { return .pluginPopup }
         if music { return .music }

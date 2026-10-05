@@ -111,7 +111,7 @@ final class AppState: ObservableObject {
             DispatchQueue.main.async {
                 // An agent's question or permission prompt stays open until you've dealt with it,
                 // and nothing closes under your typing
-                guard self?.visibilityReason != .agentPrompt, self?.isTyping != true else { return }
+                guard self?.visibilityReason != .heldByPlugin, self?.isTyping != true else { return }
                 self?.deactivateIsland()
             }
         }
@@ -182,18 +182,7 @@ final class AppState: ObservableObject {
             Task { @MainActor in
                 self?.logEvent("💥 Fallback drop triggered with \(urls.count) files")
 
-                // Convert URLs -> ShelfItems and add to the shelf
-                for url in urls {
-                    let bookmarkData = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
-                    let item = ShelfItem(url: url, bookmarkData: bookmarkData)
-                    if !ShelfStore.shared.items.contains(where: { $0.url == item.url }) {
-                        withAnimation(.spring()) {
-                            ShelfStore.shared.items.insert(item, at: 0)
-                        }
-                    }
-                }
-
-                ShelfStore.shared.saveItems()
+                ShelfStore.shared.add(urls)
                 self?.isDraggingOver = false
             }
         }

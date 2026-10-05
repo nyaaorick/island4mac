@@ -8,7 +8,7 @@ enum IslandVisibilityReason: Equatable {
     case dragDetected       // Global drag detected (Boring Notch style)
     case userExpanded       // User explicitly clicked to expand
     case hotkey             // User triggered via hotkey
-    case agentPrompt        // An agent asks you something you can answer in the island
     case plugin             // A plugin asked to show its tab ({"type":"open"})
+    case heldByPlugin       // A plugin opened its tab until it says it's done ({"type":"open","hold":true}), e.g. an agent's question
     case none               // Hidden state
 }

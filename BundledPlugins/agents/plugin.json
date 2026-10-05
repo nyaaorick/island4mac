@@ -18,6 +18,12 @@
       "key" : "besideNotch",
       "kind" : "toggle",
       "title" : "Show the active session beside the notch"
+    },
+    {
+      "default" : true,
+      "key" : "openIsland",
+      "kind" : "toggle",
+      "title" : "Open the island when an agent needs you"
     }
   ],
   "priority" : "high",

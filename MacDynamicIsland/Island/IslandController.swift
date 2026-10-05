@@ -96,38 +96,25 @@ final class IslandController: NSObject {
     /// The main island's panel, the one hotkeys and the clipboard open
     var mainPanel: NSWindow { mainIsland.panel }
 
-    /// Opens the island on the Agents tab, where you can answer an agent's question or permission prompt:
-    /// the island on the display you're working on
-    func showAgentPrompt() {
-        guard settingsStore.get(SettingsDefaults.agentPromptsOpenIsland) else { return }
-        let state = islandUnderMouse()?.appState ?? appState
-        // Don't pull the open island away from a tab you're using
-        if state.islandMode == .expanded && state.islandFrame.contains(NSEvent.mouseLocation) { return }
-        // Without the Agents tab there's nowhere to answer, so the island stays as it is
-        guard TabStore.shared.isEnabled(.agents) else { return }
-        state.currentSection = .agents
-        withAnimation(boringOpenAnimation) {
-            state.activateIsland(reason: .agentPrompt)
-        }
-    }
-
     /// Opens the island on a plugin's tab, as the plugin asked: the island on the display you're working on.
-    /// Never over something you're using or an agent waiting for your answer
-    func showPluginTab(_ pluginID: String) {
+    /// Never over something you're using, or over another plugin's tab held open for you (an agent's question).
+    /// With `hold` it stays open, without auto-close, until the plugin closes it or you do
+    func showPluginTab(_ pluginID: String, hold: Bool = false) {
         let state = islandUnderMouse()?.appState ?? appState
+        let tab = IslandTab.tab(forPlugin: pluginID)
         if state.islandMode == .expanded && state.islandFrame.contains(NSEvent.mouseLocation) { return }
-        if state.islandMode == .expanded && state.visibilityReason == .agentPrompt { return }
-        guard AgentSessionStore.shared.pendingPrompts.isEmpty else { return }
-        state.currentSection = IslandTab.tab(forPlugin: pluginID)
+        if state.islandMode == .expanded && state.visibilityReason == .heldByPlugin && state.currentSection != tab { return }
+        state.currentSection = tab
         withAnimation(boringOpenAnimation) {
-            state.activateIsland(reason: .plugin)
+            state.activateIsland(reason: hold ? .heldByPlugin : .plugin)
         }
     }
 
-    /// Closes the islands a prompt opened once no prompt is left, unless the pointer is on them
-    private func closeAfterAgentPrompts() {
+    /// Closes the islands a plugin held open on its tab, unless the pointer is on them
+    func closeHeldPluginTab(_ pluginID: String) {
+        let tab = IslandTab.tab(forPlugin: pluginID)
         for state in islands.map(\.appState) {
-            guard state.islandMode == .expanded, state.visibilityReason == .agentPrompt,
+            guard state.islandMode == .expanded, state.visibilityReason == .heldByPlugin, state.currentSection == tab,
                   !state.islandFrame.contains(NSEvent.mouseLocation) else { continue }
             withAnimation(boringCloseAnimation) {
                 state.deactivateIsland()
@@ -197,21 +184,13 @@ final class IslandController: NSObject {
             }
             .store(in: &cancellables)
 
-        // The wings also extend while Claude Code is working, waiting for your approval, or just finished, and retract afterwards
-        AgentSessionStore.shared.$liveSession
-            .map { $0 != nil }
-            .removeDuplicates()
-            .sink { [weak self] _ in
-                self?.updateAllIslands()
-            }
-            .store(in: &cancellables)
-
-        // And while a plugin shows something beside the notch: a popup, or its compact content. Both are
-        // watched, since a popup over a running countdown changes what fills the wings, not whether they show
+        // The wings extend while a plugin shows something beside the notch (an agent at work, a popup, a
+        // countdown) and retract afterwards. All are watched, since a popup over a running countdown changes
+        // what fills the wings, not whether they show
         PluginStore.shared.$popup.map { _ in () }
             .merge(with: PluginStore.shared.$contents.map { _ in () }, TabStore.shared.$enabledTabs.map { _ in () })
             .receive(on: DispatchQueue.main)
-            .map { [PluginStore.shared.showsPopupLiveActivity, PluginStore.shared.showsCompactContent] }
+            .map { [PluginStore.shared.showsPriorityContent, PluginStore.shared.showsPopupLiveActivity, PluginStore.shared.showsCompactContent] }
             .removeDuplicates()
             .sink { [weak self] _ in
                 self?.updateAllIslands()
@@ -229,16 +208,6 @@ final class IslandController: NSObject {
         NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .sink { [weak self] _ in
                 self?.scheduleIslandSync()
-            }
-            .store(in: &cancellables)
-
-        // Once an agent's question or permission prompt is handled (on the island or in the terminal), collapse the island it expanded
-        AgentSessionStore.shared.$pendingPrompts
-            .map(\.isEmpty)
-            .removeDuplicates()
-            .dropFirst()
-            .sink { [weak self] noneLeft in
-                if noneLeft { self?.closeAfterAgentPrompts() }
             }
             .store(in: &cancellables)
 

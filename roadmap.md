@@ -17,7 +17,7 @@
 
 Built: up to 6 tabs, out-of-process plugins drawn in the island's own look, the plugins repo (github.com/nyaaorick/island4mac-plugins) with the timer, Settings > Tabs and Settings > Plugins. IslandKit, the Swift SDK and `island-plugin` tool there (declarative body, @State, @Stored, CLI with live reload, CI that releases and indexes plugins); plugin preferences (protocol 2); on-demand plugins with timelines and @Fetched (protocol 3). Installing, updating or removing one plugin restarts only that one. Later:
 
-- Agents as a plugin (beta, Settings > Agents): pass the go/no-go checks in daily use, then make it the default and delete the native Agents views; then music, clipboard and files the same way.
+- Music, clipboard and files as bundled plugins, the way Agents is.
 - A native UI for plugins that need more than the protocol (a UI bundle loaded into the app, with library validation off).
 - Compare versions by order, not just difference (no offering a downgrade as an update).
 - Sign plugin builds with a Developer ID in the plugins repo's CI (they are ad-hoc signed now).

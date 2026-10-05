@@ -53,6 +53,7 @@ final class SettingsDefaults: ObservableObject {
     static let enableGestures = SettingsKey(key: "enableGestures", defaultValue: true)
     
     // MARK: - Claude Code
+    // The built-in Agents' settings, read once to carry them over to the Agents plugin's (AppIntegration)
     static let showAgentLiveActivity = SettingsKey(key: "showAgentLiveActivity", defaultValue: true)
     static let agentSoundsEnabled = SettingsKey(key: "agentSoundsEnabled", defaultValue: true)
     static let agentPromptsOpenIsland = SettingsKey(key: "agentPromptsOpenIsland", defaultValue: true)

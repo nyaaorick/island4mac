@@ -230,13 +230,14 @@ final class PluginTests: XCTestCase {
     // MARK: - Beside the notch
 
     func testWhatShowsBesideTheNotch() {
-        XCTAssertEqual(LiveActivity.pick(agent: true, pluginPopup: true, music: true, pluginCompact: true), .agent)
-        XCTAssertEqual(LiveActivity.pick(agent: false, pluginPopup: true, music: true, pluginCompact: true), .pluginPopup,
+        XCTAssertEqual(LiveActivity.pick(priorityPlugin: true, pluginPopup: true, music: true, pluginCompact: true), .priorityPlugin,
+                       "an agent at work (a high-priority plugin) comes first")
+        XCTAssertEqual(LiveActivity.pick(priorityPlugin: false, pluginPopup: true, music: true, pluginCompact: true), .pluginPopup,
                        "a popup shows ahead of music")
-        XCTAssertEqual(LiveActivity.pick(agent: false, pluginPopup: false, music: true, pluginCompact: true), .music)
-        XCTAssertEqual(LiveActivity.pick(agent: false, pluginPopup: false, music: false, pluginCompact: true), .pluginCompact,
+        XCTAssertEqual(LiveActivity.pick(priorityPlugin: false, pluginPopup: false, music: true, pluginCompact: true), .music)
+        XCTAssertEqual(LiveActivity.pick(priorityPlugin: false, pluginPopup: false, music: false, pluginCompact: true), .pluginCompact,
                        "paused music (not playing, pointer away) leaves the space to a plugin's countdown")
-        XCTAssertEqual(LiveActivity.pick(agent: false, pluginPopup: false, music: false, pluginCompact: false), .none)
+        XCTAssertEqual(LiveActivity.pick(priorityPlugin: false, pluginPopup: false, music: false, pluginCompact: false), .none)
     }
 
     func testARestartedPluginStartsWithNothingShown() throws {
@@ -512,6 +513,46 @@ final class PluginTests: XCTestCase {
         store.stop()
     }
 
+    // MARK: - Protocol 5
+
+    func testCardsRead() throws {
+        let message = try PluginMessage.decode(line(#"{"type":"cards","cards":[{"id":"c1","title":"Safari","subtitle":"now","image":{"app":"com.apple.Safari"},"preview":{"text":"hello"},"actions":[{"id":"delete:c1","title":"Delete","symbol":"trash"}]},{"title":"a.pdf","preview":{"image":{"file":"/tmp/a.pdf"}},"file":"/tmp/a.pdf"},{"title":"Bare","symbol":"star"}]}"#))
+        XCTAssertEqual(message, .cards([
+            PluginCard(id: "c1", title: "Safari", subtitle: "now", image: .app("com.apple.Safari"), preview: .text("hello"),
+                       actions: [PluginRowAction(id: "delete:c1", title: "Delete", symbol: "trash")]),
+            PluginCard(title: "a.pdf", preview: .image(.file("/tmp/a.pdf")), file: "/tmp/a.pdf"),
+            PluginCard(title: "Bare", symbol: "star"),
+        ]))
+        XCTAssertThrowsError(try PluginMessage.decode(line(#"{"type":"cards","cards":[{"title":"x","preview":{}}]}"#)),
+                             "a preview says what it shows")
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"clear","target":"cards"}"#)), .clear(.cards))
+    }
+
+    func testCardsAreKeptInBounds() throws {
+        let many = (0..<80).map { #"{"title":"c\#($0)"}"# }.joined(separator: ",")
+        guard case .cards(let cards) = try PluginMessage.decode(line(#"{"type":"cards","cards":[\#(many)]}"#)) else { return XCTFail() }
+        XCTAssertEqual(cards.count, PluginMessage.maxItems)
+
+        let long = String(repeating: "x", count: 5000)
+        let actions = (0..<10).map { #"{"id":"a\#($0)","title":"t"}"# }.joined(separator: ",")
+        guard case .cards(let one) = try PluginMessage.decode(line(#"{"type":"cards","cards":[{"title":"\#(long)","preview":{"text":"\#(long)"},"actions":[\#(actions)]}]}"#)),
+              let card = one.first else { return XCTFail() }
+        XCTAssertEqual(card.title.count, PluginMessage.maxTextLength)
+        XCTAssertEqual(card.preview, .text(String(repeating: "x", count: PluginMessage.maxSubtitleLength)))
+        XCTAssertEqual(card.actions?.count, PluginRowAction.maxCount)
+    }
+
+    func testCardsShowAndClear() throws {
+        let store = PluginStore(pluginsFolder: try makeFolder(), dataFolder: try makeFolder(), tabs: TabStore(defaults: UserDefaults(suiteName: UUID().uuidString)!))
+        store.apply(.cards([PluginCard(id: "c", title: "Card")]), from: "echo")
+        store.apply(.list([PluginRow(title: "Row")]), from: "echo")
+        XCTAssertEqual(store.contents["echo"]?.cards.map(\.title), ["Card"])
+        store.apply(.clear(.cards), from: "echo")
+        XCTAssertEqual(store.contents["echo"]?.cards, [])
+        XCTAssertEqual(store.contents["echo"]?.rows.map(\.title), ["Row"], "clearing the cards leaves the rows")
+        XCTAssertTrue(PluginMessage.cards([]).canBeScheduled)
+    }
+
     // MARK: - Protocol 4
 
     func testImagesActionsAndPresenceRead() throws {
@@ -536,9 +577,8 @@ final class PluginTests: XCTestCase {
     }
 
     func testAHighPriorityPluginShowsAheadOfPopupsAndMusic() {
-        XCTAssertEqual(LiveActivity.pick(agent: true, priorityPlugin: true, pluginPopup: true, music: true, pluginCompact: true), .agent)
-        XCTAssertEqual(LiveActivity.pick(agent: false, priorityPlugin: true, pluginPopup: true, music: true, pluginCompact: true), .priorityPlugin)
-        XCTAssertEqual(LiveActivity.pick(agent: false, priorityPlugin: false, pluginPopup: false, music: true, pluginCompact: true), .music)
+        XCTAssertEqual(LiveActivity.pick(priorityPlugin: true, pluginPopup: true, music: true, pluginCompact: true), .priorityPlugin)
+        XCTAssertEqual(LiveActivity.pick(priorityPlugin: false, pluginPopup: false, music: true, pluginCompact: true), .music)
     }
 
     func testABackgroundPluginRunsWithoutItsTabUnlessTurnedOff() throws {
@@ -570,7 +610,7 @@ final class PluginTests: XCTestCase {
 
     // MARK: - Bundled plugins
 
-    func testBundledPluginsAreOptInAndTakeOverTheirBuiltInTab() throws {
+    func testBundledPluginsDrawTheirBuiltInTabAndCanBeTurnedOff() throws {
         let bundled = try makeFolder()
         let programs = try makeFolder()
         let user = try makeFolder()
@@ -585,29 +625,22 @@ final class PluginTests: XCTestCase {
         let store = PluginStore(pluginsFolder: user, dataFolder: try makeFolder(), tabs: tabs, defaults: defaults,
                                 bundledFolder: bundled, bundledProgramFolder: programs)
         addTeardownBlock { await MainActor.run { store.stopForQuit() } }
-        var changes: [(String, Bool, Bool)] = []
-        store.onEnabledChange = { id, enabled in changes.append((id, enabled, store.processID(of: id) != nil)) }
         store.reload()
 
         XCTAssertEqual(store.installed.map(\.id), ["agents"])
         XCTAssertTrue(store.installed[0].isBundled)
         XCTAssertEqual(store.broken.map(\.reason), ["the app has a plugin with this id"], "yours doesn't replace the app's")
         XCTAssertFalse(tabs.pluginTabs.contains(.plugin("agents")), "it takes over the built-in tab instead of adding one")
-        XCTAssertFalse(store.isEnabled("agents"), "off until you turn it on")
-        XCTAssertNil(store.processID(of: "agents"))
-        XCTAssertNil(store.replacesBuiltInTab(.agents))
-
-        store.setEnabled("agents", true)
-        XCTAssertEqual(changes.map(\.0), ["agents"])
-        XCTAssertFalse(changes[0].2, "the app hears of it before the plugin starts, so it can let go of the socket")
-        XCTAssertNotNil(store.processID(of: "agents"), "its program runs from the app's Helpers")
+        XCTAssertTrue(store.isEnabled("agents"), "on from the start")
+        XCTAssertNotNil(store.processID(of: "agents"), "its program runs from the app's Helpers, tab or not (background)")
         XCTAssertEqual(store.replacesBuiltInTab(.agents), "agents")
         XCTAssertEqual(IslandTab.tab(forPlugin: "agents"), .agents)
 
         store.setEnabled("agents", false)
-        XCTAssertNil(store.processID(of: "agents"))
-        XCTAssertEqual(changes.last.map { [$0.0, String($0.1), String($0.2)] }, ["agents", "false", "false"],
-                       "and after it stopped, so the app can take the socket back")
+        XCTAssertNil(store.processID(of: "agents"), "turned off in Settings > Plugins: it stops")
+        XCTAssertEqual(store.replacesBuiltInTab(.agents), "agents", "and its tab says so")
+        store.setEnabled("agents", true)
+        XCTAssertNotNil(store.processID(of: "agents"))
         store.stop()
     }
 
@@ -991,20 +1024,26 @@ final class PluginTests: XCTestCase {
         _ = try writePlugin(#"{"id":"opener","name":"x","symbol":"x","command":["/bin/cat"],"protocol":1}"#, id: "opener", in: folder)
         let (store, tabs) = try makeStore(folder: folder)
         var opened: [String] = []
-        store.onOpen = { opened.append($0) }
+        var closed: [String] = []
+        store.onOpen = { id, hold in opened.append(hold ? "\(id) held" : id) }
+        store.onClose = { closed.append($0) }
 
-        store.apply(.open, from: "opener")
+        store.apply(.open(hold: false), from: "opener")
         XCTAssertEqual(opened, [], "its tab isn't one of yours")
         tabs.setEnabled(.plugin("opener"), true)
-        store.apply(.open, from: "opener")
-        store.apply(.open, from: "opener")
-        XCTAssertEqual(opened, ["opener"], "once, then not again within \(PluginStore.openInterval) seconds")
+        store.apply(.open(hold: true), from: "opener")
+        store.apply(.open(hold: false), from: "opener")
+        XCTAssertEqual(opened, ["opener held"], "once, then not again within \(PluginStore.openInterval) seconds")
+        store.apply(.close, from: "opener")
+        XCTAssertEqual(closed, ["opener"], "close lets go of what hold kept open")
     }
 
     // MARK: - New messages and countdown
 
     func testInputOpenConfirmAndCountdownRead() throws {
-        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"open"}"#)), .open)
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"open"}"#)), .open(hold: false))
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"open","hold":true}"#)), .open(hold: true))
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"close"}"#)), .close)
         XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"input","id":"m","placeholder":"Minutes"}"#)),
                        .input(PluginInput(id: "m", placeholder: "Minutes")))
         XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"buttons","buttons":[{"id":"s","title":"Stop","confirm":"Sure?"}]}"#)),

@@ -17,6 +17,7 @@ final class PluginStore: ObservableObject {
     struct Content: Equatable {
         var compact: PluginCompact?
         var rows: [PluginRow] = []
+        var cards: [PluginCard] = []
         var buttons: [PluginButton] = []
         var input: PluginInput?
         /// "Loading" or "couldn't load", drawn as one standard row
@@ -67,7 +68,9 @@ final class PluginStore: ObservableObject {
     /// (ISLAND_DATA_DIR), apart from its install folder so an update doesn't wipe it
     let dataFolder: URL
     /// Opens the island on a plugin's tab ({"type":"open"}); IslandController sets it
-    var onOpen: (String) -> Void = { _ in }
+    var onOpen: (_ pluginID: String, _ hold: Bool) -> Void = { _, _ in }
+    /// Closes the islands a plugin opened with `hold` ({"type":"close"}); IslandController sets it
+    var onClose: (String) -> Void = { _ in }
 
     /// One plugin opens the island at most this often
     static let openInterval: TimeInterval = 10
@@ -77,9 +80,6 @@ final class PluginStore: ObservableObject {
     /// The plugins inside the app (Contents/Resources/Plugins), and where their programs are
     let bundledFolder: URL?
     let bundledProgramFolder: URL?
-    /// A bundled plugin was turned on or off (before it starts or stops): AppIntegration hands the Agents hook
-    /// socket between the app and the Agents plugin
-    var onEnabledChange: (_ pluginID: String, _ enabled: Bool) -> Void = { _, _ in }
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "Plugin")
     private var clients: [String: PluginClient] = [:]
     private var tabsCancellable: AnyCancellable?
@@ -474,36 +474,24 @@ final class PluginStore: ObservableObject {
     /// UserDefaults key: the ids of plugins you turned off in Settings > Plugins
     static let disabledKey = "disabledPlugins"
 
-    /// UserDefaults key: the ids of opt-in plugins you turned on
-    static let optedInKey = "optedInPlugins"
-
-    /// A plugin that takes over a built-in tab replaces the app's own version of it, so it's off until you turn
-    /// it on; every other plugin is on until you turn it off
-    static func isOptIn(_ pluginID: String) -> Bool { IslandTab.builtInTabsOfPlugins[pluginID] != nil }
-
-    /// Turned on in Settings > Plugins. A plugin that's off doesn't run, even with its tab on
+    /// Turned on in Settings > Plugins (the default). A plugin that's off doesn't run, even with its tab on
     func isEnabled(_ pluginID: String) -> Bool {
-        if Self.isOptIn(pluginID) { return (defaults.stringArray(forKey: Self.optedInKey) ?? []).contains(pluginID) }
-        return !(defaults.stringArray(forKey: Self.disabledKey) ?? []).contains(pluginID)
+        !(defaults.stringArray(forKey: Self.disabledKey) ?? []).contains(pluginID)
     }
 
     func setEnabled(_ pluginID: String, _ enabled: Bool) {
         guard enabled != isEnabled(pluginID) else { return }
-        let key = Self.isOptIn(pluginID) ? Self.optedInKey : Self.disabledKey
-        var ids = Set(defaults.stringArray(forKey: key) ?? [])
-        if enabled == Self.isOptIn(pluginID) { ids.insert(pluginID) } else { ids.remove(pluginID) }
+        var disabled = Set(defaults.stringArray(forKey: Self.disabledKey) ?? [])
+        if enabled { disabled.remove(pluginID) } else { disabled.insert(pluginID) }
         objectWillChange.send()
-        defaults.set(ids.sorted(), forKey: key)
-        // Before it starts or stops, so the app can let go of what the plugin takes over (the hook socket)
-        if enabled { onEnabledChange(pluginID, true) }
+        defaults.set(disabled.sorted(), forKey: Self.disabledKey)
         syncClients()
-        if !enabled { onEnabledChange(pluginID, false) }
     }
 
-    /// Whether this installed plugin, turned on, shows in place of a built-in tab
+    /// The installed plugin that draws this built-in tab (the Agents plugin draws Agents), turned on or not
     func replacesBuiltInTab(_ tab: IslandTab) -> String? {
         guard let id = IslandTab.builtInTabsOfPlugins.first(where: { $0.value == tab })?.key,
-              installed.contains(where: { $0.id == id }), isEnabled(id) else { return nil }
+              installed.contains(where: { $0.id == id }) else { return nil }
         return id
     }
 
@@ -593,6 +581,8 @@ final class PluginStore: ObservableObject {
         switch message {
         case .compact(let compact): content.compact = compact
         case .list(let rows): content.rows = rows
+        case .cards(let cards): content.cards = cards
+        case .clear(.cards): content.cards = []
         case .buttons(let buttons): content.buttons = buttons
         case .clear(.compact): content.compact = nil
         case .clear(.list): content.rows = []
@@ -603,8 +593,11 @@ final class PluginStore: ObservableObject {
         case .popup(let popup):
             show(popup, from: pluginID)
             return
-        case .open:
-            open(from: pluginID)
+        case .open(let hold):
+            open(from: pluginID, hold: hold)
+            return
+        case .close:
+            onClose(pluginID)
             return
         case .status(let notice): content.notice = notice
         case .timeline(let schedule):
@@ -619,7 +612,7 @@ final class PluginStore: ObservableObject {
     }
 
     /// Opens the island on the plugin's tab, when its tab is one of yours, you allow it, and it hasn't just done so
-    private func open(from pluginID: String, now: Date = Date()) {
+    private func open(from pluginID: String, hold: Bool, now: Date = Date()) {
         // "Let plugins open the island" is about plugins you install; the app's own answer to their own settings
         let isBundled = installed.first { $0.id == pluginID }?.isBundled ?? false
         guard isBundled || SettingsDefaults.shared.get(SettingsDefaults.pluginsMayOpenIsland),
@@ -629,7 +622,13 @@ final class PluginStore: ObservableObject {
             return
         }
         lastOpened[pluginID] = now
-        onOpen(pluginID)
+        onOpen(pluginID, hold)
+    }
+
+    /// Takes the popup away now (tests)
+    func dismissPopup() {
+        popupDismissal?.cancel()
+        popup = nil
     }
 
     private func show(_ popup: PluginPopup, from pluginID: String) {

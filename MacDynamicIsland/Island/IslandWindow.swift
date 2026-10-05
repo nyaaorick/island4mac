@@ -185,7 +185,6 @@ final class IslandWindow {
             layoutCanvas()
         }
         let activity = LiveActivity.pick(
-            agent: AgentSessionStore.shared.showsCompactLiveActivity,
             priorityPlugin: PluginStore.shared.showsPriorityContent,
             pluginPopup: PluginStore.shared.showsPopupLiveActivity,
             music: MusicStore.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch),

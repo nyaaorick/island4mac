@@ -26,12 +26,9 @@ enum NotchMetrics {
         case .music:
             // Artwork beside title, lyrics, progress and controls
             contentHeight = 190
-        case .clipboard:
-            // One row of 160pt cards
-            contentHeight = 210
-        case .files:
-            // Shelf header over a scrolling grid
-            contentHeight = 260
+        case .clipboard, .files:
+            // One row of cards (PluginCardView) with room for their shadows, over the buttons
+            contentHeight = 232
         case .agents:
             // A couple of session rows with their task lists; the list scrolls
             contentHeight = 270

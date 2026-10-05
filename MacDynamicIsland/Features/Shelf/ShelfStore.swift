@@ -91,6 +91,18 @@ class ShelfStore: ObservableObject {
         removeItems([itemID])
     }
     
+    /// Puts files on the shelf, newest first, skipping ones already on it
+    func add(_ urls: [URL]) {
+        for url in urls where !items.contains(where: { $0.url == url }) {
+            let bookmarkData = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
+            withAnimation(.spring()) {
+                items.insert(ShelfItem(url: url, bookmarkData: bookmarkData), at: 0)
+            }
+        }
+        if items.count > maxItems { items = Array(items.prefix(maxItems)) }
+        saveItems()
+    }
+
     func clearAll() {
         items.removeAll()
         saveItems()

@@ -7,10 +7,13 @@ import Foundation
 ///     {"type":"compact","symbol":"timer","text":"04:59","progress":0.98}
 ///     {"type":"compact","symbol":"timer","until":1767225600,"total":300}     counted down by the island
 ///     {"type":"list","rows":[{"id":"r1","title":"5 min","subtitle":"Pomodoro","symbol":"play"}]}
+///     {"type":"cards","cards":[{"id":"c1","title":"Safari","preview":{"text":"let x = 1"}}]}   protocol 5: PluginCard
 ///     {"type":"buttons","buttons":[{"id":"stop","title":"Stop","confirm":"Stop the timer?"}]}
 ///     {"type":"input","id":"minutes","placeholder":"Minutes","text":""}
 ///     {"type":"popup","symbol":"bell","text":"Time's up","seconds":3}
 ///     {"type":"open"}                                                        open the island on this plugin's tab
+///     {"type":"open","hold":true}                                            and keep it open until "close" (protocol 4)
+///     {"type":"close"}                                                       close what "hold" kept open (protocol 4)
 ///     {"type":"clear","target":"compact"}
 ///     {"type":"status","state":"loading","text":"Updating"}                 one standard row; "idle" removes it
 ///     {"type":"timeline","entries":[…],"wake":1767229200}                    protocol 3: see PluginSchedule
@@ -18,10 +21,14 @@ import Foundation
 enum PluginMessage: Equatable {
     case compact(PluginCompact)
     case list([PluginRow])
+    /// Protocol 5: cards in a row you scroll sideways, above the rows
+    case cards([PluginCard])
     case buttons([PluginButton])
     case input(PluginInput)
     case popup(PluginPopup)
-    case open
+    /// With `hold`, the island stays open (no auto-close) until the plugin says `close`, or you close it
+    case open(hold: Bool)
+    case close
     case clear(PluginClearTarget)
     /// Loading or failed, drawn as one standard row; nil: neither
     case status(PluginNotice?)
@@ -45,10 +52,12 @@ enum PluginMessage: Equatable {
         switch envelope.type {
         case "compact": return .compact(try decoder.decode(PluginCompact.self, from: line).trimmed)
         case "list": return .list(Array(try decoder.decode(ListBody.self, from: line).rows.prefix(maxItems)).map(\.trimmed))
+        case "cards": return .cards(Array(try decoder.decode(CardsBody.self, from: line).cards.prefix(maxItems)).map(\.trimmed))
         case "buttons": return .buttons(Array(try decoder.decode(ButtonsBody.self, from: line).buttons.prefix(maxItems)).map(\.trimmed))
         case "input": return .input(try decoder.decode(PluginInput.self, from: line).trimmed)
         case "popup": return .popup(try decoder.decode(PluginPopup.self, from: line).trimmed)
-        case "open": return .open
+        case "open": return .open(hold: (try? decoder.decode(OpenBody.self, from: line).hold) ?? false)
+        case "close": return .close
         case "clear": return .clear(try decoder.decode(ClearBody.self, from: line).target)
         case "status":
             let body = try decoder.decode(StatusBody.self, from: line)
@@ -62,9 +71,11 @@ enum PluginMessage: Equatable {
 
     private struct Envelope: Decodable { let type: String }
     private struct ListBody: Decodable { let rows: [PluginRow] }
+    private struct CardsBody: Decodable { let cards: [PluginCard] }
     private struct ButtonsBody: Decodable { let buttons: [PluginButton] }
     private struct ClearBody: Decodable { let target: PluginClearTarget }
     private struct StatusBody: Decodable { let state: String; let text: String? }
+    private struct OpenBody: Decodable { let hold: Bool? }
 
     static func cut(_ text: String) -> String { String(text.prefix(maxTextLength)) }
     static func cut(_ text: String?) -> String? { text.map(cut) }
@@ -159,5 +170,5 @@ struct PluginNotice: Equatable {
 }
 
 enum PluginClearTarget: String, Decodable {
-    case compact, list, buttons, input, all
+    case compact, list, cards, buttons, input, all
 }

@@ -2,15 +2,9 @@ import SwiftUI
 
 struct CompactIslandRegion: View {
     @EnvironmentObject var appState: AppState
-    @ObservedObject private var agents = AgentSessionStore.shared
     @ObservedObject private var plugins = PluginStore.shared
 
     let animation: Namespace.ID
-
-    /// An agent session takes the wings over from music while it works, waits for you or has just finished
-    private var agentSession: AgentSession? {
-        agents.showsCompactLiveActivity ? agents.liveSession : nil
-    }
 
     /// What a plugin shows beside the notch: a popup ahead of now playing, its compact content after it
     private struct PluginLive {
@@ -54,9 +48,7 @@ struct CompactIslandRegion: View {
         if notch == .zero {
             // No notch on this display: a small pill at the top center
             HStack(spacing: 8) {
-                if activity == .agent, let session = agentSession {
-                    CompactAgentLiveActivityView(session: session, isWide: appState.isOnLargeDisplay)
-                } else if let live = pluginLive {
+                if let live = pluginLive {
                     CompactPluginLiveActivityView(name: live.name, compact: live.compact)
                 } else if activity == .music {
                     CompactMusicLiveActivityView(animation: animation)
@@ -70,8 +62,6 @@ struct CompactIslandRegion: View {
                 }
             }
             .padding(.horizontal, 14)
-        } else if activity == .agent, let session = agentSession {
-            AgentNotchLiveActivityView(session: session, notch: notch, wings: appState.liveActivityWings, activeCount: agents.activeSessionCount)
         } else if let live = pluginLive {
             PluginNotchLiveActivityView(compact: live.compact, notch: notch, wings: appState.liveActivityWings)
         } else if activity == .music {

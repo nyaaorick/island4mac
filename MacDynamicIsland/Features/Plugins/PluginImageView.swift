@@ -5,26 +5,46 @@ import AppKit
 /// Until it loads, or if it can't, the plugin's symbol shows instead
 struct PluginImageView: View {
     let image: PluginImage
-    let size: CGFloat
+    let width: CGFloat
+    let height: CGFloat
     var fallbackSymbol: String?
+    /// A card's preview shows the whole picture, at a fixed corner radius, rather than a cropped thumbnail
+    private var isPreview = false
 
     @State private var loaded: NSImage?
+
+    init(image: PluginImage, size: CGFloat, fallbackSymbol: String? = nil) {
+        self.image = image
+        self.width = size
+        self.height = size
+        self.fallbackSymbol = fallbackSymbol
+    }
+
+    /// The large picture of a card (PluginCardPreview)
+    init(preview image: PluginImage, width: CGFloat, height: CGFloat, fallbackSymbol: String? = nil) {
+        self.image = image
+        self.width = width
+        self.height = height
+        self.fallbackSymbol = fallbackSymbol
+        self.isPreview = true
+    }
 
     var body: some View {
         Group {
             if let loaded {
                 Image(nsImage: loaded)
                     .resizable()
-                    .aspectRatio(contentMode: isIcon ? .fit : .fill)
+                    .aspectRatio(contentMode: isIcon || isPreview ? .fit : .fill)
+                    .clipShape(RoundedRectangle(cornerRadius: isPreview ? 6 : 0, style: .continuous))
             } else {
                 Image(systemName: fallbackSymbol ?? "photo")
-                    .font(.system(size: size * 0.6, weight: .semibold))
+                    .font(.system(size: min(width, height) * (isPreview ? 0.4 : 0.6), weight: .semibold))
                     .foregroundStyle(.white.opacity(0.8))
             }
         }
-        .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: isIcon ? 0 : size * 0.22, style: .continuous))
-        .task(id: image) { loaded = await PluginImageLoader.shared.image(for: image, size: size) }
+        .frame(width: width, height: height)
+        .clipShape(RoundedRectangle(cornerRadius: isIcon || isPreview ? 0 : width * 0.22, style: .continuous))
+        .task(id: image) { loaded = await PluginImageLoader.shared.image(for: image, size: max(width, height)) }
     }
 
     /// App icons keep their own shape; thumbnails and pictures are cropped square

@@ -56,9 +56,7 @@ struct ExpandedIslandRegion: View {
 
             Spacer()
 
-            if appState.currentSection == .agents {
-                AgentTabControls()
-            }
+            PluginSettingsButton(tab: appState.currentSection)
             
             // Close Button - Using custom view to ensure clickability
             Image(systemName: "xmark.circle.fill")
@@ -93,12 +91,8 @@ struct ExpandedIslandRegion: View {
                 case .files:
                     ShelfView()
                 case .agents:
-                    // Turned on, the Agents plugin shows in this tab instead (Settings > Agents)
-                    if let pluginID = PluginStore.shared.replacesBuiltInTab(.agents) {
-                        PluginTabView(pluginID: pluginID)
-                    } else {
-                        AgentsView()
-                    }
+                    // Drawn by the Agents plugin that ships in the app
+                    PluginTabView(pluginID: PluginStore.shared.replacesBuiltInTab(.agents) ?? "agents")
                 default:
                     PluginTabView(pluginID: appState.currentSection.pluginID ?? "")
                         // A fresh view per plugin, so switching between two plugin tabs tells both
@@ -108,10 +102,10 @@ struct ExpandedIslandRegion: View {
         }
         // The rest of the open island, sized per tab by NotchMetrics.expandedSize(for:largeDisplay:notch:)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // With the tabs beside the camera there's no tab bar, so the Agents tab's controls float in its corner
+        // With the tabs beside the camera there's no tab bar, so a plugin's settings button floats in its corner
         .overlay(alignment: .bottomTrailing) {
-            if notch != .zero && appState.currentSection == .agents {
-                AgentTabControls()
+            if notch != .zero {
+                PluginSettingsButton(tab: appState.currentSection)
                     .padding(6)
             }
         }

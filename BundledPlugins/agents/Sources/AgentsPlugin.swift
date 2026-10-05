@@ -19,6 +19,7 @@ struct AgentsPlugin: IslandPlugin {
 
     @Preference("Play a sound when an agent needs you, finishes or fails") var sounds = true
     @Preference("Show the active session beside the notch") var besideNotch = true
+    @Preference("Open the island when an agent needs you") var openIsland = true
 
     /// The labels picked so far, by question text, for the prompt being answered
     @State var picked: [String: [String]] = [:]
@@ -30,7 +31,7 @@ struct AgentsPlugin: IslandPlugin {
     private var store: AgentSessionStore { AgentSessionStore.shared }
 
     func onStart() {
-        AgentsService.shared.start(soundsOn: { sounds })
+        AgentsService.shared.start(soundsOn: { sounds }, opensIsland: { openIsland })
     }
 
     /// Ticks the elapsed time: every second while the tab shows, every minute beside the notch
@@ -67,6 +68,8 @@ struct AgentsPlugin: IslandPlugin {
                     for session in store.sessions where session.hasEnded { store.archive(session.id) }
                 }
             }
+            // Connecting and disconnecting stay at hand below the sessions
+            AgentConnectionRows(note: $note)
         }
     }
 
@@ -213,12 +216,21 @@ struct ConnectView: IslandComponent {
     let note: Binding<String?>
 
     var body: some IslandContent {
-        let installers = AgentHookInstaller.all.filter(\.isAgentPresent)
-        let connected = installers.filter(\.isInstalled)
+        let connected = AgentHookInstaller.all.filter { $0.isAgentPresent && $0.isInstalled }
         Row(connected.isEmpty ? "No agent is connected" : "No agent sessions",
             subtitle: connected.isEmpty ? "Connect one to see its sessions here and answer its questions"
                                         : "Sessions show up here once you send an agent a prompt",
             symbol: "terminal")
+        AgentConnectionRows(note: note)
+    }
+}
+
+/// One row per agent on this Mac: tap to connect one; a connected one disconnects from its row's actions
+struct AgentConnectionRows: IslandComponent {
+    let note: Binding<String?>
+
+    var body: some IslandContent {
+        let installers = AgentHookInstaller.all.filter(\.isAgentPresent)
         for installer in installers {
             Row(installer.agent.displayName, subtitle: installer.isInstalled ? "Connected" : "Adds hooks to its config file (backed up first)",
                 symbol: installer.isInstalled ? "checkmark.circle.fill" : "circle",
@@ -251,8 +263,9 @@ final class AgentsService {
 
     private var server: AgentHookServer?
     private var changes: AnyCancellable?
+    private var promptsAnswered: AnyCancellable?
 
-    func start(soundsOn: @escaping () -> Bool) {
+    func start(soundsOn: @escaping () -> Bool, opensIsland: @escaping () -> Bool) {
         // The helper the hooks run lives in the app, not beside this program
         if let app = ProcessInfo.processInfo.environment["ISLAND_APP_BUNDLE"] {
             AgentHookInstaller.appBundleURL = URL(fileURLWithPath: app, isDirectory: true)
@@ -274,15 +287,22 @@ final class AgentsService {
         store.onStatusChange = { session, previous in
             if soundsOn() { AgentAlertSound.play(for: session, previous: previous) }
         }
-        // Claude is waiting on you: say so beside the notch and open the island on Agents
+        // Claude is waiting on you: say so beside the notch and open the island on Agents, held open until it's
+        // answered (here or in the terminal)
         store.onPrompt = { prompt in
             Island.popup(prompt.isQuestion ? "\(prompt.agent.shortName) is asking you" : "\(prompt.agent.shortName) needs permission",
                          symbol: prompt.isQuestion ? "questionmark.bubble.fill" : "hand.raised.fill", seconds: 4)
-            Island.open()
+            if opensIsland() { Island.open(hold: true) }
         }
         store.startPruning()
         // The store changed: show it (rendered on the next turn, after the change landed)
         changes = store.objectWillChange.sink { _ in Island.refresh() }
+        // Every question answered: close the island a question opened
+        promptsAnswered = store.$pendingPrompts
+            .map(\.isEmpty)
+            .removeDuplicates()
+            .dropFirst()
+            .sink { noneLeft in if noneLeft { Island.close() } }
     }
 }
 

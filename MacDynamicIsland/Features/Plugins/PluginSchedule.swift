@@ -76,8 +76,8 @@ extension PluginMessage {
     /// Whether it can be shown later, from a schedule, without the plugin running
     var canBeScheduled: Bool {
         switch self {
-        case .compact, .list, .buttons, .input, .clear, .status: return true
-        case .popup, .open, .timeline, .done: return false
+        case .compact, .list, .cards, .buttons, .input, .clear, .status: return true
+        case .popup, .open, .close, .timeline, .done: return false
         }
     }
 }

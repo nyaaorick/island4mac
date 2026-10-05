@@ -23,14 +23,6 @@ struct ClipboardItem: Identifiable, Codable, Equatable {
         return formatter.localizedString(for: timestamp, relativeTo: Date())
     }
     
-    var sourceIcon: NSImage {
-        if let bundleID = sourceBundleID,
-           let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-            return NSWorkspace.shared.icon(forFile: appURL.path)
-        }
-        return NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: nil) ?? NSImage()
-    }
-
     static func == (lhs: ClipboardItem, rhs: ClipboardItem) -> Bool {
         return lhs.id == rhs.id
     }
@@ -48,12 +40,46 @@ struct ClipboardItem: Identifiable, Codable, Equatable {
 
 @MainActor
 final class ClipboardStore: ObservableObject {
-    @Published var items: [ClipboardItem] = []
+    @Published var items: [ClipboardItem] = [] {
+        didSet { syncImageFiles() }
+    }
 
     private let defaults: UserDefaults
+    /// Copied images as files, one per item (`<id>.png`), so the tab can show them as pictures (PluginImage)
+    let imageFolder: URL
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, imageFolder: URL = ClipboardStore.defaultImageFolder) {
         self.defaults = defaults
+        self.imageFolder = imageFolder
+    }
+
+    nonisolated static var defaultImageFolder: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.macdynamicisland.app", isDirectory: true)
+            .appendingPathComponent("ClipboardImages", isDirectory: true)
+    }
+
+    /// The file of an image item, once written
+    func imageFile(for item: ClipboardItem) -> URL? {
+        let url = imageFolder.appendingPathComponent("\(item.id.uuidString).png")
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    /// Writes the images that have no file yet and removes the files of items that are gone
+    private func syncImageFiles() {
+        let fileManager = FileManager.default
+        try? fileManager.createDirectory(at: imageFolder, withIntermediateDirectories: true)
+        var wanted = Set<String>()
+        for item in items where item.type == .image {
+            guard let data = item.imageData else { continue }
+            let name = "\(item.id.uuidString).png"
+            wanted.insert(name)
+            let url = imageFolder.appendingPathComponent(name)
+            if !fileManager.fileExists(atPath: url.path) { try? data.write(to: url, options: .atomic) }
+        }
+        for name in (try? fileManager.contentsOfDirectory(atPath: imageFolder.path)) ?? [] where !wanted.contains(name) {
+            try? fileManager.removeItem(at: imageFolder.appendingPathComponent(name))
+        }
     }
 
     // UI Settings

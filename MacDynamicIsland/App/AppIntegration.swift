@@ -8,7 +8,6 @@ class AppIntegration {
     // MARK: - Monitors
     private var clipboardMonitor: ClipboardMonitor?
     private var hotKeyMonitor: HotKeyMonitor?
-    private var agentHookServer: AgentHookServer?
 
     private init() {}
 
@@ -43,40 +42,13 @@ class AppIntegration {
 
         let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")
 
-        // Claude Code, Codex and ZCode sessions, reported by island-claude-hook; every agent's hooks share one socket.
-        // The Agents plugin (Settings > Agents, beta) takes the socket over while it's turned on
-        AgentHookInstaller.all.forEach { $0.refreshIfInstalled() }
-        if !MainActor.assumeIsolated({ PluginStore.shared.isEnabled(Self.agentsPluginID) }) {
-            startAgentHookServer()
-        }
+        // Plugins: separate processes that tell the island what to show. Agents (Claude Code, Codex and ZCode,
+        // reported by island-claude-hook) is one of them, shipped in the app
         MainActor.assumeIsolated {
-            PluginStore.shared.onEnabledChange = { [weak self] pluginID, enabled in
-                guard pluginID == Self.agentsPluginID else { return }
-                if enabled {
-                    Self.carryAgentSettingsOver()
-                    self?.agentHookServer?.stop()
-                    self?.agentHookServer = nil
-                } else {
-                    // The plugin was just asked to quit; bind once it has let go of the socket
-                    DispatchQueue.main.asyncAfter(deadline: .now() + PluginClient.terminationGrace) { self?.startAgentHookServer() }
-                }
-            }
-        }
-        AgentSessionStore.shared.onStatusChange = { session, previous in
-            if SettingsDefaults.shared.get(SettingsDefaults.agentSoundsEnabled) {
-                AgentAlertSound.play(for: session, previous: previous)
-            }
-        }
-        // Claude asks you a question or for a permission: open the island on it, so you can answer there
-        AgentSessionStore.shared.onPrompt = { _ in
-            IslandController.shared.showAgentPrompt()
-        }
-        AgentSessionStore.shared.startPruning()
-
-        // Plugins: separate processes that tell the island what to show
-        MainActor.assumeIsolated {
-            PluginStore.shared.onOpen = { IslandController.shared.showPluginTab($0) }
+            PluginStore.shared.onOpen = { IslandController.shared.showPluginTab($0, hold: $1) }
+            PluginStore.shared.onClose = { IslandController.shared.closeHeldPluginTab($0) }
             PluginStore.shared.start()
+            Self.carryAgentSettingsOver()
         }
 
         logger.info("All managers started")
@@ -84,7 +56,7 @@ class AppIntegration {
 
     static let agentsPluginID = "agents"
 
-    /// The first time the Agents plugin is turned on, it starts with the built-in Agents' settings
+    /// The first time the Agents plugin runs, it takes the settings of the Agents built into earlier versions
     @MainActor
     static func carryAgentSettingsOver() {
         let store = PluginStore.shared.preferences
@@ -95,6 +67,7 @@ class AppIntegration {
         let pairs: [(key: String, value: Bool)] = [
             ("sounds", settings.get(SettingsDefaults.agentSoundsEnabled)),
             ("besideNotch", settings.get(SettingsDefaults.showAgentLiveActivity)),
+            ("openIsland", settings.get(SettingsDefaults.agentPromptsOpenIsland)),
         ]
         for (key, value) in pairs {
             if let preference = manifest.preferences?.first(where: { $0.key == key }) {
@@ -104,26 +77,10 @@ class AppIntegration {
         UserDefaults.standard.set(true, forKey: carried)
     }
 
-    private func startAgentHookServer() {
-        guard agentHookServer == nil else { return }
-        agentHookServer = AgentHookServer(socketURL: AgentHookInstaller.standard(.claude).socketURL) { event, reply in
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated { AgentSessionStore.shared.apply(event, reply: reply) }
-            }
-        }
-        do {
-            try agentHookServer?.start()
-        } catch {
-            os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")
-                .error("Agent hook server failed to start: \(String(describing: error))")
-        }
-    }
-
     func stop() {
         MusicStore.shared.stop()
         clipboardMonitor?.stop()
         hotKeyMonitor?.stop()
-        agentHookServer?.stop()
         // Waits briefly for them to quit, then ends whatever is left, so no plugin outlives the app
         MainActor.assumeIsolated { PluginStore.shared.stopForQuit() }
 

@@ -137,10 +137,11 @@ struct NotchHomeView: View {
         .animation(reduceMotion ? nil : animationSpring, value: appState.liveActivityWings)
     }
 
-    /// Opens the island; when an agent session is showing beside the notch, on the Agents tab
+    /// Opens the island; when a high-priority plugin (an agent at work) shows beside the notch, on its tab
     private func openIsland() {
-        if appState.showsLiveActivity && AgentSessionStore.shared.showsCompactLiveActivity && TabStore.shared.isEnabled(.agents) {
-            appState.currentSection = .agents
+        if appState.showsLiveActivity, appState.liveActivity == .priorityPlugin, let plugin = PluginStore.shared.priorityPlugin {
+            let tab = IslandTab.tab(forPlugin: plugin.manifest.id)
+            if TabStore.shared.isEnabled(tab) { appState.currentSection = tab }
         }
         withAnimation(openAnimation) {
             appState.activateIsland(reason: .userExpanded)
