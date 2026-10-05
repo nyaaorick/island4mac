@@ -10,7 +10,7 @@ struct PluginNotchLiveActivityView: View {
     var body: some View {
         PluginTimeline(compact: compact) { text, progress in
             NotchWingsLayout(notch: notch, wings: wings) { _ in
-                PluginSymbolView(symbol: compact.symbol, progress: progress, size: max(12, notch.height - 18))
+                PluginSymbolView(symbol: compact.symbol, progress: progress, size: max(12, notch.height - 18), image: compact.image)
             } secondary: { _ in
                 Text(text ?? "")
                     .font(.system(size: 11, weight: .semibold).monospacedDigit())

@@ -1,0 +1,27 @@
+{
+  "background" : true,
+  "command" : [
+    "./agents"
+  ],
+  "description" : "Claude Code, Codex and ZCode sessions; answer their questions in the island",
+  "id" : "agents",
+  "name" : "Agents",
+  "preferences" : [
+    {
+      "default" : true,
+      "key" : "sounds",
+      "kind" : "toggle",
+      "title" : "Play a sound when an agent needs you, finishes or fails"
+    },
+    {
+      "default" : true,
+      "key" : "besideNotch",
+      "kind" : "toggle",
+      "title" : "Show the active session beside the notch"
+    }
+  ],
+  "priority" : "high",
+  "protocol" : 4,
+  "symbol" : "terminal",
+  "version" : "1.0.0"
+}

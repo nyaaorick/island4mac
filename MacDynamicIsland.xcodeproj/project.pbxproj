@@ -9,6 +9,9 @@
 /* Begin PBXBuildFile section */
 		4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D5241020000000000000016 /* island-claude-hook in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000012 /* island-claude-hook */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241040000000000000010 /* agents in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241040000000000000006 /* agents */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241040000000000000011 /* plugin.json in Embed Bundled Plugins */ = {isa = PBXBuildFile; fileRef = 4D5241040000000000000005 /* plugin.json */; };
+		4D5241040000000000000014 /* IslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5241040000000000000013 /* IslandKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,6 +36,13 @@
 			remoteGlobalIDString = 4D5241020000000000000015;
 			remoteInfo = ClaudeHookBridge;
 		};
+		4D524104000000000000000D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241040000000000000007;
+			remoteInfo = AgentsPlugin;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -54,8 +64,20 @@
 			dstSubfolderSpec = 1;
 			files = (
 				4D5241020000000000000016 /* island-claude-hook in Embed Helpers */,
+				4D5241040000000000000010 /* agents in Embed Helpers */,
 			);
 			name = "Embed Helpers";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D524104000000000000000F /* Embed Bundled Plugins */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Plugins/agents;
+			dstSubfolderSpec = 7;
+			files = (
+				4D5241040000000000000011 /* plugin.json in Embed Bundled Plugins */,
+			);
+			name = "Embed Bundled Plugins";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
@@ -65,6 +87,8 @@
 		16699883D1FCA93359C8C3D6 /* MacDynamicIslandTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MacDynamicIslandTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMediaRemoteAdapter.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D5241020000000000000012 /* island-claude-hook */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "island-claude-hook"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D5241040000000000000005 /* plugin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = plugin.json; sourceTree = "<group>"; };
+		4D5241040000000000000006 /* agents */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = agents; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -101,6 +125,16 @@
 			path = MediaRemoteAdapter;
 			sourceTree = "<group>";
 		};
+		4D5241040000000000000001 /* AgentsCore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AgentsCore;
+			sourceTree = "<group>";
+		};
+		4D5241040000000000000002 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -132,6 +166,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4D5241040000000000000009 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D5241040000000000000014 /* IslandKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -140,6 +182,8 @@
 			children = (
 				4D52410300000000000000A1 /* MacDynamicIsland */,
 				4D52410300000000000000A2 /* MacDynamicIslandTests */,
+				4D5241040000000000000001 /* AgentsCore */,
+				4D5241040000000000000004 /* BundledPlugins */,
 				4D52410300000000000000A5 /* Helpers */,
 				51E49FAC2F0B8D41002AD746 /* Products */,
 			);
@@ -161,8 +205,26 @@
 				16699883D1FCA93359C8C3D6 /* MacDynamicIslandTests.xctest */,
 				4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */,
 				4D5241020000000000000012 /* island-claude-hook */,
+				4D5241040000000000000006 /* agents */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		4D5241040000000000000004 /* BundledPlugins */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241040000000000000003 /* agents */,
+			);
+			path = BundledPlugins;
+			sourceTree = "<group>";
+		};
+		4D5241040000000000000003 /* agents */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241040000000000000005 /* plugin.json */,
+				4D5241040000000000000002 /* Sources */,
+			);
+			path = agents;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -177,15 +239,18 @@
 				51E49FA92F0B8D41002AD746 /* Resources */,
 				4D52410100000000000000A9 /* Embed Libraries */,
 				4D5241020000000000000017 /* Embed Helpers */,
+				4D524104000000000000000F /* Embed Bundled Plugins */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				4D52410100000000000000AB /* PBXTargetDependency */,
 				4D5241020000000000000019 /* PBXTargetDependency */,
+				4D524104000000000000000E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4D52410300000000000000A1 /* MacDynamicIsland */,
+				4D5241040000000000000001 /* AgentsCore */,
 			);
 			name = "MacDynamicIsland";
 			productName = "MacDynamicIsland";
@@ -251,6 +316,29 @@
 			productReference = 4D5241020000000000000012 /* island-claude-hook */;
 			productType = "com.apple.product-type.tool";
 		};
+		4D5241040000000000000007 /* AgentsPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D524104000000000000000A /* Build configuration list for PBXNativeTarget "AgentsPlugin" */;
+			buildPhases = (
+				4D5241040000000000000008 /* Sources */,
+				4D5241040000000000000009 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D5241040000000000000001 /* AgentsCore */,
+				4D5241040000000000000002 /* Sources */,
+			);
+			name = AgentsPlugin;
+			packageProductDependencies = (
+				4D5241040000000000000013 /* IslandKit */,
+			);
+			productName = agents;
+			productReference = 4D5241040000000000000006 /* agents */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -274,6 +362,9 @@
 					4D5241020000000000000015 = {
 						CreatedOnToolsVersion = 27.0;
 					};
+					4D5241040000000000000007 = {
+						CreatedOnToolsVersion = 27.0;
+					};
 				};
 			};
 			buildConfigurationList = 51E49FA62F0B8D41002AD746 /* Build configuration list for PBXProject "MacDynamicIsland" */;
@@ -286,6 +377,7 @@
 			mainGroup = 51E49FA22F0B8D41002AD746;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 51E49FAC2F0B8D41002AD746 /* Products */;
@@ -296,6 +388,7 @@
 				2013CF6D78CAA4315DA29D50 /* MacDynamicIslandTests */,
 				4D52410100000000000000A6 /* MediaRemoteAdapter */,
 				4D5241020000000000000015 /* ClaudeHookBridge */,
+				4D5241040000000000000007 /* AgentsPlugin */,
 			);
 		};
 /* End PBXProject section */
@@ -346,6 +439,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		4D5241040000000000000008 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -363,6 +463,11 @@
 			isa = PBXTargetDependency;
 			target = 4D5241020000000000000015 /* ClaudeHookBridge */;
 			targetProxy = 4D5241020000000000000018 /* PBXContainerItemProxy */;
+		};
+		4D524104000000000000000E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241040000000000000007 /* AgentsPlugin */;
+			targetProxy = 4D524104000000000000000D /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -647,6 +752,40 @@
 			};
 			name = Release;
 		};
+		4D524104000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = agents;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4D524104000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = agents;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -695,7 +834,31 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		4D524104000000000000000A /* Build configuration list for PBXNativeTarget "AgentsPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524104000000000000000B /* Debug */,
+				4D524104000000000000000C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../island4mac-plugins";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4D5241040000000000000013 /* IslandKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */;
+			productName = IslandKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 51E49FA32F0B8D41002AD746 /* Project object */;
 }

@@ -1,4 +1,5 @@
-// Timer: the sample island plugin, and the template for writing one.
+// Timer: the sample island plugin, speaking the protocol directly with nothing but Foundation. To write a plugin,
+// use IslandKit, the Swift SDK in the plugins repo (github.com/nyaaorick/island4mac-plugins): `island-plugin new`.
 //
 // A plugin is a folder with a plugin.json and a program. The app runs the program in that folder and reads what
 // to show from its stdout, one JSON object per line; what you do comes back on its stdin the same way. It quits

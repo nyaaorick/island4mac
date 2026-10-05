@@ -265,11 +265,6 @@ final class AgentSessionStore: ObservableObject {
     /// Sessions working or waiting for you
     var activeSessionCount: Int { sessions.filter(\.isActive).count }
 
-    /// Whether the collapsed island shows an agent session beside the notch
-    var showsCompactLiveActivity: Bool {
-        SettingsDefaults.shared.get(SettingsDefaults.showAgentLiveActivity) && liveSession != nil
-    }
-
     /// `reply` is the waiting hook's connection, when the island can answer the event's prompt
     func apply(_ event: AgentHookEvent, reply: AgentHookReply? = nil, now: Date = Date()) {
         var updated = sessions

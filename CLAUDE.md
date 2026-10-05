@@ -36,21 +36,29 @@ MacDynamicIsland/              App target. Folders are synced with Xcode: add or
                                interaction/visibility enums, background, swipes
   Features/
     Music/                     MusicStore, NowPlayingClient (MediaRemote via adapter), LyricsClient, music views
-    Agents/                    Hook events, socket server, session store, hook installer, terminal focusing, agent views
+    Agents/                    The built-in Agents views (their logic is in AgentsCore/, shared with the Agents plugin)
     Clipboard/                 ClipboardMonitor (pasteboard polling), ClipboardStore, clipboard views
     Shelf/                     Shelf items, view model, persistence, thumbnails, Quick Look, drag detection
     Plugins/                   PluginStore, PluginClient (one process per plugin), PluginMessage/PluginEvent (the protocol),
+                               PluginSchedule (timelines), PluginImage, PluginPreferencesStore, PluginFolderMonitor,
                                PluginCatalogClient (plugins repo), plugin views
   Settings/                    Settings window and one view per tab
-  System/                      macOS integration: hotkeys, screens, menu bar space, full-screen video, login item, AppleScript
+  System/                      macOS integration: hotkeys, screens, menu bar space, full-screen video, login item, Keychain
   Shared/                      Extensions, reusable components, utilities (settings keys, L("key"), logging, build config)
   Resources/                   Assets, en.lproj/Localizable.strings, Info.plist, entitlements
+AgentsCore/                    Agents logic shared by the app and the Agents plugin: hook events and socket, installers,
+                               session store, transcripts, terminal focus, sounds, AppleScriptClient. Compiled into both
+                               targets (one synced folder, two targets), so no SwiftUI or Settings in it
+BundledPlugins/
+  agents/                      The Agents plugin that ships in the app (target AgentsPlugin, product `agents`): Sources/
+                               on IslandKit, plugin.json written with `agents --describe` (a test checks they match)
 MacDynamicIslandTests/         Unit tests (hosted by the app)
 Helpers/
   ClaudeHookBridge/            island-claude-hook: the command every agent's hooks run
   MediaRemoteAdapter/          Library loaded into perl by the now-playing helper process (exports mediaremote_adapter_stream)
 Plugins/
-  timer/                       Sample plugin and the template for new ones; Launch.command builds and installs it
+  timer/                       Sample plugin speaking the raw protocol (no SDK); Launch.command builds and installs it.
+                               New plugins use IslandKit, the Swift SDK in the plugins repo (`island-plugin new`)
 ```
 
 ## Conventions
@@ -78,7 +86,11 @@ Plugins/
 - The island's glass is `NSGlassEffectView` in the `.clear` style under a black dimming layer and soft top/side fades (`IslandBackground`); the clear glass has no dimming of its own and blows out over light windows without it. Views inside the island draw no backgrounds of their own: a module, card or row is `.islandTile()` (a pane of the system's clear Liquid Glass, `.glassEffect`, a step deeper than the glass it lies on) and a field or preview inside it is `.islandInset()` (deeper again). Hover and selection go deeper, never lighter (`Shared/Components/IslandSurface.swift`), so every tab reads as the same stack of glass. Leave room in scroll views for the tile shadow.
 - Agent hooks: connecting adds one command hook per event to the agent's config (Claude Code `~/.claude/settings.json`, Codex `~/.codex/hooks.json`, ZCode `~/.zcode/cli/config.json`), backed up to `<file>.mac-island-backup`. The helper talks to the app over a per-user Unix socket, prints nothing and always exits 0. Claude Code's `PermissionRequest` hook runs in the foreground (`claude wait`) so the island can answer questions.
 - Tabs: `IslandTab` is a string id (built-in ones, or `plugin.<id>`); `TabStore` keeps up to 6 enabled, saved under `enabledTabs`. Code that jumps to a tab (drag to Files, ⌥⌘V, agent prompts) checks `TabStore.isEnabled` first. Plugin tabs are 270 pt tall, the tallest built-in tab, so they never grow the SwiftUI canvas.
-- Plugins: a folder in `~/Library/Application Support/MacDynamicIsland/Plugins/<id>` with `plugin.json` and a program; the protocol is documented in the plugins repo's README (github.com/nyaaorick/island4mac-plugins). The app runs it (`PluginProcess`, posix_spawn) in its own process group while its tab is enabled, reads JSON lines from stdout (`PluginMessage`) and writes taps to stdin (`PluginEvent`) on a background queue, dropping events once 64 KB wait. Stopping closes stdin, sends SIGTERM to the group and SIGKILL 2 s later; quitting does the same within 0.5 s; a crash leaves `PluginData/.running.json`, and the next launch kills what's still running the plugin's program. 6 exits in 60 s and it is marked stopped (reason from its stderr) with a Restart button. Each plugin gets `ISLAND_DATA_DIR` (`PluginData/<id>`, kept across updates). Bump `PluginManifest.supportedProtocol` for an incompatible protocol change. Beside the notch: agents, then plugin popups, then music, then plugin compact content.
-- Plugins never style anything: no colors, fonts, images or layout in the protocol. New plugin UI uses the island's existing look (rows, capsule buttons, the agent cards' text field).
+- Plugins: a folder in `~/Library/Application Support/MacDynamicIsland/Plugins/<id>` with `plugin.json` and a program; the protocol is documented in the plugins repo's README (github.com/nyaaorick/island4mac-plugins). The app runs it (`PluginProcess`, posix_spawn) in its own process group while its tab is enabled, reads JSON lines from stdout (`PluginMessage`) and writes taps to stdin (`PluginEvent`) on a background queue, dropping events once 64 KB wait. Stopping closes stdin, sends SIGTERM to the group and SIGKILL 2 s later; quitting does the same within 0.5 s; a crash leaves `PluginData/.running.json`, and the next launch kills what's still running the plugin's program. 6 exits in 60 s and it is marked stopped (reason from its stderr) with a Restart button. Each plugin gets `ISLAND_DATA_DIR` (`PluginData/<id>`, kept across updates). Bump `PluginManifest.supportedProtocol` when the protocol gains something (now 4); a plugin declares the oldest it needs and older apps refuse it. `PluginFolderMonitor` restarts only the plugin whose files changed (installs, updates, `island-plugin dev`); Settings > Plugins > Reload restarts all. Beside the notch (`LiveActivity.pick`): agents, then high-priority plugins, then plugin popups, then music, then plugin compact content.
+- Plugin preferences (protocol 2): declared in plugin.json, drawn by `PluginPreferencesView` under Settings > Plugins, kept by `PluginPreferencesStore` (UserDefaults `pluginPreferences.<id>`, secure ones in the Keychain), sent as a `preferences` event before `visible`. A required one left empty keeps the plugin from starting (`.needsSetup`).
+- On-demand plugins (protocol 3, `"lifecycle":"onDemand"`): started when their tab shows, on a tap, at a `wake` time from their `timeline` message, or when a preference changes; they say `done` and are stopped, and what they showed stays (`.sleeping`). The island applies timeline entries itself (`PluginSchedule`), catching up after sleep and clock changes, and stops one left running and silent with its tab hidden after 30 s. IslandKit's plugin.json for each kind of preference is copied into `PluginTests.testIslandKitsPluginJSONLoads`; keep it in step with the plugins repo's fixture.
+- Protocol 4: pictures on rows and compact content (`PluginImage`: a file path, an app icon, an https URL; the island sizes and caches them), row actions (`PluginRowAction`), and plugin.json `"background": true` (runs while turned on, tab or not) and `"priority": "high"` (ahead of popups and music beside the notch). Every plugin has an Enabled switch in Settings > Plugins.
+- Bundled plugins: folders in `Contents/Resources/Plugins/<id>` with their programs in `Contents/Helpers` (code can't sit among resources in a signed app). Updated with the app, can't be removed. One in `IslandTab.builtInTabsOfPlugins` takes over that built-in tab and is opt-in; the Agents plugin (Settings > Agents, beta) does, and while it's on the app doesn't open the hook socket (`AppIntegration` hands it over through `PluginStore.onEnabledChange`). The AgentsPlugin target needs IslandKit, referenced as a local package at `../island4mac-plugins` until the plugins repo is tagged. `ISLAND_AGENTS_SOCKET` gives the Agents plugin a socket of its own (tests).
+- Plugins never style anything: no colors, fonts or layout in the protocol; a picture says only where it comes from. New plugin UI uses the island's existing look (rows, capsule buttons, the agent cards' text field).
 - Permissions: Accessibility (hotkeys, full-screen detection on the built-in display), Automation/Apple Events (Music lyrics, paste via System Events, terminal tab focus).
 - Shortcuts: ⇧⌘Space toggle, ⌥⌘Space show/hide, ⌥⌘V clipboard tab.

@@ -1,8 +1,20 @@
 import SwiftUI
 
 struct AgentSettingsView: View {
+    @ObservedObject private var plugins = PluginStore.shared
+
     var body: some View {
         SettingsForm {
+            Section {
+                Toggle("Run Agents as a plugin (beta)", isOn: Binding(
+                    get: { plugins.isEnabled(AppIntegration.agentsPluginID) },
+                    set: { plugins.setEnabled(AppIntegration.agentsPluginID, $0) }
+                ))
+                .help("The Agents tab runs as the plugin that ships with the app, drawn with the island's plugin rows and buttons. Its settings are under Plugins")
+            } footer: {
+                SettingsNote("Trying out Agents built on the plugin protocol. Turn it off to go back to the built-in Agents.")
+            }
+
             ForEach(AgentKind.allCases, id: \.self) { agent in
                 Section(header: Text(agent.displayName)) {
                     AgentConnectionRow(installer: .standard(agent))

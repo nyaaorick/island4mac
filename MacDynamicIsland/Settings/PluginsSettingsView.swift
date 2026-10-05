@@ -58,6 +58,10 @@ struct PluginsSettingsView: View {
                 Text(L("settings.plugins.installed"))
             }
 
+            ForEach(plugins.installed.filter { $0.manifest.preferences?.isEmpty == false }) { plugin in
+                PluginPreferencesView(plugin: plugin, store: plugins.preferences)
+            }
+
             Section {
                 if isLoading {
                     ProgressView().controlSize(.small)
@@ -94,11 +98,21 @@ struct PluginsSettingsView: View {
     private func installedRow(_ plugin: PluginStore.Installed) -> some View {
         LabeledContent {
             HStack {
+                Toggle(L("settings.plugins.enabled"), isOn: Binding(
+                    get: { plugins.isEnabled(plugin.id) },
+                    set: { plugins.setEnabled(plugin.id, $0) }
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .help(L("settings.plugins.enabled"))
                 if case .stopped = plugins.statuses[plugin.id] {
                     Button(L("plugins.tab.restart")) { plugins.restart(plugin.id) }
                 }
-                Button(L("settings.plugins.remove"), role: .destructive) { remove(plugin.id) }
-                    .disabled(busyID != nil)
+                if !plugin.isBundled {
+                    Button(L("settings.plugins.remove"), role: .destructive) { remove(plugin.id) }
+                        .disabled(busyID != nil)
+                }
             }
         } label: {
             Label {
@@ -143,6 +157,9 @@ struct PluginsSettingsView: View {
         let status: String = switch plugins.statuses[plugin.id] {
         case .running: L("settings.plugins.status_running")
         case .stopped(let reason): L("settings.plugins.status_stopped", reason)
+        case .needsSetup: L("settings.plugins.status_needs_setup")
+        case .sleeping: L("settings.plugins.status_sleeping")
+        case nil where !plugins.isEnabled(plugin.id): L("settings.plugins.status_disabled")
         case nil: L("settings.plugins.status_off")
         }
         return [plugin.manifest.version, status].compactMap { $0 }.joined(separator: " · ")
@@ -174,16 +191,17 @@ struct PluginsSettingsView: View {
         } catch {
             errorText = L("settings.plugins.install_failed", entry.name, String(describing: error))
         }
-        plugins.reload()
+        plugins.refresh()
     }
 
     private func remove(_ pluginID: String) {
         do {
             try client.remove(pluginID)
+            plugins.preferences.removeAll(for: pluginID)
             errorText = nil
         } catch {
             errorText = String(describing: error)
         }
-        plugins.reload()
+        plugins.refresh()
     }
 }

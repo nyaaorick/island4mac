@@ -31,11 +31,19 @@ struct CompactIslandRegion: View {
         return PluginLive(name: live.manifest.name, compact: compact)
     }
 
+    private var priorityPlugin: PluginLive? {
+        guard let live = plugins.priorityPlugin else { return nil }
+        var compact = live.compact
+        compact.symbol = compact.symbol ?? live.manifest.symbol
+        return PluginLive(name: live.manifest.name, compact: compact)
+    }
+
     /// The plugin content of the live activity IslandWindow picked, if it's a plugin's
     private var pluginLive: PluginLive? {
         switch appState.liveActivity {
         case .pluginPopup: return pluginPopup
         case .pluginCompact: return pluginCompact
+        case .priorityPlugin: return priorityPlugin
         default: return nil
         }
     }

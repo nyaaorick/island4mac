@@ -1,5 +1,6 @@
 import Cocoa
 import SwiftUI
+import Combine
 
 @MainActor
 public final class SettingsWindowController: NSObject {
@@ -9,6 +10,12 @@ public final class SettingsWindowController: NSObject {
     
     private override init() {}
     
+    /// Opens Settings on one pane (a plugin's tab asking to be set up opens Plugins)
+    func showSettings(pane: SettingsPane) {
+        SettingsNavigation.shared.pane = pane
+        showSettings()
+    }
+
     public func showSettings() {
         if window == nil {
             let appState = IslandController.shared.getAppState()
@@ -86,13 +93,22 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     }
 }
 
+/// The pane Settings shows, so the island can open Settings on a given one
+@MainActor
+final class SettingsNavigation: ObservableObject {
+    static let shared = SettingsNavigation()
+    @Published var pane: SettingsPane = .general
+}
+
 /// A sidebar rather than tabs: the window's content runs under its transparent title bar, which hid the tab row
 struct MainSettingsView: View {
-    @State private var selection: SettingsPane = .general
+    @ObservedObject private var navigation = SettingsNavigation.shared
+
+    private var selection: SettingsPane { navigation.pane }
 
     var body: some View {
         NavigationSplitView {
-            List(SettingsPane.allCases, selection: $selection) { pane in
+            List(SettingsPane.allCases, selection: $navigation.pane) { pane in
                 Label(pane.title, systemImage: pane.iconName)
                     .tag(pane)
             }

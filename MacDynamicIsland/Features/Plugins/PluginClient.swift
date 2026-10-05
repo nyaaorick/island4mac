@@ -16,6 +16,10 @@ final class PluginClient {
     var onLaunch: () -> Void = {}
     /// The plugin stopped for good: it kept exiting, or it couldn't be started. With the reason
     var onGiveUp: (String) -> Void = { _ in }
+    /// Started again when it exits (a plugin that runs while its tab is on). Without it, the process just ends
+    /// and `onExit` says how (a plugin that runs on demand)
+    var restartsOnExit = true
+    var onExit: (Int32) -> Void = { _ in }
 
     /// A line longer than this is dropped, with everything up to its end
     static let maxLineLength = 64 * 1024
@@ -36,9 +40,15 @@ final class PluginClient {
     private var recentExits: [Date] = []
     private(set) var isRunning = false
 
-    init(manifest: PluginManifest, folder: URL, dataFolder: URL, restartDelay: TimeInterval = 1) {
+    /// Where its program is, when not in its folder (a plugin bundled in the app)
+    let programFolder: URL?
+
+    var executableURL: URL { manifest.executableURL(in: programFolder ?? folder) }
+
+    init(manifest: PluginManifest, folder: URL, dataFolder: URL, programFolder: URL? = nil, restartDelay: TimeInterval = 1) {
         self.manifest = manifest
         self.folder = folder
+        self.programFolder = programFolder
         self.dataFolder = dataFolder
         self.restartDelay = restartDelay
     }
@@ -84,6 +94,7 @@ final class PluginClient {
         environment["ISLAND_PLUGIN_ID"] = manifest.id
         environment["ISLAND_DATA_DIR"] = dataFolder.path
         environment["ISLAND_APP_VERSION"] = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        environment["ISLAND_APP_BUNDLE"] = Bundle.main.bundleURL.path
         return environment
     }
 
@@ -96,7 +107,7 @@ final class PluginClient {
         let spawned: PluginProcess
         do {
             spawned = try PluginProcess.spawn(
-                executable: manifest.executableURL(in: folder),
+                executable: executableURL,
                 arguments: Array(manifest.command.dropFirst()),
                 directory: folder,
                 environment: environment,
@@ -126,6 +137,11 @@ final class PluginClient {
         guard let process, process.exited else { return }
         self.process = nil
         guard isRunning else { return }
+        guard restartsOnExit else {
+            isRunning = false
+            onExit(status)
+            return
+        }
 
         // Start it again, but give up if it keeps exiting
         let now = Date()

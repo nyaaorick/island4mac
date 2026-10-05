@@ -16,16 +16,24 @@ struct PluginTabView: View {
         VStack(spacing: 8) {
             if case .stopped(let reason) = plugins.statuses[pluginID] {
                 stoppedState(reason: reason)
-            } else if content.rows.isEmpty && content.buttons.isEmpty && content.input == nil {
+            } else if plugins.statuses[pluginID] == .needsSetup {
+                setupState
+            } else if content.rows.isEmpty && content.buttons.isEmpty && content.input == nil && content.notice == nil {
                 emptyState
             } else {
                 ScrollView {
-                    VStack(spacing: 4) {
+                    // Room between and below the panes for their shadows (IslandSurface)
+                    VStack(spacing: 8) {
+                        if let notice = content.notice {
+                            PluginNoticeView(notice: notice)
+                        }
                         ForEach(Array(content.rows.enumerated()), id: \.offset) { _, row in
-                            PluginRowView(row: row) { send(row.id) }
+                            PluginRowView(row: row, action: { send(row.id) }, onAction: { send($0) })
                         }
                     }
                     .padding(.horizontal, 12)
+                    .padding(.top, 4)
+                    .padding(.bottom, 22)
                 }
                 .scrollIndicators(.never)
 
@@ -73,6 +81,22 @@ struct PluginTabView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// A required preference is empty: the plugin waits for it, set in Settings
+    private var setupState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "gearshape")
+                .font(.system(size: 28))
+                .foregroundStyle(.white.opacity(0.3))
+            Text(L("plugins.tab.needs_setup", plugin?.manifest.name ?? pluginID))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.6))
+            PluginButtonView(title: L("plugins.tab.open_settings"), symbol: "gearshape") {
+                SettingsWindowController.shared.showSettings(pane: .plugins)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     /// The plugin kept exiting or couldn't start: say so, and offer to start it again
     private func stoppedState(reason: String) -> some View {
         VStack(spacing: 10) {
@@ -102,7 +126,7 @@ struct PluginTabView: View {
             .font(.system(size: 11))
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Color.white.opacity(0.06)))
+            .islandInset(cornerRadius: 6)
             .padding(.horizontal, 12)
             .onChange(of: typed) { _, text in
                 if text.count > PluginInput.maxLength { typed = String(text.prefix(PluginInput.maxLength)) }
@@ -152,11 +176,15 @@ struct PluginTabView: View {
 private struct PluginRowView: View {
     let row: PluginRow
     let action: () -> Void
+    /// One of its secondary actions was tapped, with that action's id
+    let onAction: (String) -> Void
     @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: 10) {
-            if let symbol = row.symbol {
+            if let image = row.image {
+                PluginImageView(image: image, size: 28, fallbackSymbol: row.symbol)
+            } else if let symbol = row.symbol {
                 Image(systemName: symbol)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(.white.opacity(0.8))
@@ -166,24 +194,78 @@ private struct PluginRowView: View {
                 Text(row.title)
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.white)
+                    .lineLimit(1)
                 if let subtitle = row.subtitle {
                     Text(subtitle)
                         .font(.system(size: 10))
                         .foregroundStyle(.white.opacity(0.5))
+                        .lineLimit(3)
                 }
             }
-            .lineLimit(1)
+            Spacer(minLength: 0)
+            // Secondary actions show on hover, like the archive button of an agent session
+            if isHovered, let actions = row.actions, !actions.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(actions) { rowAction in
+                        Button { onAction(rowAction.id) } label: {
+                            Image(systemName: rowAction.symbol ?? "ellipsis")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.7))
+                                .frame(width: 22, height: 22)
+                                .islandInset(cornerRadius: 6)
+                        }
+                        .buttonStyle(.plain)
+                        .help(rowAction.title)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .islandTile(cornerRadius: 12, highlighted: isHovered && row.id != nil)
+        .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
+        .onTapGesture(perform: action)
+        .contextMenu {
+            ForEach(row.actions ?? []) { rowAction in
+                Button { onAction(rowAction.id) } label: {
+                    if let symbol = rowAction.symbol {
+                        Label(rowAction.title, systemImage: symbol)
+                    } else {
+                        Text(rowAction.title)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// A plugin's "loading" or "couldn't load" line: the same row for every plugin
+private struct PluginNoticeView: View {
+    let notice: PluginNotice
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Group {
+                switch notice.state {
+                case .loading:
+                    ProgressView().controlSize(.small)
+                case .error:
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.yellow.opacity(0.9))
+                }
+            }
+            .frame(width: 20)
+            Text(notice.text ?? L(notice.state == .loading ? "plugins.tab.loading" : "plugins.tab.failed"))
+                .font(.system(size: 11))
+                .foregroundStyle(.white.opacity(0.7))
+                .lineLimit(2)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 7)
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(.white.opacity(isHovered && row.id != nil ? 0.12 : 0.06))
-        )
-        .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
-        .onTapGesture(perform: action)
+        .islandTile(cornerRadius: 12)
     }
 }
 
@@ -204,7 +286,7 @@ private struct PluginButtonView: View {
         .foregroundStyle(.white)
         .padding(.vertical, 6)
         .padding(.horizontal, 12)
-        .background(Capsule().fill(.white.opacity(isHovered ? 0.22 : 0.14)))
+        .islandTile(cornerRadius: 999, highlighted: isHovered)
         .contentShape(Capsule())
         .onHover { isHovered = $0 }
         .onTapGesture(perform: action)

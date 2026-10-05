@@ -53,6 +53,11 @@
 "settings.plugins.status_running" = "Running";
 "settings.plugins.status_off" = "Off: turn its tab on under Tabs";
 "settings.plugins.status_stopped" = "Stopped: %@";
+"settings.plugins.status_needs_setup" = "Waiting for its settings below";
+"settings.plugins.status_sleeping" = "Runs when needed";
+"settings.plugins.status_disabled" = "Turned off";
+"settings.plugins.enabled" = "Turned on: runs while its tab is on, or always if it runs in the background";
+"settings.plugins.required" = "Required: the plugin starts once this is filled in";
 "settings.plugins.install" = "Install";
 "settings.plugins.update" = "Update";
 "settings.plugins.remove" = "Remove";
@@ -67,6 +72,10 @@
 "plugins.tab.restart" = "Restart";
 "plugins.tab.cancel" = "Cancel";
 "plugins.tab.missing" = "This plugin isn't installed";
+"plugins.tab.needs_setup" = "%@ needs setting up";
+"plugins.tab.open_settings" = "Open Settings";
+"plugins.tab.loading" = "Loading";
+"plugins.tab.failed" = "Couldn't load";
 "settings.tabs.limit" = "Hide a tab first: the island shows at most 6.";
 "settings.startup.header" = "Startup";
 "settings.startup.launch_at_login" = "Launch at login";

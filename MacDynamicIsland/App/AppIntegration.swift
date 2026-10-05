@@ -43,20 +43,29 @@ class AppIntegration {
 
         let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")
 
-        // Claude Code, Codex and ZCode sessions, reported by island-claude-hook; every agent's hooks share one socket
+        // Claude Code, Codex and ZCode sessions, reported by island-claude-hook; every agent's hooks share one socket.
+        // The Agents plugin (Settings > Agents, beta) takes the socket over while it's turned on
         AgentHookInstaller.all.forEach { $0.refreshIfInstalled() }
-        agentHookServer = AgentHookServer(socketURL: AgentHookInstaller.standard(.claude).socketURL) { event, reply in
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated { AgentSessionStore.shared.apply(event, reply: reply) }
+        if !MainActor.assumeIsolated({ PluginStore.shared.isEnabled(Self.agentsPluginID) }) {
+            startAgentHookServer()
+        }
+        MainActor.assumeIsolated {
+            PluginStore.shared.onEnabledChange = { [weak self] pluginID, enabled in
+                guard pluginID == Self.agentsPluginID else { return }
+                if enabled {
+                    Self.carryAgentSettingsOver()
+                    self?.agentHookServer?.stop()
+                    self?.agentHookServer = nil
+                } else {
+                    // The plugin was just asked to quit; bind once it has let go of the socket
+                    DispatchQueue.main.asyncAfter(deadline: .now() + PluginClient.terminationGrace) { self?.startAgentHookServer() }
+                }
             }
         }
-        do {
-            try agentHookServer?.start()
-        } catch {
-            logger.error("Agent hook server failed to start: \(String(describing: error))")
-        }
         AgentSessionStore.shared.onStatusChange = { session, previous in
-            AgentAlertSound.play(for: session, previous: previous)
+            if SettingsDefaults.shared.get(SettingsDefaults.agentSoundsEnabled) {
+                AgentAlertSound.play(for: session, previous: previous)
+            }
         }
         // Claude asks you a question or for a permission: open the island on it, so you can answer there
         AgentSessionStore.shared.onPrompt = { _ in
@@ -71,6 +80,43 @@ class AppIntegration {
         }
 
         logger.info("All managers started")
+    }
+
+    static let agentsPluginID = "agents"
+
+    /// The first time the Agents plugin is turned on, it starts with the built-in Agents' settings
+    @MainActor
+    static func carryAgentSettingsOver() {
+        let store = PluginStore.shared.preferences
+        let settings = SettingsDefaults.shared
+        let carried = "agentsPluginSettingsCarriedOver"
+        guard let manifest = PluginStore.shared.installed.first(where: { $0.id == agentsPluginID })?.manifest,
+              !UserDefaults.standard.bool(forKey: carried) else { return }
+        let pairs: [(key: String, value: Bool)] = [
+            ("sounds", settings.get(SettingsDefaults.agentSoundsEnabled)),
+            ("besideNotch", settings.get(SettingsDefaults.showAgentLiveActivity)),
+        ]
+        for (key, value) in pairs {
+            if let preference = manifest.preferences?.first(where: { $0.key == key }) {
+                store.set(.bool(value), of: preference, for: agentsPluginID)
+            }
+        }
+        UserDefaults.standard.set(true, forKey: carried)
+    }
+
+    private func startAgentHookServer() {
+        guard agentHookServer == nil else { return }
+        agentHookServer = AgentHookServer(socketURL: AgentHookInstaller.standard(.claude).socketURL) { event, reply in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated { AgentSessionStore.shared.apply(event, reply: reply) }
+            }
+        }
+        do {
+            try agentHookServer?.start()
+        } catch {
+            os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")
+                .error("Agent hook server failed to start: \(String(describing: error))")
+        }
     }
 
     func stop() {

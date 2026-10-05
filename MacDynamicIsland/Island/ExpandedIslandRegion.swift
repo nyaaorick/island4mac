@@ -93,7 +93,12 @@ struct ExpandedIslandRegion: View {
                 case .files:
                     ShelfView()
                 case .agents:
-                    AgentsView()
+                    // Turned on, the Agents plugin shows in this tab instead (Settings > Agents)
+                    if let pluginID = PluginStore.shared.replacesBuiltInTab(.agents) {
+                        PluginTabView(pluginID: pluginID)
+                    } else {
+                        AgentsView()
+                    }
                 default:
                     PluginTabView(pluginID: appState.currentSection.pluginID ?? "")
                         // A fresh view per plugin, so switching between two plugin tabs tells both

@@ -26,6 +26,10 @@ nonisolated struct AgentHookInstaller {
     /// Our hook entries are recognized by the helper's file name in the command
     static let helperName = "island-claude-hook"
 
+    /// The app, whose Contents/Helpers holds the helper. The Agents plugin runs as its own program, so it sets
+    /// this from ISLAND_APP_BUNDLE
+    nonisolated(unsafe) static var appBundleURL = Bundle.main.bundleURL
+
     static func standard(_ agent: AgentKind) -> AgentHookInstaller {
         let fileManager = FileManager.default
         return AgentHookInstaller(
@@ -33,7 +37,7 @@ nonisolated struct AgentHookInstaller {
             homeURL: fileManager.homeDirectoryForCurrentUser,
             supportURL: fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.macdynamicisland.app", isDirectory: true),
-            bundledHelperURL: Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/\(helperName)")
+            bundledHelperURL: appBundleURL.appendingPathComponent("Contents/Helpers/\(helperName)")
         )
     }
 

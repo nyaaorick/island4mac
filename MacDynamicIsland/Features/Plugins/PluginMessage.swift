@@ -12,6 +12,9 @@ import Foundation
 ///     {"type":"popup","symbol":"bell","text":"Time's up","seconds":3}
 ///     {"type":"open"}                                                        open the island on this plugin's tab
 ///     {"type":"clear","target":"compact"}
+///     {"type":"status","state":"loading","text":"Updating"}                 one standard row; "idle" removes it
+///     {"type":"timeline","entries":[…],"wake":1767229200}                    protocol 3: see PluginSchedule
+///     {"type":"done"}                                                        protocol 3: nothing more to do, stop me
 enum PluginMessage: Equatable {
     case compact(PluginCompact)
     case list([PluginRow])
@@ -20,11 +23,17 @@ enum PluginMessage: Equatable {
     case popup(PluginPopup)
     case open
     case clear(PluginClearTarget)
+    /// Loading or failed, drawn as one standard row; nil: neither
+    case status(PluginNotice?)
+    case timeline(PluginSchedule)
+    case done
 
     /// Rows and buttons past this are dropped
     static let maxItems = 50
     /// Text past this is cut
     static let maxTextLength = 200
+    /// A row's subtitle may run longer, over up to 3 lines (a command an agent wants to run)
+    static let maxSubtitleLength = 600
 
     enum DecodeError: Error, Equatable {
         case unknownType(String)
@@ -41,6 +50,12 @@ enum PluginMessage: Equatable {
         case "popup": return .popup(try decoder.decode(PluginPopup.self, from: line).trimmed)
         case "open": return .open
         case "clear": return .clear(try decoder.decode(ClearBody.self, from: line).target)
+        case "status":
+            let body = try decoder.decode(StatusBody.self, from: line)
+            guard let state = PluginNotice.State(rawValue: body.state) else { return .status(nil) }
+            return .status(PluginNotice(state: state, text: cut(body.text)))
+        case "timeline": return .timeline(try PluginSchedule.decode(line))
+        case "done": return .done
         default: throw DecodeError.unknownType(envelope.type)
         }
     }
@@ -49,6 +64,7 @@ enum PluginMessage: Equatable {
     private struct ListBody: Decodable { let rows: [PluginRow] }
     private struct ButtonsBody: Decodable { let buttons: [PluginButton] }
     private struct ClearBody: Decodable { let target: PluginClearTarget }
+    private struct StatusBody: Decodable { let state: String; let text: String? }
 
     static func cut(_ text: String) -> String { String(text.prefix(maxTextLength)) }
     static func cut(_ text: String?) -> String? { text.map(cut) }
@@ -64,10 +80,12 @@ struct PluginCompact: Decodable, Equatable {
     var until: Double?
     /// The countdown's whole length in seconds; with it, the ring shows the time left
     var total: Double?
+    /// Shown in place of the symbol (protocol 4)
+    var image: PluginImage?
 
     var trimmed: PluginCompact {
         PluginCompact(symbol: symbol, text: PluginMessage.cut(text), progress: progress.map { min(max($0, 0), 1) },
-                      until: until, total: total.flatMap { $0 > 0 ? $0 : nil })
+                      until: until, total: total.flatMap { $0 > 0 ? $0 : nil }, image: image)
     }
 }
 
@@ -89,11 +107,17 @@ struct PluginInput: Decodable, Equatable {
 struct PluginRow: Decodable, Equatable, Identifiable {
     var id: String?
     var title: String
+    /// Up to 3 lines show
     var subtitle: String?
     var symbol: String?
+    /// Shown in place of the symbol (protocol 4)
+    var image: PluginImage?
+    /// Secondary actions, on hover and in its context menu (protocol 4)
+    var actions: [PluginRowAction]?
 
     var trimmed: PluginRow {
-        PluginRow(id: id, title: PluginMessage.cut(title), subtitle: PluginMessage.cut(subtitle), symbol: symbol)
+        PluginRow(id: id, title: PluginMessage.cut(title), subtitle: subtitle.map { String($0.prefix(PluginMessage.maxSubtitleLength)) },
+                  symbol: symbol, image: image, actions: actions.map { Array($0.prefix(PluginRowAction.maxCount)).map(\.trimmed) })
     }
 }
 
@@ -122,6 +146,16 @@ struct PluginPopup: Decodable, Equatable {
     var trimmed: PluginPopup {
         PluginPopup(symbol: symbol, text: PluginMessage.cut(text), seconds: seconds)
     }
+}
+
+/// A plugin's "loading" or "couldn't load" line, drawn the same way for every plugin
+struct PluginNotice: Equatable {
+    enum State: String {
+        case loading, error
+    }
+
+    let state: State
+    let text: String?
 }
 
 enum PluginClearTarget: String, Decodable {

@@ -118,7 +118,7 @@ final class IslandController: NSObject {
         if state.islandMode == .expanded && state.islandFrame.contains(NSEvent.mouseLocation) { return }
         if state.islandMode == .expanded && state.visibilityReason == .agentPrompt { return }
         guard AgentSessionStore.shared.pendingPrompts.isEmpty else { return }
-        state.currentSection = .plugin(pluginID)
+        state.currentSection = IslandTab.tab(forPlugin: pluginID)
         withAnimation(boringOpenAnimation) {
             state.activateIsland(reason: .plugin)
         }

@@ -259,6 +259,585 @@ final class PluginTests: XCTestCase {
         store.stop()
     }
 
+    func testOnlyAPluginWhoseFilesChangedRestarts() throws {
+        let folder = try makeFolder()
+        _ = try writePlugin(#"{"id":"one","name":"One","symbol":"star","command":["/bin/cat"],"protocol":1}"#, id: "one", in: folder)
+        _ = try writePlugin(#"{"id":"two","name":"Two","symbol":"star","command":["/bin/cat"],"protocol":1}"#, id: "two", in: folder)
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let tabs = TabStore(defaults: defaults)
+        let store = PluginStore(pluginsFolder: folder, dataFolder: try makeFolder(), tabs: tabs)
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
+        store.reload()
+        // Room for two plugin tabs
+        tabs.setEnabled(IslandTab.builtIn.last!, false)
+        tabs.setEnabled(.plugin("one"), true)
+        tabs.setEnabled(.plugin("two"), true)
+        // Without start() nothing follows the tabs, so scan again to run the two
+        store.reload()
+        XCTAssertTrue(waitUntil(2) { store.processID(of: "one") != nil && store.processID(of: "two") != nil })
+        let one = store.processID(of: "one"), two = store.processID(of: "two")
+
+        store.refresh()
+        XCTAssertEqual(store.processID(of: "one"), one, "nothing changed: nothing restarts")
+        XCTAssertEqual(store.processID(of: "two"), two)
+
+        _ = try writePlugin(#"{"id":"two","name":"Two","symbol":"star","command":["/bin/cat"],"protocol":1,"version":"2"}"#, id: "two", in: folder)
+        store.refresh()
+        XCTAssertTrue(waitUntil(2) { store.processID(of: "two") != nil && store.processID(of: "two") != two }, "an update restarts it")
+        XCTAssertEqual(store.processID(of: "one"), one, "and only it")
+
+        try FileManager.default.removeItem(at: folder.appendingPathComponent("two"))
+        store.refresh()
+        XCTAssertNil(store.processID(of: "two"), "a removed plugin stops")
+        XCTAssertEqual(store.processID(of: "one"), one)
+        store.stop()
+    }
+
+    func testTheFolderMonitorReportsAChangeInAPluginsFolder() throws {
+        let folder = try makeFolder()
+        let plugin = try writePlugin(#"{"id":"one","name":"One","symbol":"star","command":["/bin/cat"],"protocol":1}"#, id: "one", in: folder)
+        var changes = 0
+        let monitor = PluginFolderMonitor(folder: folder, delay: 0.05) { changes += 1 }
+        monitor.start()
+        defer { monitor.stop() }
+        // As island-plugin dev installs a build: written aside, then renamed into place
+        try Data("new".utf8).write(to: plugin.appendingPathComponent(".one.installing"))
+        XCTAssertEqual(rename(plugin.appendingPathComponent(".one.installing").path, plugin.appendingPathComponent("one").path), 0)
+        XCTAssertTrue(waitUntil(2) { changes > 0 })
+
+        // A plugin folder added later is watched too
+        let added = try writePlugin(#"{"id":"two","name":"Two","symbol":"star","command":["/bin/cat"],"protocol":1}"#, id: "two", in: folder)
+        XCTAssertTrue(waitUntil(2) { changes > 1 })
+        let before = changes
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        try Data("x".utf8).write(to: added.appendingPathComponent("two"))
+        XCTAssertTrue(waitUntil(2) { changes > before })
+    }
+
+    // MARK: - Preferences
+
+    /// Secrets in memory, so tests never touch the Keychain
+    private final class MemorySecrets: SecretStorage {
+        var items: [String: String] = [:]
+        func read(service: String, account: String) -> String? { items["\(service)/\(account)"] }
+        func write(_ value: String?, service: String, account: String) { items["\(service)/\(account)"] = value }
+        func removeAll(service: String) { items = items.filter { !$0.key.hasPrefix(service + "/") } }
+    }
+
+    private func makePreferences() -> (PluginPreferencesStore, MemorySecrets) {
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let secrets = MemorySecrets()
+        return (PluginPreferencesStore(defaults: UserDefaults(suiteName: suiteName)!, secrets: secrets), secrets)
+    }
+
+    func testPreferencesInTheManifest() throws {
+        let folder = try makeFolder()
+        let plugin = try writePlugin(#"""
+        {"id":"weather","name":"Weather","symbol":"sun.max","command":["./weather"],"protocol":2,"preferences":[
+          {"key":"apiKey","title":"API key","kind":"secure","required":true},
+          {"key":"city","title":"City","kind":"text","default":"Paris","placeholder":"City name"},
+          {"key":"celsius","title":"Celsius","kind":"toggle","default":true},
+          {"key":"count","title":"Days","kind":"number","default":3,"minimum":1,"maximum":7},
+          {"key":"minutes","title":"Refresh every","kind":"choice","default":5,
+           "options":[{"title":"1 min","value":1},{"title":"5 min","value":5}]}]}
+        """#, id: "weather", in: folder)
+        let manifest = try PluginManifest.load(from: plugin)
+        XCTAssertEqual(manifest.preferences?.map(\.kind), [.secure, .text, .toggle, .number, .choice])
+        XCTAssertEqual(manifest.preferences?[3].fallback, .number(3))
+        XCTAssertEqual(manifest.preferences?[4].fallback, .number(5))
+
+        func loadError(_ preferences: String) -> PluginManifest.LoadError? {
+            let bad = try? writePlugin(#"{"id":"bad","name":"x","symbol":"x","command":["./x"],"protocol":2,"preferences":\#(preferences)}"#, id: "bad", in: folder)
+            do { _ = try PluginManifest.load(from: bad!); return nil } catch { return error as? PluginManifest.LoadError }
+        }
+        XCTAssertEqual(loadError(#"[{"key":"a","title":"A","kind":"text"},{"key":"a","title":"B","kind":"text"}]"#),
+                       .invalidPreferences(#"preference "a" is declared twice"#))
+        XCTAssertEqual(loadError(#"[{"key":"a","title":"A","kind":"choice"}]"#), .invalidPreferences(#"preference "a" is a choice without options"#))
+        let many = (0...PluginPreference.maxCount).map { #"{"key":"k\#($0)","title":"t","kind":"toggle"}"# }.joined(separator: ",")
+        XCTAssertNotNil(loadError("[\(many)]"))
+        let unknownKind = try writePlugin(#"{"id":"bad","name":"x","symbol":"x","command":["./x"],"protocol":2,"preferences":[{"key":"a","title":"A","kind":"colour"}]}"#,
+                                          id: "bad", in: folder)
+        XCTAssertThrowsError(try PluginManifest.load(from: unknownKind), "an unknown kind")
+    }
+
+    /// IslandKit's plugin.json for a plugin with one preference of each kind, copied from the plugins repo
+    /// (IslandKit/Tests/IslandKitTests/Fixtures/weather.plugin.json): the app must read what IslandKit writes
+    func testIslandKitsPluginJSONLoads() throws {
+        let folder = try makeFolder()
+        let plugin = try writePlugin(#"""
+        {
+          "command" : [
+            "./weather"
+          ],
+          "id" : "weather",
+          "name" : "Weather",
+          "preferences" : [
+            {
+              "default" : "",
+              "key" : "apiKey",
+              "kind" : "secure",
+              "required" : true,
+              "title" : "API key"
+            },
+            {
+              "default" : 5,
+              "key" : "minutes",
+              "kind" : "choice",
+              "options" : [
+                {
+                  "title" : "1",
+                  "value" : 1
+                },
+                {
+                  "title" : "5",
+                  "value" : 5
+                },
+                {
+                  "title" : "15",
+                  "value" : 15
+                }
+              ],
+              "title" : "Refresh every"
+            },
+            {
+              "default" : 3,
+              "key" : "days",
+              "kind" : "number",
+              "maximum" : 7,
+              "minimum" : 1,
+              "title" : "Days"
+            },
+            {
+              "default" : true,
+              "key" : "celsius",
+              "kind" : "toggle",
+              "title" : "Celsius"
+            }
+          ],
+          "protocol" : 2,
+          "symbol" : "sun.max",
+          "version" : "1.0.0"
+        }
+        """#, id: "weather", in: folder)
+        let manifest = try PluginManifest.load(from: plugin)
+        XCTAssertEqual(manifest.preferences?.map(\.kind), [.secure, .choice, .number, .toggle])
+        XCTAssertEqual(manifest.preferences?.first?.required, true)
+        XCTAssertEqual(manifest.preferences?[1].options?.map(\.value), [.number(1), .number(5), .number(15)])
+        XCTAssertEqual(manifest.preferences?[1].fallback, .number(5))
+        XCTAssertEqual(manifest.preferences?[3].fallback, .bool(true))
+    }
+
+    func testPreferenceValuesKeepTheirShape() throws {
+        let decoded = try JSONDecoder().decode([PluginPreferenceValue].self, from: Data(#"[true, 5, 2.5, "x"]"#.utf8))
+        XCTAssertEqual(decoded, [.bool(true), .number(5), .number(2.5), .string("x")])
+        XCTAssertEqual(PluginPreferenceValue(object: true as NSNumber), .bool(true), "a boolean isn't read as 1")
+        XCTAssertEqual(PluginPreferenceValue(object: 1 as NSNumber), .number(1))
+
+        let days = PluginPreference(key: "d", title: "Days", kind: .number, minimum: 1, maximum: 7)
+        XCTAssertEqual(days.accepted(.number(30)), .number(7))
+        XCTAssertNil(days.accepted(.string("3")))
+        let choice = PluginPreference(key: "c", title: "C", kind: .choice, options: [.init(title: "One", value: .number(1))])
+        XCTAssertNil(choice.accepted(.number(2)), "only one of its options")
+
+        let line = String(decoding: PluginEvent.preferences(["on": .bool(true), "n": .number(5), "s": .string("x")]).line, as: UTF8.self)
+        XCTAssertEqual(line, #"{"type":"preferences","values":{"n":5,"on":true,"s":"x"}}"# + "\n")
+    }
+
+    func testPreferencesAreKeptAndSecretsGoToTheKeychain() {
+        let (store, secrets) = makePreferences()
+        let key = PluginPreference(key: "apiKey", title: "Key", kind: .secure, required: true)
+        let city = PluginPreference(key: "city", title: "City", kind: .text, default: .string("Paris"))
+        var changes: [String] = []
+        let cancellable = store.changes.sink { changes.append($0) }
+        defer { cancellable.cancel() }
+
+        XCTAssertEqual(store.value(of: city, for: "w"), .string("Paris"), "its default until set")
+        store.set(.string("Rome"), of: city, for: "w")
+        store.set(.string("s3cret"), of: key, for: "w")
+        XCTAssertEqual(store.value(of: city, for: "w"), .string("Rome"))
+        XCTAssertEqual(store.value(of: key, for: "w"), .string("s3cret"))
+        XCTAssertEqual(secrets.items.values.sorted(), ["s3cret"], "only the secret is in the Keychain")
+        XCTAssertEqual(changes, ["w", "w"])
+        store.set(.string("Rome"), of: city, for: "w")
+        XCTAssertEqual(changes.count, 2, "setting the same value isn't a change")
+
+        store.removeAll(for: "w")
+        XCTAssertEqual(store.value(of: city, for: "w"), .string("Paris"))
+        XCTAssertTrue(secrets.items.isEmpty)
+    }
+
+    func testAPluginWaitsForItsRequiredSettingsThenHearsThem() throws {
+        let folder = try makeFolder()
+        let data = try makeFolder()
+        _ = try writePlugin(#"""
+        {"id":"weather","name":"Weather","symbol":"sun.max","command":["/bin/sh","-c","cat > \"$ISLAND_DATA_DIR/in.txt\""],"protocol":2,
+         "preferences":[{"key":"apiKey","title":"API key","kind":"secure","required":true},{"key":"city","title":"City","kind":"text","default":"Paris"}]}
+        """#, id: "weather", in: folder)
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let tabs = TabStore(defaults: UserDefaults(suiteName: suiteName)!)
+        let (preferences, _) = makePreferences()
+        let store = PluginStore(pluginsFolder: folder, dataFolder: data, tabs: tabs, preferences: preferences)
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
+        store.reload()
+        tabs.setEnabled(.plugin("weather"), true)
+        store.reload()
+        XCTAssertEqual(store.statuses["weather"], .needsSetup)
+        XCTAssertNil(store.processID(of: "weather"), "not started without its key")
+
+        let apiKey = try XCTUnwrap(store.installed.first?.manifest.preferences?.first)
+        preferences.set(.string("k1"), of: apiKey, for: "weather")
+        store.applyPreferences(of: "weather")
+        XCTAssertNotNil(store.processID(of: "weather"), "started once it's set")
+        XCTAssertEqual(store.statuses["weather"], .running)
+
+        let input = data.appendingPathComponent("weather/in.txt")
+        func received() -> [String] {
+            ((try? String(contentsOf: input, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init)
+        }
+        XCTAssertTrue(waitUntil(2) { received().count >= 2 })
+        XCTAssertEqual(received().prefix(2), [#"{"type":"preferences","values":{"apiKey":"k1","city":"Paris"}}"#,
+                                              #"{"tab":false,"type":"visible"}"#], "its settings first, then visibility")
+
+        preferences.set(.string("k2"), of: apiKey, for: "weather")
+        XCTAssertTrue(waitUntil(2) { received().last?.contains("k2") == true }, "a change reaches it after a pause")
+
+        preferences.set(.string(""), of: apiKey, for: "weather")
+        store.applyPreferences(of: "weather")
+        XCTAssertNil(store.processID(of: "weather"), "emptied: it stops")
+        XCTAssertEqual(store.statuses["weather"], .needsSetup)
+        store.stop()
+    }
+
+    // MARK: - Protocol 4
+
+    func testImagesActionsAndPresenceRead() throws {
+        let row = try PluginMessage.decode(Data(#"{"type":"list","rows":[{"id":"r","title":"Photo","image":{"file":"/tmp/a.jpg"},"actions":[{"id":"del:r","title":"Delete","symbol":"trash"}]},{"title":"Safari","image":{"app":"com.apple.Safari"}}]}"#.utf8))
+        XCTAssertEqual(row, .list([
+            PluginRow(id: "r", title: "Photo", image: .file("/tmp/a.jpg"), actions: [PluginRowAction(id: "del:r", title: "Delete", symbol: "trash")]),
+            PluginRow(title: "Safari", image: .app("com.apple.Safari")),
+        ]))
+        let compact = try PluginMessage.decode(Data(#"{"type":"compact","text":"Song","image":{"url":"https://example.com/a.png"}}"#.utf8))
+        XCTAssertEqual(compact, .compact(PluginCompact(text: "Song", image: .url(URL(string: "https://example.com/a.png")!))))
+        XCTAssertThrowsError(try PluginMessage.decode(Data(#"{"type":"compact","image":{"url":"http://example.com/a.png"}}"#.utf8)),
+                             "plain http pictures are refused")
+        let many = (0..<10).map { #"{"id":"a\#($0)","title":"t"}"# }.joined(separator: ",")
+        guard case .list(let rows) = try PluginMessage.decode(Data(#"{"type":"list","rows":[{"title":"x","actions":[\#(many)]}]}"#.utf8)) else { return XCTFail() }
+        XCTAssertEqual(rows.first?.actions?.count, PluginRowAction.maxCount)
+
+        let folder = try makeFolder()
+        let plugin = try writePlugin(#"{"id":"bg","name":"Bg","symbol":"x","command":["./x"],"protocol":4,"background":true,"priority":"high"}"#, id: "bg", in: folder)
+        let manifest = try PluginManifest.load(from: plugin)
+        XCTAssertTrue(manifest.runsInBackground)
+        XCTAssertEqual(manifest.priority, .high)
+    }
+
+    func testAHighPriorityPluginShowsAheadOfPopupsAndMusic() {
+        XCTAssertEqual(LiveActivity.pick(agent: true, priorityPlugin: true, pluginPopup: true, music: true, pluginCompact: true), .agent)
+        XCTAssertEqual(LiveActivity.pick(agent: false, priorityPlugin: true, pluginPopup: true, music: true, pluginCompact: true), .priorityPlugin)
+        XCTAssertEqual(LiveActivity.pick(agent: false, priorityPlugin: false, pluginPopup: false, music: true, pluginCompact: true), .music)
+    }
+
+    func testABackgroundPluginRunsWithoutItsTabUnlessTurnedOff() throws {
+        let folder = try makeFolder()
+        _ = try writePlugin(#"{"id":"bg","name":"Bg","symbol":"x","command":["/bin/cat"],"protocol":4,"background":true,"priority":"high"}"#, id: "bg", in: folder)
+        _ = try writePlugin(#"{"id":"tabbed","name":"Tabbed","symbol":"x","command":["/bin/cat"],"protocol":1}"#, id: "tabbed", in: folder)
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let tabs = TabStore(defaults: defaults)
+        let store = PluginStore(pluginsFolder: folder, dataFolder: try makeFolder(), tabs: tabs, defaults: defaults)
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
+        store.reload()
+        XCTAssertNotNil(store.processID(of: "bg"), "runs with no tab")
+        XCTAssertNil(store.processID(of: "tabbed"), "a plain plugin still waits for its tab")
+
+        store.apply(.compact(PluginCompact(text: "Working")), from: "bg")
+        XCTAssertEqual(store.priorityPlugin?.compact.text, "Working", "its compact content is the high-priority one")
+        XCTAssertNil(store.compactPlugin)
+
+        store.setEnabled("bg", false)
+        XCTAssertFalse(store.isEnabled("bg"))
+        XCTAssertNil(store.processID(of: "bg"), "turned off: it stops")
+        XCTAssertNil(store.priorityPlugin)
+        store.setEnabled("bg", true)
+        XCTAssertNotNil(store.processID(of: "bg"))
+        store.stop()
+    }
+
+    // MARK: - Bundled plugins
+
+    func testBundledPluginsAreOptInAndTakeOverTheirBuiltInTab() throws {
+        let bundled = try makeFolder()
+        let programs = try makeFolder()
+        let user = try makeFolder()
+        _ = try writePlugin(#"{"id":"agents","name":"Agents","symbol":"terminal","command":["./agents"],"protocol":4,"background":true,"priority":"high"}"#,
+                            id: "agents", in: bundled)
+        try FileManager.default.copyItem(at: URL(fileURLWithPath: "/bin/cat"), to: programs.appendingPathComponent("agents"))
+        _ = try writePlugin(#"{"id":"agents","name":"Mine","symbol":"x","command":["/bin/cat"],"protocol":1}"#, id: "agents", in: user)
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let tabs = TabStore(defaults: defaults)
+        let store = PluginStore(pluginsFolder: user, dataFolder: try makeFolder(), tabs: tabs, defaults: defaults,
+                                bundledFolder: bundled, bundledProgramFolder: programs)
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
+        var changes: [(String, Bool, Bool)] = []
+        store.onEnabledChange = { id, enabled in changes.append((id, enabled, store.processID(of: id) != nil)) }
+        store.reload()
+
+        XCTAssertEqual(store.installed.map(\.id), ["agents"])
+        XCTAssertTrue(store.installed[0].isBundled)
+        XCTAssertEqual(store.broken.map(\.reason), ["the app has a plugin with this id"], "yours doesn't replace the app's")
+        XCTAssertFalse(tabs.pluginTabs.contains(.plugin("agents")), "it takes over the built-in tab instead of adding one")
+        XCTAssertFalse(store.isEnabled("agents"), "off until you turn it on")
+        XCTAssertNil(store.processID(of: "agents"))
+        XCTAssertNil(store.replacesBuiltInTab(.agents))
+
+        store.setEnabled("agents", true)
+        XCTAssertEqual(changes.map(\.0), ["agents"])
+        XCTAssertFalse(changes[0].2, "the app hears of it before the plugin starts, so it can let go of the socket")
+        XCTAssertNotNil(store.processID(of: "agents"), "its program runs from the app's Helpers")
+        XCTAssertEqual(store.replacesBuiltInTab(.agents), "agents")
+        XCTAssertEqual(IslandTab.tab(forPlugin: "agents"), .agents)
+
+        store.setEnabled("agents", false)
+        XCTAssertNil(store.processID(of: "agents"))
+        XCTAssertEqual(changes.last.map { [$0.0, String($0.1), String($0.2)] }, ["agents", "false", "false"],
+                       "and after it stopped, so the app can take the socket back")
+        store.stop()
+    }
+
+    func testTheBundledAgentsPluginDescribesItselfAsItsPluginJSON() throws {
+        let program = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/agents")
+        let process = Process()
+        process.executableURL = program
+        process.arguments = ["--describe"]
+        let output = Pipe()
+        process.standardOutput = output
+        try process.run()
+        let described = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        let shipped = try Data(contentsOf: try XCTUnwrap(Bundle.main.resourceURL).appendingPathComponent("Plugins/agents/plugin.json"))
+        XCTAssertEqual(try JSONSerialization.jsonObject(with: described) as? NSDictionary, try JSONSerialization.jsonObject(with: shipped) as? NSDictionary,
+                       "BundledPlugins/agents/plugin.json is out of date: write it again with `agents --describe`")
+        XCTAssertNoThrow(try PluginManifest.load(from: try XCTUnwrap(Bundle.main.resourceURL).appendingPathComponent("Plugins/agents")))
+    }
+
+    /// The bundled Agents plugin, turned on, on a socket of its own
+    private func startAgentsPlugin() throws -> (store: PluginStore, socket: URL) {
+        let socketFolder = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("ag-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: socketFolder, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: socketFolder) }
+        let socket = socketFolder.appendingPathComponent("h.sock")
+        setenv("ISLAND_AGENTS_SOCKET", socket.path, 1)
+        addTeardownBlock { unsetenv("ISLAND_AGENTS_SOCKET") }
+
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let (preferences, _) = makePreferences()
+        let store = PluginStore(pluginsFolder: try makeFolder(), dataFolder: try makeFolder(), tabs: TabStore(defaults: defaults),
+                                preferences: preferences, defaults: defaults,
+                                bundledFolder: Bundle.main.resourceURL?.appendingPathComponent("Plugins"),
+                                bundledProgramFolder: Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers"))
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
+        store.reload()
+        let manifest = try XCTUnwrap(store.installed.first { $0.id == "agents" }?.manifest)
+        if let sounds = manifest.preferences?.first(where: { $0.key == "sounds" }) {
+            preferences.set(.bool(false), of: sounds, for: "agents")
+        }
+        store.setEnabled("agents", true)
+        XCTAssertTrue(waitUntil(5) { FileManager.default.fileExists(atPath: socket.path) }, "the plugin opened its socket")
+        return (store, socket)
+    }
+
+    /// Runs the hook as Claude Code does for a request that waits for an answer; its stdout is the answer
+    private func askThroughTheHook(_ input: String, socket: URL) throws -> (process: Process, output: Pipe) {
+        let helper = Process()
+        helper.executableURL = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/island-claude-hook")
+        helper.arguments = [socket.path, "claude", "wait"]
+        let stdin = Pipe(), stdout = Pipe()
+        helper.standardInput = stdin
+        helper.standardOutput = stdout
+        try helper.run()
+        stdin.fileHandleForWriting.write(Data(input.utf8))
+        try stdin.fileHandleForWriting.close()
+        return (helper, stdout)
+    }
+
+    private func hookOutput(_ pipe: Pipe, of process: Process) -> [String: Any]? {
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["hookSpecificOutput"] as? [String: Any]
+    }
+
+    /// The whole path, as Claude Code would use it: the hook asks, the Agents plugin shows the request through
+    /// the plugin protocol, a tap on Allow goes back to the plugin, and the hook prints the decision
+    func testTheAgentsPluginAnswersAPermissionRequestFromTheIsland() throws {
+        let (store, socket) = try startAgentsPlugin()
+        let hook = try askThroughTheHook(#"{"session_id":"e2e","hook_event_name":"PermissionRequest","cwd":"/tmp/demo","tool_name":"Bash","tool_input":{"command":"make test"}}"#,
+                                         socket: socket)
+        XCTAssertTrue(waitUntil(5) { store.contents["agents"]?.buttons.contains { $0.title == "Allow" } == true }, "the request shows with its buttons")
+        let rows = store.contents["agents"]?.rows ?? []
+        XCTAssertTrue(rows.contains { $0.subtitle == "make test" || $0.title.contains("make test") }, "\(rows)")
+        XCTAssertNotNil(store.priorityPlugin, "and beside the notch, ahead of music")
+
+        let allow = try XCTUnwrap(store.contents["agents"]?.buttons.first { $0.title == "Allow" })
+        let tapped = Date()
+        store.send(.action(allow.id), to: "agents")
+        let output = hookOutput(hook.output, of: hook.process)
+        let roundTrip = Date().timeIntervalSince(tapped)
+        print("Agents plugin: tap to hook output in \(Int(roundTrip * 1000)) ms")
+        XCTAssertEqual((output?["decision"] as? [String: Any])?["behavior"] as? String, "allow")
+        XCTAssertLessThan(roundTrip, 0.5)
+        store.stop()
+    }
+
+    func testTheAgentsPluginComesBackAfterACrash() throws {
+        let (store, socket) = try startAgentsPlugin()
+        let first = try XCTUnwrap(store.processID(of: "agents"))
+        kill(first, SIGKILL)
+        XCTAssertTrue(waitUntil(5) { (store.processID(of: "agents") ?? first) != first }, "restarted")
+        // Meanwhile a hook finds nobody and leaves the question to the terminal. Once the new process shows
+        // something it is listening again (it opens the socket before its first render), and it answers again
+        XCTAssertTrue(waitUntil(5) { store.contents["agents"]?.rows.isEmpty == false })
+        let hook = try askThroughTheHook(#"{"session_id":"e2e","hook_event_name":"PermissionRequest","tool_name":"Bash","tool_input":{"command":"ls"}}"#,
+                                         socket: socket)
+        XCTAssertTrue(waitUntil(5) { store.contents["agents"]?.buttons.contains { $0.title == "Deny" } == true })
+        let deny = try XCTUnwrap(store.contents["agents"]?.buttons.first { $0.title == "Deny" })
+        store.send(.action(deny.id), to: "agents")
+        XCTAssertEqual((hookOutput(hook.output, of: hook.process)?["decision"] as? [String: Any])?["behavior"] as? String, "deny")
+        store.stop()
+    }
+
+    func testTheAgentsPluginAnswersAQuestionWithATap() throws {
+        let (store, socket) = try startAgentsPlugin()
+        let hook = try askThroughTheHook("""
+            {"session_id":"e2e","hook_event_name":"PermissionRequest","tool_name":"AskUserQuestion",\
+            "tool_input":{"questions":[{"question":"Which layout?","header":"Layout","multiSelect":false,\
+            "options":[{"label":"Grid","description":"Cards in rows"},{"label":"List"}]}]}}
+            """, socket: socket)
+        XCTAssertTrue(waitUntil(5) { store.contents["agents"]?.rows.contains { $0.title == "List" } == true }, "the options show as rows")
+        let list = try XCTUnwrap(store.contents["agents"]?.rows.first { $0.title == "List" }?.id)
+        store.send(.action(list), to: "agents")
+        let output = hookOutput(hook.output, of: hook.process)
+        let answers = ((output?["decision"] as? [String: Any])?["updatedInput"] as? [String: Any])?["answers"] as? [String: String]
+        XCTAssertEqual(answers, ["Which layout?": "List"], "one choice answers on tap")
+        XCTAssertTrue(waitUntil(2) { store.contents["agents"]?.rows.contains { $0.title == "List" } != true }, "and the prompt goes")
+        store.stop()
+    }
+
+    // MARK: - On demand
+
+    func testTimelineDoneAndStatusRead() throws {
+        let line = #"{"type":"timeline","entries":[{"at":200,"show":[{"type":"compact","text":"B"},{"type":"popup","text":"no"}]},{"at":100,"show":[{"type":"list","rows":[{"title":"A"}]}]}],"wake":300}"#
+        guard case .timeline(var schedule) = try PluginMessage.decode(Data(line.utf8)) else { return XCTFail("not a timeline") }
+        XCTAssertEqual(schedule.nextDate, Date(timeIntervalSince1970: 100), "entries are sorted")
+        var due = schedule.takeDue(at: Date(timeIntervalSince1970: 150))
+        XCTAssertEqual(due.messages, [.list([PluginRow(title: "A")])])
+        XCTAssertFalse(due.wake)
+        due = schedule.takeDue(at: Date(timeIntervalSince1970: 300))
+        XCTAssertEqual(due.messages, [.compact(PluginCompact(text: "B"))], "a popup can't be scheduled")
+        XCTAssertTrue(due.wake)
+        XCTAssertTrue(schedule.isEmpty)
+
+        XCTAssertEqual(try PluginMessage.decode(Data(#"{"type":"done"}"#.utf8)), .done)
+        XCTAssertEqual(try PluginMessage.decode(Data(#"{"type":"status","state":"loading"}"#.utf8)), .status(PluginNotice(state: .loading, text: nil)))
+        XCTAssertEqual(try PluginMessage.decode(Data(#"{"type":"status","state":"idle"}"#.utf8)), .status(nil))
+        XCTAssertEqual(String(decoding: PluginEvent.wake(reason: "timeline").line, as: UTF8.self), #"{"reason":"timeline","type":"wake"}"# + "\n")
+    }
+
+    /// A store with one on-demand plugin running `script` in sh, its tab on
+    private func onDemandStore(_ script: String) throws -> (PluginStore, URL) {
+        let folder = try makeFolder()
+        let data = try makeFolder()
+        let command = try String(data: JSONSerialization.data(withJSONObject: ["/bin/sh", "-c", script]), encoding: .utf8)!
+        _ = try writePlugin(#"{"id":"cal","name":"Cal","symbol":"calendar","command":\#(command),"protocol":3,"lifecycle":"onDemand"}"#,
+                            id: "cal", in: folder)
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let tabs = TabStore(defaults: UserDefaults(suiteName: suiteName)!)
+        let store = PluginStore(pluginsFolder: folder, dataFolder: data, tabs: tabs)
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
+        store.reload()
+        tabs.setEnabled(.plugin("cal"), true)
+        store.reload()
+        return (store, data.appendingPathComponent("cal/in.txt"))
+    }
+
+    private func lines(of file: URL) -> [String] {
+        ((try? String(contentsOf: file, encoding: .utf8)) ?? "").split(separator: "\n").map(String.init)
+    }
+
+    /// Logs what it hears; on each wake it shows something and says it's done
+    private let politeScript = #"""
+    while read line; do
+      echo "$line" >> "$ISLAND_DATA_DIR/in.txt"
+      case "$line" in *'"type":"wake"'*) printf '{"type":"compact","text":"hi"}\n{"type":"done"}\n';; esac
+    done
+    """#
+
+    func testAnOnDemandPluginRunsOnlyWhenNeeded() throws {
+        let (store, input) = try onDemandStore(politeScript)
+        XCTAssertTrue(waitUntil(3) { store.statuses["cal"] == .sleeping }, "started once to show itself, then asleep")
+        XCTAssertEqual(store.contents["cal"]?.compact?.text, "hi", "what it showed stays while it sleeps")
+        XCTAssertNil(store.processID(of: "cal"))
+        XCTAssertEqual(lines(of: input), [#"{"tab":false,"type":"visible"}"#, #"{"reason":"launch","type":"wake"}"#])
+
+        store.send(.action("refresh"), to: "cal")
+        XCTAssertTrue(waitUntil(3) { lines(of: input).count == 5 && store.statuses["cal"] == .sleeping })
+        XCTAssertEqual(lines(of: input).suffix(3), [#"{"tab":false,"type":"visible"}"#, #"{"id":"refresh","type":"action"}"#,
+                                                    #"{"reason":"action","type":"wake"}"#], "the tap that woke it comes first")
+
+        store.tabAppeared("cal")
+        XCTAssertTrue(waitUntil(3) { lines(of: input).last == #"{"reason":"visible","type":"wake"}"# })
+        XCTAssertTrue(lines(of: input).contains(#"{"tab":true,"type":"visible"}"#))
+        store.tabDisappeared("cal")
+        store.stop()
+    }
+
+    func testATimelineShowsLaterAndWakesThePlugin() throws {
+        let (store, input) = try onDemandStore(politeScript)
+        XCTAssertTrue(waitUntil(3) { store.statuses["cal"] == .sleeping })
+        let soon = Date().addingTimeInterval(0.3)
+        store.apply(.timeline(PluginSchedule(entries: [.init(at: soon, messages: [.compact(PluginCompact(text: "later"))])],
+                                             wake: soon.addingTimeInterval(0.3))), from: "cal")
+        XCTAssertTrue(waitUntil(2) { store.contents["cal"]?.compact?.text == "later" }, "switched by the island, plugin asleep")
+        XCTAssertTrue(waitUntil(3) { lines(of: input).last == #"{"reason":"timeline","type":"wake"}"# }, "woken when it asked")
+        XCTAssertTrue(waitUntil(3) { store.contents["cal"]?.compact?.text == "hi" && store.statuses["cal"] == .sleeping })
+        store.stop()
+    }
+
+    func testAnOnDemandPluginLeftIdleIsStopped() throws {
+        let (store, _) = try onDemandStore("cat > /dev/null")
+        store.idleTimeout = 0.3
+        store.send(.action("x"), to: "cal")
+        XCTAssertTrue(waitUntil(1) { store.processID(of: "cal") != nil })
+        XCTAssertTrue(waitUntil(3) { store.processID(of: "cal") == nil && store.statuses["cal"] == .sleeping },
+                      "it never said done, so it is stopped once idle")
+        store.stop()
+    }
+
+    func testAnOnDemandPluginThatKeepsFailingIsGivenUp() throws {
+        let (store, _) = try onDemandStore("echo broken >&2; exit 3")
+        for _ in 0..<8 {
+            XCTAssertTrue(waitUntil(2) { store.processID(of: "cal") == nil })
+            store.send(.action("again"), to: "cal")
+        }
+        XCTAssertTrue(waitUntil(2) {
+            if case .stopped = store.statuses["cal"] { return true }
+            return false
+        })
+        XCTAssertEqual(store.statuses["cal"], .stopped(reason: "broken"))
+        store.restart("cal")
+        XCTAssertNotEqual(store.statuses["cal"], .stopped(reason: "broken"), "Restart tries again")
+        store.stop()
+    }
+
     // MARK: - Process lifecycle
 
     private func client(_ command: [String]) -> PluginClient {
@@ -351,7 +930,7 @@ final class PluginTests: XCTestCase {
             folder: FileManager.default.temporaryDirectory, dataFolder: data, restartDelay: 60)
         let received = expectation(description: "environment")
         client.onMessage = { message in
-            XCTAssertEqual(message, .compact(PluginCompact(text: "1|echo|\(data.path)")))
+            XCTAssertEqual(message, .compact(PluginCompact(text: "\(PluginManifest.supportedProtocol)|echo|\(data.path)")))
             received.fulfill()
         }
         client.start()
