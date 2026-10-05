@@ -1,18 +1,24 @@
 import Foundation
 
 /// One line a plugin writes to its stdout, telling the island what to show. The island draws it with its own
-/// templates; the plugin never draws. Each kind replaces what the plugin showed of that kind before.
+/// templates and look; the plugin never draws, and can't set colors, fonts or images. Each kind replaces what
+/// the plugin showed of that kind before.
 ///
 ///     {"type":"compact","symbol":"timer","text":"04:59","progress":0.98}
+///     {"type":"compact","symbol":"timer","until":1767225600,"total":300}     counted down by the island
 ///     {"type":"list","rows":[{"id":"r1","title":"5 min","subtitle":"Pomodoro","symbol":"play"}]}
-///     {"type":"buttons","buttons":[{"id":"stop","title":"Stop"}]}
+///     {"type":"buttons","buttons":[{"id":"stop","title":"Stop","confirm":"Stop the timer?"}]}
+///     {"type":"input","id":"minutes","placeholder":"Minutes","text":""}
 ///     {"type":"popup","symbol":"bell","text":"Time's up","seconds":3}
+///     {"type":"open"}                                                        open the island on this plugin's tab
 ///     {"type":"clear","target":"compact"}
 enum PluginMessage: Equatable {
     case compact(PluginCompact)
     case list([PluginRow])
     case buttons([PluginButton])
+    case input(PluginInput)
     case popup(PluginPopup)
+    case open
     case clear(PluginClearTarget)
 
     /// Rows and buttons past this are dropped
@@ -31,7 +37,9 @@ enum PluginMessage: Equatable {
         case "compact": return .compact(try decoder.decode(PluginCompact.self, from: line).trimmed)
         case "list": return .list(Array(try decoder.decode(ListBody.self, from: line).rows.prefix(maxItems)).map(\.trimmed))
         case "buttons": return .buttons(Array(try decoder.decode(ButtonsBody.self, from: line).buttons.prefix(maxItems)).map(\.trimmed))
+        case "input": return .input(try decoder.decode(PluginInput.self, from: line).trimmed)
         case "popup": return .popup(try decoder.decode(PluginPopup.self, from: line).trimmed)
+        case "open": return .open
         case "clear": return .clear(try decoder.decode(ClearBody.self, from: line).target)
         default: throw DecodeError.unknownType(envelope.type)
         }
@@ -52,9 +60,28 @@ struct PluginCompact: Decodable, Equatable {
     var text: String?
     /// 0...1, drawn as a ring
     var progress: Double?
+    /// A countdown the island runs itself, to this time (seconds since 1970): shown instead of `text`
+    var until: Double?
+    /// The countdown's whole length in seconds; with it, the ring shows the time left
+    var total: Double?
 
     var trimmed: PluginCompact {
-        PluginCompact(symbol: symbol, text: PluginMessage.cut(text), progress: progress.map { min(max($0, 0), 1) })
+        PluginCompact(symbol: symbol, text: PluginMessage.cut(text), progress: progress.map { min(max($0, 0), 1) },
+                      until: until, total: total.flatMap { $0 > 0 ? $0 : nil })
+    }
+}
+
+/// The one text field a plugin's tab can have, above its buttons; Return sends it as PluginEvent.submit
+struct PluginInput: Decodable, Equatable {
+    var id: String
+    var placeholder: String?
+    /// Its starting text
+    var text: String?
+
+    static let maxLength = 1000
+
+    var trimmed: PluginInput {
+        PluginInput(id: id, placeholder: PluginMessage.cut(placeholder), text: text.map { String($0.prefix(Self.maxLength)) })
     }
 }
 
@@ -75,9 +102,11 @@ struct PluginButton: Decodable, Equatable, Identifiable {
     var id: String
     var title: String
     var symbol: String?
+    /// Asked first, in the tab, before the tap goes to the plugin
+    var confirm: String?
 
     var trimmed: PluginButton {
-        PluginButton(id: id, title: PluginMessage.cut(title), symbol: symbol)
+        PluginButton(id: id, title: PluginMessage.cut(title), symbol: symbol, confirm: PluginMessage.cut(confirm))
     }
 }
 
@@ -96,5 +125,5 @@ struct PluginPopup: Decodable, Equatable {
 }
 
 enum PluginClearTarget: String, Decodable {
-    case compact, list, buttons, all
+    case compact, list, buttons, input, all
 }

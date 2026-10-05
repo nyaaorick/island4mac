@@ -4,10 +4,15 @@ import Foundation
 /// folder. PluginStore picks the change up on its next reload
 struct PluginCatalogClient {
     let pluginsFolder: URL
+    /// Where plugins keep their data (PluginStore.dataFolder); a removed plugin's goes with it
+    var dataFolder: URL?
     var session: URLSession = .shared
 
     enum CatalogError: Error, CustomStringConvertible {
         case insecureURL(URL)
+        /// The index isn't there (yet): nothing is published, which isn't a failure
+        case notPublished
+        case http(Int)
         case unpackFailed(Int32)
         case noManifest
         case wrongPlugin(expected: String, found: String)
@@ -15,6 +20,8 @@ struct PluginCatalogClient {
         var description: String {
             switch self {
             case .insecureURL(let url): return "not an https address: \(url.absoluteString)"
+            case .notPublished: return "no plugins published yet"
+            case .http(let status): return "the plugins repo answered \(status)"
             case .unpackFailed(let status): return "couldn't unpack the archive (ditto exit \(status))"
             case .noManifest: return "the archive has no \(PluginManifest.fileName)"
             case .wrongPlugin(let expected, let found): return "the archive holds \"\(found)\", not \"\(expected)\""
@@ -24,7 +31,11 @@ struct PluginCatalogClient {
 
     func fetchIndex(from url: URL) async throws -> [PluginCatalogEntry] {
         try checkScheme(url)
-        let (data, _) = try await session.data(from: url)
+        if url.isFileURL && !FileManager.default.fileExists(atPath: url.path) { throw CatalogError.notPublished }
+        let (data, response) = try await session.data(from: url)
+        if let status = (response as? HTTPURLResponse)?.statusCode, !(200..<300).contains(status) {
+            throw status == 404 ? CatalogError.notPublished : CatalogError.http(status)
+        }
         return try JSONDecoder().decode(PluginCatalogEntry.Index.self, from: data).plugins
     }
 
@@ -52,6 +63,9 @@ struct PluginCatalogClient {
 
     func remove(_ pluginID: String) throws {
         try FileManager.default.removeItem(at: pluginsFolder.appendingPathComponent(pluginID))
+        if let dataFolder {
+            try? FileManager.default.removeItem(at: dataFolder.appendingPathComponent(pluginID))
+        }
     }
 
     // MARK: - Helpers

@@ -111,6 +111,19 @@ final class IslandController: NSObject {
         }
     }
 
+    /// Opens the island on a plugin's tab, as the plugin asked: the island on the display you're working on.
+    /// Never over something you're using or an agent waiting for your answer
+    func showPluginTab(_ pluginID: String) {
+        let state = islandUnderMouse()?.appState ?? appState
+        if state.islandMode == .expanded && state.islandFrame.contains(NSEvent.mouseLocation) { return }
+        if state.islandMode == .expanded && state.visibilityReason == .agentPrompt { return }
+        guard AgentSessionStore.shared.pendingPrompts.isEmpty else { return }
+        state.currentSection = .plugin(pluginID)
+        withAnimation(boringOpenAnimation) {
+            state.activateIsland(reason: .plugin)
+        }
+    }
+
     /// Closes the islands a prompt opened once no prompt is left, unless the pointer is on them
     private func closeAfterAgentPrompts() {
         for state in islands.map(\.appState) {

@@ -59,6 +59,8 @@ final class SettingsDefaults: ObservableObject {
 
     // MARK: - Plugins
     static let showPluginLiveActivity = SettingsKey(key: "showPluginLiveActivity", defaultValue: true)
+    /// A plugin may open the island on its tab ({"type":"open"}), at most every PluginStore.openInterval
+    static let pluginsMayOpenIsland = SettingsKey(key: "pluginsMayOpenIsland", defaultValue: true)
     /// index.json of the plugins repo (PluginCatalogClient)
     static let pluginIndexURL = SettingsKey(key: "pluginIndexURL", defaultValue: "https://raw.githubusercontent.com/nyaaorick/island4mac-plugins/main/index.json")
 

@@ -15,7 +15,7 @@
 
 ## Plugins
 
-Built: tabs as a registry (up to 6), the plugin protocol with island-drawn templates, the sample timer, Settings > Tabs and Settings > Plugins. Left:
+Built: up to 6 tabs, out-of-process plugins drawn in the island's own look, the plugins repo (github.com/nyaaorick/island4mac-plugins) with the timer, Settings > Tabs and Settings > Plugins. Later:
 
-- Create the plugins repo (`nyaaorick/island4mac-plugins`, the default `pluginIndexURL`): one folder per plugin, reviewed by pull request, `index.json`, and a release zip per plugin with its program built universal (arm64 + x86_64).
-- Publish the timer there.
+- Install, update or remove one plugin without restarting the others.
+- Compare versions by order, not just difference (no offering a downgrade as an update).

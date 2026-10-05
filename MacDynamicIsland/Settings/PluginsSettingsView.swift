@@ -10,9 +10,13 @@ struct PluginsSettingsView: View {
     @State private var isLoading = false
     @State private var busyID: String?
     @State private var errorText: String?
+    /// Why the catalog couldn't be read, shown quietly: not published yet, or offline
+    @State private var catalogNote: String?
     @State private var pendingInstall: PluginCatalogEntry?
 
-    private var client: PluginCatalogClient { PluginCatalogClient(pluginsFolder: plugins.pluginsFolder) }
+    private var client: PluginCatalogClient {
+        PluginCatalogClient(pluginsFolder: plugins.pluginsFolder, dataFolder: plugins.dataFolder)
+    }
 
     var body: some View {
         SettingsForm {
@@ -21,6 +25,11 @@ struct PluginsSettingsView: View {
                     key: SettingsDefaults.showPluginLiveActivity,
                     title: L("settings.plugins.live_activity"),
                     help: L("settings.plugins.live_activity_help")
+                )
+                ToggleSettingsRow(
+                    key: SettingsDefaults.pluginsMayOpenIsland,
+                    title: L("settings.plugins.may_open"),
+                    help: L("settings.plugins.may_open_help")
                 )
             } footer: {
                 SettingsNote(L("settings.plugins.about"))
@@ -53,7 +62,7 @@ struct PluginsSettingsView: View {
                 if isLoading {
                     ProgressView().controlSize(.small)
                 } else if catalog.isEmpty {
-                    SettingsNote(L("settings.plugins.catalog_empty"))
+                    SettingsNote(catalogNote ?? L("settings.plugins.catalog_empty"))
                 }
                 ForEach(catalog) { entry in
                     catalogRow(entry)
@@ -84,14 +93,17 @@ struct PluginsSettingsView: View {
 
     private func installedRow(_ plugin: PluginStore.Installed) -> some View {
         LabeledContent {
-            Button(L("settings.plugins.remove"), role: .destructive) { remove(plugin.id) }
-                .disabled(busyID != nil)
+            HStack {
+                if case .stopped = plugins.statuses[plugin.id] {
+                    Button(L("plugins.tab.restart")) { plugins.restart(plugin.id) }
+                }
+                Button(L("settings.plugins.remove"), role: .destructive) { remove(plugin.id) }
+                    .disabled(busyID != nil)
+            }
         } label: {
             Label {
                 Text(plugin.manifest.name)
-                if let version = plugin.manifest.version {
-                    Text(version)
-                }
+                Text(statusText(for: plugin))
             } icon: {
                 Image(systemName: plugin.manifest.symbol)
             }
@@ -126,15 +138,30 @@ struct PluginsSettingsView: View {
         }
     }
 
+    /// Version, and whether it runs: on while its tab is shown, stopped with the reason if it kept failing
+    private func statusText(for plugin: PluginStore.Installed) -> String {
+        let status: String = switch plugins.statuses[plugin.id] {
+        case .running: L("settings.plugins.status_running")
+        case .stopped(let reason): L("settings.plugins.status_stopped", reason)
+        case nil: L("settings.plugins.status_off")
+        }
+        return [plugin.manifest.version, status].compactMap { $0 }.joined(separator: " · ")
+    }
+
     private func loadCatalog() async {
         guard let url = URL(string: settings.get(SettingsDefaults.pluginIndexURL)) else { return }
         isLoading = true
         defer { isLoading = false }
         do {
             catalog = try await client.fetchIndex(from: url)
-            errorText = nil
+            catalogNote = nil
+        } catch PluginCatalogClient.CatalogError.notPublished {
+            catalog = []
+            catalogNote = L("settings.plugins.not_published")
         } catch {
-            errorText = L("settings.plugins.catalog_failed", String(describing: error))
+            // Offline or the repo is down: say so quietly; Refresh tries again
+            catalog = []
+            catalogNote = L("settings.plugins.catalog_unreachable")
         }
     }
 

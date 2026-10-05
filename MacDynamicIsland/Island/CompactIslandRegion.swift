@@ -15,21 +15,20 @@ struct CompactIslandRegion: View {
     /// What a plugin shows beside the notch: a popup ahead of now playing, its compact content after it
     private struct PluginLive {
         let name: String
-        let symbol: String?
-        let text: String?
-        let progress: Double?
+        let compact: PluginCompact
     }
 
     private var pluginPopup: PluginLive? {
         guard let active = plugins.popup else { return nil }
         let name = plugins.installed.first { $0.id == active.pluginID }?.manifest.name ?? active.pluginID
-        return PluginLive(name: name, symbol: active.popup.symbol, text: active.popup.text, progress: nil)
+        return PluginLive(name: name, compact: PluginCompact(symbol: active.popup.symbol, text: active.popup.text))
     }
 
     private var pluginCompact: PluginLive? {
         guard let live = plugins.compactPlugin else { return nil }
-        return PluginLive(name: live.manifest.name, symbol: live.compact.symbol ?? live.manifest.symbol,
-                          text: live.compact.text, progress: live.compact.progress)
+        var compact = live.compact
+        compact.symbol = compact.symbol ?? live.manifest.symbol
+        return PluginLive(name: live.manifest.name, compact: compact)
     }
 
     /// The plugin content of the live activity IslandWindow picked, if it's a plugin's
@@ -50,7 +49,7 @@ struct CompactIslandRegion: View {
                 if activity == .agent, let session = agentSession {
                     CompactAgentLiveActivityView(session: session, isWide: appState.isOnLargeDisplay)
                 } else if let live = pluginLive {
-                    CompactPluginLiveActivityView(name: live.name, symbol: live.symbol, text: live.text, progress: live.progress)
+                    CompactPluginLiveActivityView(name: live.name, compact: live.compact)
                 } else if activity == .music {
                     CompactMusicLiveActivityView(animation: animation)
                 } else {
@@ -66,7 +65,7 @@ struct CompactIslandRegion: View {
         } else if activity == .agent, let session = agentSession {
             AgentNotchLiveActivityView(session: session, notch: notch, wings: appState.liveActivityWings, activeCount: agents.activeSessionCount)
         } else if let live = pluginLive {
-            PluginNotchLiveActivityView(symbol: live.symbol, text: live.text, progress: live.progress, notch: notch, wings: appState.liveActivityWings)
+            PluginNotchLiveActivityView(compact: live.compact, notch: notch, wings: appState.liveActivityWings)
         } else if activity == .music {
             MusicNotchLiveActivityView(notch: notch, wings: appState.liveActivityWings, animation: animation)
         } else {

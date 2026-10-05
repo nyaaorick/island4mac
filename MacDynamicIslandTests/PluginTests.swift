@@ -95,7 +95,7 @@ final class PluginTests: XCTestCase {
 
     func testAClientReadsWhatThePluginWrites() {
         let client = PluginClient(manifest: manifest(command: ["/bin/echo", #"{"type":"compact","text":"hi"}"#]),
-                                  folder: FileManager.default.temporaryDirectory, restartDelay: 60)
+                                  folder: FileManager.default.temporaryDirectory, dataFolder: FileManager.default.temporaryDirectory, restartDelay: 60)
         let received = expectation(description: "message")
         client.onMessage = { message in
             XCTAssertEqual(message, .compact(PluginCompact(text: "hi")))
@@ -109,7 +109,7 @@ final class PluginTests: XCTestCase {
     func testTapsReachThePlugin() {
         // sed as a plugin: it turns each action it reads into a message the island understands
         let client = PluginClient(manifest: manifest(command: ["/usr/bin/sed", "-l", #"s/"type":"action"/"type":"clear","target":"all"/"#]),
-                                  folder: FileManager.default.temporaryDirectory, restartDelay: 60)
+                                  folder: FileManager.default.temporaryDirectory, dataFolder: FileManager.default.temporaryDirectory, restartDelay: 60)
         let received = expectation(description: "echo")
         client.onMessage = { message in
             XCTAssertEqual(message, .clear(.all))
@@ -130,7 +130,7 @@ final class PluginTests: XCTestCase {
     }
 
     func testAStoppedPluginLeavesTheCPUIdle() {
-        let client = PluginClient(manifest: manifest(command: ["/bin/sleep", "30"]), folder: FileManager.default.temporaryDirectory)
+        let client = PluginClient(manifest: manifest(command: ["/bin/sleep", "30"]), folder: FileManager.default.temporaryDirectory, dataFolder: FileManager.default.temporaryDirectory)
         client.start()
         RunLoop.main.run(until: Date().addingTimeInterval(0.2))
         client.stop()
@@ -143,16 +143,16 @@ final class PluginTests: XCTestCase {
 
     func testAPluginThatKeepsExitingIsGivenUp() {
         let client = PluginClient(manifest: manifest(command: ["/usr/bin/true"]), folder: FileManager.default.temporaryDirectory,
-                                  restartDelay: 0.05)
+                                  dataFolder: FileManager.default.temporaryDirectory, restartDelay: 0.05)
         let gaveUp = expectation(description: "gave up")
-        client.onGiveUp = { gaveUp.fulfill() }
+        client.onGiveUp = { _ in gaveUp.fulfill() }
         client.start()
         wait(for: [gaveUp], timeout: 10)
         XCTAssertFalse(client.isRunning)
     }
 
     func testLinesSplitAcrossChunksAndOverlongLines() {
-        let client = PluginClient(manifest: manifest(command: ["/usr/bin/true"]), folder: FileManager.default.temporaryDirectory)
+        let client = PluginClient(manifest: manifest(command: ["/usr/bin/true"]), folder: FileManager.default.temporaryDirectory, dataFolder: FileManager.default.temporaryDirectory)
         var messages: [PluginMessage] = []
         client.onMessage = { messages.append($0) }
 
@@ -246,7 +246,8 @@ final class PluginTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
         let tabs = TabStore(defaults: defaults)
-        let store = PluginStore(pluginsFolder: folder, tabs: tabs)
+        let store = PluginStore(pluginsFolder: folder, dataFolder: try makeFolder(), tabs: tabs)
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
         store.reload()
         tabs.setEnabled(.plugin("echo"), true)
         RunLoop.main.run(until: Date().addingTimeInterval(0.2))
@@ -256,6 +257,203 @@ final class PluginTests: XCTestCase {
         store.reload()
         XCTAssertNil(store.compactPlugin, "the new process hasn't said anything yet, so the old countdown goes")
         store.stop()
+    }
+
+    // MARK: - Process lifecycle
+
+    private func client(_ command: [String]) -> PluginClient {
+        PluginClient(manifest: manifest(command: command), folder: FileManager.default.temporaryDirectory,
+                     dataFolder: FileManager.default.temporaryDirectory, restartDelay: 60)
+    }
+
+    /// Whether any process is left in the group
+    private func groupAlive(_ pgid: pid_t) -> Bool { kill(-pgid, 0) == 0 }
+
+    private func waitUntil(_ timeout: TimeInterval, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        }
+        return condition()
+    }
+
+    func testAPluginThatDoesntReadNeverBlocksTheIsland() throws {
+        let client = client(["/bin/sleep", "30"])
+        client.start()
+        let process = try XCTUnwrap(client.process)
+        let started = Date()
+        var dropped = 0
+        for _ in 0..<100_000 where !process.write(PluginEvent.visible(true).line) { dropped += 1 }
+        XCTAssertLessThan(Date().timeIntervalSince(started), 1, "writing never waits for the plugin")
+        XCTAssertGreaterThan(dropped, 0, "past the limit, events are dropped")
+        client.stop()
+    }
+
+    func testAPluginThatIgnoresTerminationIsKilledWithWhatItStarted() throws {
+        // Ignores SIGTERM and doesn't read, and starts a child of its own
+        let client = client(["/usr/bin/perl", "-e", #"$SIG{TERM}="IGNORE"; system("sleep 30 &"); sleep 30"#])
+        client.start()
+        let pgid = try XCTUnwrap(client.process?.pid)
+        XCTAssertTrue(waitUntil(2) { groupAlive(pgid) })
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+
+        client.stop()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+        XCTAssertTrue(groupAlive(pgid), "it gets its grace period")
+        XCTAssertTrue(waitUntil(PluginClient.terminationGrace + 1) { !groupAlive(pgid) }, "then it and its child are killed")
+    }
+
+    func testQuittingTheAppEndsEveryPlugin() throws {
+        let folder = try makeFolder()
+        _ = try writePlugin(#"{"id":"stubborn","name":"x","symbol":"x","command":["/usr/bin/perl","-e","$SIG{TERM}=\"IGNORE\"; sleep 30"],"protocol":1}"#,
+                            id: "stubborn", in: folder)
+        let (store, tabs) = try makeStore(folder: folder)
+        tabs.setEnabled(.plugin("stubborn"), true)
+        store.reload()  // what start()'s subscription to your tabs does in the app
+        XCTAssertTrue(waitUntil(2) { store.statuses["stubborn"] == .running })
+        let pgid = try XCTUnwrap(store.processID(of: "stubborn"))
+
+        let started = Date()
+        store.stopForQuit()
+        XCTAssertLessThan(Date().timeIntervalSince(started), 1, "quitting waits briefly")
+        XCTAssertTrue(waitUntil(1) { !groupAlive(pgid) }, "and leaves nothing behind")
+    }
+
+    func testANextLaunchEndsPluginsACrashLeftBehind() throws {
+        let folder = try makeFolder()
+        let data = try makeFolder()
+        // Ignores SIGTERM and never reads, so the end of its input after a crash doesn't make it quit
+        _ = try writePlugin(#"{"id":"stubborn","name":"x","symbol":"x","command":["/usr/bin/perl","-e","$SIG{TERM}=\"IGNORE\"; sleep 30"],"protocol":1}"#,
+                            id: "stubborn", in: folder)
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let tabs = TabStore(defaults: defaults)
+        tabs.setPluginTabs([(.plugin("stubborn"), TabStore.TabInfo(name: "x", symbol: "x"))])
+        tabs.setEnabled(.plugin("stubborn"), true)
+        let running = PluginStore(pluginsFolder: folder, dataFolder: data, tabs: tabs)
+        running.reload()
+        let pgid = try XCTUnwrap(running.processID(of: "stubborn"))
+        // The app "crashes": nothing stops it. The next launch, with the plugin's tab off:
+        let suite2 = "PluginTests-\(UUID().uuidString)"
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suite2) }
+        let nextLaunch = PluginStore(pluginsFolder: folder, dataFolder: data, tabs: TabStore(defaults: UserDefaults(suiteName: suite2)!))
+        nextLaunch.start()
+        XCTAssertTrue(waitUntil(1) { !groupAlive(pgid) }, "the leftover plugin is ended")
+        nextLaunch.stop()
+    }
+
+    func testAPluginLearnsWhereItRuns() throws {
+        let data = try makeFolder()
+        let client = PluginClient(
+            manifest: manifest(command: ["/bin/sh", "-c", #"printf '{"type":"compact","text":"%s|%s|%s"}\n' "$ISLAND_PROTOCOL" "$ISLAND_PLUGIN_ID" "$ISLAND_DATA_DIR"; sleep 5"#]),
+            folder: FileManager.default.temporaryDirectory, dataFolder: data, restartDelay: 60)
+        let received = expectation(description: "environment")
+        client.onMessage = { message in
+            XCTAssertEqual(message, .compact(PluginCompact(text: "1|echo|\(data.path)")))
+            received.fulfill()
+        }
+        client.start()
+        wait(for: [received], timeout: 5)
+        client.stop()
+    }
+
+    // MARK: - Store: status, visibility, open
+
+    private func makeStore(folder: URL) throws -> (PluginStore, TabStore) {
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let tabs = TabStore(defaults: defaults)
+        let store = PluginStore(pluginsFolder: folder, dataFolder: try makeFolder(), tabs: tabs, restartDelay: 0.05)
+        store.reload()
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
+        return (store, tabs)
+    }
+
+    func testAStoppedPluginSaysSoAndCanBeRestarted() throws {
+        let folder = try makeFolder()
+        _ = try writePlugin(#"{"id":"crashy","name":"Crashy","symbol":"x","command":["/bin/sh","-c","echo broken config >&2; exit 3"],"protocol":1}"#,
+                            id: "crashy", in: folder)
+        let (store, tabs) = try makeStore(folder: folder)
+        tabs.setEnabled(.plugin("crashy"), true)
+        store.reload()  // what start()'s subscription to your tabs does in the app
+        XCTAssertTrue(waitUntil(5) { store.statuses["crashy"] == .stopped(reason: "broken config") },
+                      "its last error says why; got \(String(describing: store.statuses["crashy"]))")
+
+        store.restart("crashy")
+        XCTAssertNotEqual(store.statuses["crashy"], .stopped(reason: "broken config"), "a restart starts afresh")
+    }
+
+    func testTheTabIsVisibleWhileAnyIslandShowsIt() throws {
+        let folder = try makeFolder()
+        // Echoes each visible event back as compact text
+        _ = try writePlugin(#"{"id":"seen","name":"x","symbol":"x","command":["/usr/bin/sed","-l","-E","s/.*\"tab\":(true|false).*/{\"type\":\"compact\",\"text\":\"\\1\"}/"],"protocol":1}"#,
+                            id: "seen", in: folder)
+        let (store, tabs) = try makeStore(folder: folder)
+        tabs.setEnabled(.plugin("seen"), true)
+        store.reload()  // what start()'s subscription to your tabs does in the app
+        func shown() -> String? { store.contents["seen"]?.compact?.text }
+        XCTAssertTrue(waitUntil(2) { shown() == "false" }, "it hears right away that its tab isn't showing")
+
+        store.tabAppeared("seen")
+        XCTAssertTrue(waitUntil(2) { shown() == "true" })
+        store.tabAppeared("seen")    // a second display
+        store.tabDisappeared("seen")
+        RunLoop.main.run(until: Date().addingTimeInterval(0.3))
+        XCTAssertEqual(shown(), "true", "still showing on the other display")
+        store.tabDisappeared("seen")
+        XCTAssertTrue(waitUntil(2) { shown() == "false" })
+    }
+
+    func testAPluginOpensTheIslandOnlyOnItsTabAndNotTooOften() throws {
+        let folder = try makeFolder()
+        _ = try writePlugin(#"{"id":"opener","name":"x","symbol":"x","command":["/bin/cat"],"protocol":1}"#, id: "opener", in: folder)
+        let (store, tabs) = try makeStore(folder: folder)
+        var opened: [String] = []
+        store.onOpen = { opened.append($0) }
+
+        store.apply(.open, from: "opener")
+        XCTAssertEqual(opened, [], "its tab isn't one of yours")
+        tabs.setEnabled(.plugin("opener"), true)
+        store.apply(.open, from: "opener")
+        store.apply(.open, from: "opener")
+        XCTAssertEqual(opened, ["opener"], "once, then not again within \(PluginStore.openInterval) seconds")
+    }
+
+    // MARK: - New messages and countdown
+
+    func testInputOpenConfirmAndCountdownRead() throws {
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"open"}"#)), .open)
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"input","id":"m","placeholder":"Minutes"}"#)),
+                       .input(PluginInput(id: "m", placeholder: "Minutes")))
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"buttons","buttons":[{"id":"s","title":"Stop","confirm":"Sure?"}]}"#)),
+                       .buttons([PluginButton(id: "s", title: "Stop", confirm: "Sure?")]))
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"compact","until":100,"total":60}"#)),
+                       .compact(PluginCompact(until: 100, total: 60)))
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"clear","target":"input"}"#)), .clear(.input))
+        XCTAssertEqual(String(decoding: PluginEvent.submit(id: "m", text: "5").line, as: UTF8.self),
+                       #"{"id":"m","text":"5","type":"submit"}"# + "\n")
+    }
+
+    func testTheIslandCountsDown() {
+        let now = Date(timeIntervalSince1970: 1000)
+        let compact = PluginCompact(text: "ignored", until: 1299.2, total: 300)
+        XCTAssertEqual(compact.displayText(at: now), "05:00", "rounded up: 299.2 seconds left reads 05:00")
+        XCTAssertEqual(compact.displayProgress(at: now)!, 299.2 / 300, accuracy: 0.0001)
+        XCTAssertEqual(compact.displayText(at: Date(timeIntervalSince1970: 2000)), "00:00", "it stops at zero")
+        XCTAssertEqual(PluginCountdown.text(remaining: 3725), "1:02:05")
+        XCTAssertEqual(PluginCompact(text: "hi").displayText(at: now), "hi", "without until, the plugin's text")
+    }
+
+    func testAnUnpublishedCatalogIsntAnError() async throws {
+        let client = PluginCatalogClient(pluginsFolder: try makeFolder())
+        do {
+            _ = try await client.fetchIndex(from: try makeFolder().appendingPathComponent("index.json"))
+            XCTFail("expected notPublished")
+        } catch PluginCatalogClient.CatalogError.notPublished {
+        }
     }
 
     // MARK: - Store
@@ -269,7 +467,8 @@ final class PluginTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
         let tabs = TabStore(defaults: defaults)
-        let store = PluginStore(pluginsFolder: folder, tabs: tabs)
+        let store = PluginStore(pluginsFolder: folder, dataFolder: try makeFolder(), tabs: tabs)
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
         store.reload()
 
         XCTAssertEqual(store.installed.map(\.id), ["echo"])

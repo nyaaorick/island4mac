@@ -46,7 +46,13 @@
 "settings.plugins.available" = "Available";
 "settings.plugins.refresh" = "Refresh";
 "settings.plugins.catalog_empty" = "Nothing to show from the plugins repo.";
-"settings.plugins.catalog_failed" = "Couldn't read the plugins repo: %@";
+"settings.plugins.not_published" = "No plugins published yet.";
+"settings.plugins.catalog_unreachable" = "Couldn't reach the plugins repo. Check your connection and refresh.";
+"settings.plugins.may_open" = "Let plugins open the island";
+"settings.plugins.may_open_help" = "A plugin may open the island on its tab, e.g. when a timer ends; at most every 10 seconds, and never over something you're using";
+"settings.plugins.status_running" = "Running";
+"settings.plugins.status_off" = "Off: turn its tab on under Tabs";
+"settings.plugins.status_stopped" = "Stopped: %@";
 "settings.plugins.install" = "Install";
 "settings.plugins.update" = "Update";
 "settings.plugins.remove" = "Remove";
@@ -57,6 +63,9 @@
 "settings.plugins.confirm_title" = "Install this plugin?";
 "settings.plugins.confirm_message" = "%@ runs as a program on your Mac. Install plugins you trust.";
 "plugins.tab.empty" = "Nothing to show yet";
+"plugins.tab.stopped" = "%@ stopped";
+"plugins.tab.restart" = "Restart";
+"plugins.tab.cancel" = "Cancel";
 "plugins.tab.missing" = "This plugin isn't installed";
 "settings.tabs.limit" = "Hide a tab first: the island shows at most 6.";
 "settings.startup.header" = "Startup";

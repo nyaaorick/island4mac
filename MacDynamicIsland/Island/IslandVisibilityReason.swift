@@ -9,5 +9,6 @@ enum IslandVisibilityReason: Equatable {
     case userExpanded       // User explicitly clicked to expand
     case hotkey             // User triggered via hotkey
     case agentPrompt        // An agent asks you something you can answer in the island
+    case plugin             // A plugin asked to show its tab ({"type":"open"})
     case none               // Hidden state
 }

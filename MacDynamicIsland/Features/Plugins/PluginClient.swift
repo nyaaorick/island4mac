@@ -8,30 +8,38 @@ import os
 final class PluginClient {
     let manifest: PluginManifest
     let folder: URL
+    /// The plugin's own folder for what it keeps (ISLAND_DATA_DIR): outside its install folder, so updates keep it
+    let dataFolder: URL
     /// Every message, in the order the plugin wrote them
     var onMessage: (PluginMessage) -> Void = { _ in }
     /// A new process started (the first, or one after an exit): it begins with nothing shown
     var onLaunch: () -> Void = {}
-    /// The plugin stopped for good: it kept exiting, or it couldn't be started
-    var onGiveUp: () -> Void = {}
+    /// The plugin stopped for good: it kept exiting, or it couldn't be started. With the reason
+    var onGiveUp: (String) -> Void = { _ in }
 
     /// A line longer than this is dropped, with everything up to its end
     static let maxLineLength = 64 * 1024
+    /// How long a plugin gets to quit after being asked, before it and everything it started are killed
+    static let terminationGrace: TimeInterval = 2
+    /// Lines of its stderr kept to say why it stopped
+    static let keptErrorLines = 5
 
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "Plugin")
     private let restartDelay: TimeInterval
-    private var process: Process?
-    private var input: Pipe?
-    private var output: Pipe?
+    private(set) var process: PluginProcess?
     private var outputBuffer = Data()
     /// Dropping the rest of an overlong line until its newline
     private var skippingLine = false
+    private var errorBuffer = Data()
+    /// The last lines the plugin wrote to stderr, newest last
+    private(set) var recentErrors: [String] = []
     private var recentExits: [Date] = []
     private(set) var isRunning = false
 
-    init(manifest: PluginManifest, folder: URL, restartDelay: TimeInterval = 1) {
+    init(manifest: PluginManifest, folder: URL, dataFolder: URL, restartDelay: TimeInterval = 1) {
         self.manifest = manifest
         self.folder = folder
+        self.dataFolder = dataFolder
         self.restartDelay = restartDelay
     }
 
@@ -41,80 +49,82 @@ final class PluginClient {
         launch()
     }
 
+    /// Starts a plugin that was given up on, with a clean slate
+    func restart() {
+        stop()
+        recentExits.removeAll()
+        recentErrors.removeAll()
+        start()
+    }
+
+    /// Asks it to quit; it and everything it started are killed if it's still there after terminationGrace
     func stop() {
         isRunning = false
-        // At end of file a readability handler is called again and again with no data, so it must go with the
-        // process: the termination handler that would clear it is cleared right here
-        output?.fileHandleForReading.readabilityHandler = nil
-        output = nil
-        process?.terminationHandler = nil
-        try? input?.fileHandleForWriting.close()
-        process?.terminate()
+        process?.terminate(grace: Self.terminationGrace)
         process = nil
-        input = nil
+    }
+
+    /// Forgets the process without signalling it, for stopForQuit, which ends every plugin together
+    func stopWithoutKilling() {
+        isRunning = false
+        process = nil
     }
 
     func send(_ event: PluginEvent) {
-        guard let input else { return }
-        // A plugin that has just exited makes this fail; SIGPIPE is ignored (PluginStore), so it only throws
-        do {
-            try input.fileHandleForWriting.write(contentsOf: event.line)
-        } catch {
-            logger.warning("Plugin \(self.manifest.id, privacy: .public) isn't reading its input: \(error.localizedDescription, privacy: .public)")
+        guard let process else { return }
+        if !process.write(event.line) {
+            logger.warning("Plugin \(self.manifest.id, privacy: .public) isn't reading its input; an event was dropped")
         }
+    }
+
+    /// What a plugin learns about where it runs, beside the environment it inherits
+    var environment: [String: String] {
+        var environment = ProcessInfo.processInfo.environment
+        environment["ISLAND_PROTOCOL"] = String(PluginManifest.supportedProtocol)
+        environment["ISLAND_PLUGIN_ID"] = manifest.id
+        environment["ISLAND_DATA_DIR"] = dataFolder.path
+        environment["ISLAND_APP_VERSION"] = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+        return environment
     }
 
     private func launch() {
-        let process = Process()
-        process.executableURL = manifest.executableURL(in: folder)
-        process.arguments = Array(manifest.command.dropFirst())
-        process.currentDirectoryURL = folder
-
-        let input = Pipe()
-        let output = Pipe()
-        process.standardInput = input
-        process.standardOutput = output
-        process.standardError = FileHandle.nullDevice
-
         outputBuffer.removeAll()
         skippingLine = false
-        output.fileHandleForReading.readabilityHandler = { [weak self] handle in
-            let chunk = handle.availableData
-            // End of file: stop listening, or this is called again at once, forever
-            guard !chunk.isEmpty else {
-                handle.readabilityHandler = nil
-                return
-            }
-            // A line can span chunks, so keep them in order (Task hops don't guarantee that)
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated { self?.consume(chunk) }
-            }
-        }
-        process.terminationHandler = { [weak self] process in
-            output.fileHandleForReading.readabilityHandler = nil
-            let status = process.terminationStatus
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated { self?.didExit(status: status) }
-            }
-        }
+        errorBuffer.removeAll()
+        try? FileManager.default.createDirectory(at: dataFolder, withIntermediateDirectories: true)
 
+        let spawned: PluginProcess
         do {
-            try process.run()
-            self.process = process
-            self.input = input
-            self.output = output
-            onLaunch()
+            spawned = try PluginProcess.spawn(
+                executable: manifest.executableURL(in: folder),
+                arguments: Array(manifest.command.dropFirst()),
+                directory: folder,
+                environment: environment,
+                // A line can span chunks, so keep them in order (Task hops don't guarantee that)
+                onOutput: { [weak self] chunk in
+                    DispatchQueue.main.async { MainActor.assumeIsolated { self?.consume(chunk) } }
+                },
+                onError: { [weak self] chunk in
+                    DispatchQueue.main.async { MainActor.assumeIsolated { self?.consumeErrors(chunk) } }
+                },
+                onExit: { [weak self] status in
+                    DispatchQueue.main.async { MainActor.assumeIsolated { self?.didExit(status: status) } }
+                }
+            )
         } catch {
-            logger.error("Plugin \(self.manifest.id, privacy: .public) failed to start: \(error.localizedDescription, privacy: .public)")
+            logger.error("Plugin \(self.manifest.id, privacy: .public) failed to start: \(String(describing: error), privacy: .public)")
             isRunning = false
-            onGiveUp()
+            onGiveUp(String(describing: error))
+            return
         }
+        process = spawned
+        onLaunch()
     }
 
     private func didExit(status: Int32) {
-        process = nil
-        input = nil
-        output = nil
+        // An exit of a process already replaced (restart) or stopped
+        guard let process, process.exited else { return }
+        self.process = nil
         guard isRunning else { return }
 
         // Start it again, but give up if it keeps exiting
@@ -123,7 +133,7 @@ final class PluginClient {
         guard recentExits.count <= 5 else {
             logger.error("Plugin \(self.manifest.id, privacy: .public) keeps exiting (status \(status)); giving up")
             isRunning = false
-            onGiveUp()
+            onGiveUp(recentErrors.last ?? "exited \(recentExits.count) times in a minute (status \(status))")
             return
         }
         logger.warning("Plugin \(self.manifest.id, privacy: .public) exited with status \(status); restarting")
@@ -131,6 +141,18 @@ final class PluginClient {
             guard let self, self.isRunning, self.process == nil else { return }
             self.launch()
         }
+    }
+
+    private func consumeErrors(_ chunk: Data) {
+        errorBuffer.append(chunk)
+        while let newline = errorBuffer.firstIndex(of: UInt8(ascii: "\n")) {
+            let line = String(decoding: errorBuffer[errorBuffer.startIndex..<newline], as: UTF8.self)
+            errorBuffer = Data(errorBuffer[errorBuffer.index(after: newline)...])
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard !trimmed.isEmpty else { continue }
+            recentErrors = Array((recentErrors + [String(trimmed.prefix(PluginMessage.maxTextLength))]).suffix(Self.keptErrorLines))
+        }
+        if errorBuffer.count > Self.maxLineLength { errorBuffer.removeAll() }
     }
 
     // MARK: - Reading
