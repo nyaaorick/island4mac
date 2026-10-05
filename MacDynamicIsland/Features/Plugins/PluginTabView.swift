@@ -47,7 +47,7 @@ struct PluginTabView: View {
         // The plugin may update often while its tab shows and rest otherwise (counted across displays)
         .onAppear {
             plugins.tabAppeared(pluginID)
-            player.start(builtIn: nil, plugins: plugins)
+            player.start(plugins: plugins)
         }
         .onDisappear { plugins.tabDisappeared(pluginID) }
     }

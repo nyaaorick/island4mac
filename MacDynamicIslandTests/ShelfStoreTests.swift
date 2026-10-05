@@ -41,10 +41,4 @@ final class ShelfStoreTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: legacy.path), "moved, not copied")
         XCTAssertEqual(ShelfStore(folder: folder.appendingPathComponent("files"), legacyFile: legacy).items.map(\.url.path), ["/tmp/old.pdf"])
     }
-
-    func testEmptyShelfOffersOneLargeButton() {
-        let store = ShelfStore(folder: FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString))
-        XCTAssertEqual(store.islandContent.buttons.map(\.id), ["choose"])
-        XCTAssertTrue(store.islandContent.cards.isEmpty)
-    }
 }

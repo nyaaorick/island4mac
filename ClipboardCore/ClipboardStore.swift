@@ -3,8 +3,8 @@ import AppKit
 import Combine
 
 /// Your clipboard history, newest first, kept in its own folder: `history.json` and a file per copied picture.
-/// The folder is the Clipboard plugin's data folder (PluginData/clipboard), so the history is already where the
-/// plugin will keep it. No SwiftUI and no island in here: the tab animates its own changes
+/// The folder is the Clipboard plugin's data folder (PluginData/clipboard). The Clipboard plugin's logic; also
+/// compiled into the app, for its tests. No SwiftUI and no island in here
 @MainActor
 final class ClipboardStore: ObservableObject {
     /// What you can set: how many items it keeps and for how long
@@ -93,10 +93,10 @@ final class ClipboardStore: ObservableObject {
         guard let app = app ?? frontmostApps.previousApp, !app.isTerminated else { return }
         app.activate(options: [])
         Task {
-            // Activating takes a moment. If it doesn't come forward the item stays on the clipboard,
-            // rather than being pasted into whatever is in front
+            // Activating takes a moment (from a plugin, the island hands it back as it closes). If it doesn't come
+            // forward the item stays on the clipboard, rather than being pasted into whatever is in front
             var isInFront: Bool { NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier }
-            for _ in 0..<20 {
+            for _ in 0..<60 {
                 if isInFront { break }
                 try? await Task.sleep(for: .milliseconds(25))
             }

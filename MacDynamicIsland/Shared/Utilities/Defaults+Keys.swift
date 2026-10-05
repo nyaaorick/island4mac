@@ -42,18 +42,17 @@ final class SettingsDefaults: ObservableObject {
     static let coloredSpectrogram = SettingsKey(key: "coloredSpectrogram", defaultValue: true)
     static let useMusicVisualizer = SettingsKey(key: "useMusicVisualizer", defaultValue: true)
     static let enableLyrics = SettingsKey(key: "enableLyrics", defaultValue: true)
+    /// Read once to carry it over to the Music plugin's preferences (AppIntegration)
     static let lyricsSource = SettingsKey(key: "lyricsSource", defaultValue: "auto")
     static let musicControlSlotLimit = SettingsKey(key: "musicControlSlotLimit", defaultValue: 5)
     static let sliderColor = SettingsKey(key: "sliderColor", defaultValue: "white")
 
     // MARK: - Clipboard
+    // The clipboard's settings before it was a plugin, read once to carry them over to its preferences (AppIntegration)
     static let clipboardMaxItems = SettingsKey(key: "clipboardMaxItems", defaultValue: 50)
     /// 0: forever
     static let clipboardKeepHours = SettingsKey(key: "clipboardKeepHours", defaultValue: 24)
 
-    // MARK: - Shelf
-    static let boringShelf = SettingsKey(key: "boringShelf", defaultValue: true)
-    
     // MARK: - Gestures
     static let enableGestures = SettingsKey(key: "enableGestures", defaultValue: true)
     
@@ -75,7 +74,6 @@ final class SettingsDefaults: ObservableObject {
     /// UUID of the display chosen for the island (NSScreen.displayUUID); empty: the built-in display
     static let preferredDisplayUUID = SettingsKey(key: "preferredDisplayUUID", defaultValue: "")
     static let automaticallySwitchDisplay = SettingsKey(key: "automaticallySwitchDisplay", defaultValue: true)
-    static let expandedDragDetection = SettingsKey(key: "expandedDragDetection", defaultValue: true)
     /// Hide the island on a display while the app that's playing shows its video there in full screen
     static let hideForFullScreenVideo = SettingsKey(key: "hideForFullScreenVideo", defaultValue: true)
 

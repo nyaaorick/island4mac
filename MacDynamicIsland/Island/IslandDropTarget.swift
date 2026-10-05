@@ -1,13 +1,13 @@
 import Foundation
 
-/// Which tabs take what you drop on the island: the built-in Files tab, and plugin tabs whose plugin.json
-/// "accepts" files (protocol 5). The island does the dragging part for all of them: it opens on the first such
+/// Which tabs take what you drop on the island: those whose plugin's plugin.json "accepts" files (protocol 5),
+/// the bundled Files plugin among them. The island does the dragging part for all of them: it opens on the first such
 /// tab when a drag nears the notch, shows where to drop (IslandDropZone), reads the drop and hands it over
 @MainActor
 enum IslandDropTarget {
     /// Whether this tab takes drops
     static func accepts(_ tab: IslandTab, plugins: PluginStore = .shared) -> Bool {
-        guard let pluginID = pluginID(of: tab, plugins: plugins) else { return tab == .files }
+        guard let pluginID = pluginID(of: tab, plugins: plugins) else { return false }
         return plugins.installed.first { $0.id == pluginID }?.manifest.acceptsFiles == true && plugins.isEnabled(pluginID)
     }
 
@@ -30,11 +30,8 @@ enum IslandDropTarget {
         guard !drop.isEmpty else { return }
         if let last = lastDelivered, last.drop == drop, Date().timeIntervalSince(last.at) < 2 { return }
         lastDelivered = (drop, Date())
-        if let pluginID = pluginID(of: tab, plugins: plugins) {
-            plugins.send(.drop(paths: drop.paths, urls: drop.urls), to: pluginID)
-        } else if tab == .files {
-            ShelfStore.shared.add(paths: drop.paths, urls: drop.urls)
-        }
+        guard let pluginID = pluginID(of: tab, plugins: plugins) else { return }
+        plugins.send(.drop(paths: drop.paths, urls: drop.urls), to: pluginID)
     }
 
     /// The plugin drawing a tab: a plugin tab's, or the one that took over a built-in tab

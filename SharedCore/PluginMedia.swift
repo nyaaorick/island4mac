@@ -3,7 +3,7 @@ import Foundation
 /// What's playing, from a plugin (protocol 5): data only. The island draws it with its own player (artwork,
 /// lyrics, progress, controls, spectrum), runs the progress itself from `elapsed`, `at` and `rate`, and sends
 /// taps on the controls back as PluginEvent.control and .seek. Also how the island knows what plays, to hide for
-/// a full-screen video of that app (`app`)
+/// a full-screen video of that app (`app`). Shared with the Music plugin, which makes it (MusicStore)
 ///
 ///     {"type":"media","title":"Song","artist":"Artist","album":"Album","artwork":{"url":"https://…/cover.jpg"},
 ///      "app":"com.spotify.client","playing":true,"elapsed":42.0,"at":1767225600.0,"duration":215.0,"rate":1.0}
@@ -23,17 +23,6 @@ struct PluginMedia: Decodable, Equatable {
     var duration: Double?
     /// 1 is normal speed; the island counts at it while playing
     var rate: Double?
-
-    var trimmed: PluginMedia {
-        var media = self
-        media.title = PluginMessage.cut(title)
-        media.artist = PluginMessage.cut(artist)
-        media.album = PluginMessage.cut(album)
-        media.elapsed = elapsed.map { max($0.isFinite ? $0 : 0, 0) }
-        media.duration = duration.flatMap { $0.isFinite && $0 > 0 ? $0 : nil }
-        media.rate = rate.map { $0.isFinite ? min(max($0, 0), 16) : 1 }
-        return media
-    }
 
     /// Where playback is at `date`: counted on from `elapsed` while playing, never past the end
     func position(at date: Date) -> Double {
@@ -57,10 +46,6 @@ struct PluginLyricLine: Decodable, Equatable {
 
     /// A track has at most this many lines
     static let maxCount = 1000
-
-    var trimmed: PluginLyricLine {
-        PluginLyricLine(time: time.flatMap { $0.isFinite && $0 >= 0 ? $0 : nil }, text: PluginMessage.cut(text))
-    }
 }
 
 extension Array where Element == PluginLyricLine {

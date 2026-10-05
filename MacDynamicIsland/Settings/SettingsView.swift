@@ -56,7 +56,7 @@ public final class SettingsWindowController: NSObject {
 
 /// One page of the settings window
 enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, appearance, tabs, plugins, media, clipboard, shelf, shortcuts, advanced, about
+    case general, appearance, tabs, plugins, media, shortcuts, advanced, about
 
     var id: String { rawValue }
 
@@ -67,8 +67,6 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .tabs: return L("settings.tab.tabs")
         case .plugins: return L("settings.tab.plugins")
         case .media: return L("settings.tab.media")
-        case .clipboard: return L("settings.tab.clipboard")
-        case .shelf: return L("settings.tab.shelf")
         case .shortcuts: return L("settings.tab.shortcuts")
         case .advanced: return L("settings.tab.advanced")
         case .about: return L("settings.tab.about")
@@ -82,8 +80,6 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .tabs: return "square.grid.3x2"
         case .plugins: return "puzzlepiece.extension"
         case .media: return "music.note"
-        case .clipboard: return "doc.on.clipboard"
-        case .shelf: return "shippingbox"
         case .shortcuts: return "keyboard"
         case .advanced: return "slider.horizontal.3"
         case .about: return "info.circle"
@@ -128,8 +124,6 @@ struct MainSettingsView: View {
         case .tabs: TabsSettingsView()
         case .plugins: PluginsSettingsView()
         case .media: MediaSettingsView()
-        case .clipboard: ClipboardSettingsView(clipboardStore: IslandController.shared.getAppState().clipboardStore)
-        case .shelf: ShelfSettingsView()
         case .shortcuts: ShortcutsSettingsView()
         case .advanced: AdvancedSettingsView()
         case .about: AboutView()

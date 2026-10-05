@@ -1,8 +1,8 @@
 import AppKit
 import Combine
 
-/// What the island shows as playing: one track, picked from everything that reports one in the plugin protocol's
-/// `media` (the built-in Music, and plugins such as a Spotify or YouTube one). The player views, the music beside
+/// What the island shows as playing: one track, picked from every plugin that reports one in the plugin protocol's
+/// `media` (the bundled Music plugin, and others such as a Spotify or YouTube one). The player views, the music beside
 /// the notch, the track-change peek and the full-screen video check all read it here. A playing source wins over
 /// a paused one, then the one that changed last. Taps on the controls go back to whichever it came from
 @MainActor
@@ -11,8 +11,6 @@ final class NowPlayingStore: ObservableObject {
 
     /// Where a track comes from
     enum Source: Hashable {
-        /// The built-in Music (MusicStore)
-        case builtIn
         case plugin(String)
     }
 
@@ -30,7 +28,6 @@ final class NowPlayingStore: ObservableObject {
 
     /// Every source's track, and when it last changed
     private var tracks: [Source: (playing: NowPlaying, changed: Date)] = [:]
-    private var builtIn: MusicStore?
     private var plugins: PluginStore?
     private var cancellables = Set<AnyCancellable>()
     private var artworkTask: Task<Void, Never>?
@@ -45,18 +42,10 @@ final class NowPlayingStore: ObservableObject {
         self.only = only
     }
 
-    /// Starts listening to the built-in Music and to plugins' `media` and `lyrics`
-    func start(builtIn music: MusicStore?, plugins: PluginStore) {
-        builtIn = music
+    /// Starts listening to plugins' `media` and `lyrics`
+    func start(plugins: PluginStore) {
         self.plugins = plugins
         cancellables.removeAll()
-        if let music {
-            music.$media.combineLatest(music.$lyrics)
-                .sink { [weak self] media, lyrics in
-                    MainActor.assumeIsolated { self?.update(media, lyrics: lyrics, from: .builtIn) }
-                }
-                .store(in: &cancellables)
-        }
         plugins.$contents
             .sink { [weak self] contents in
                 MainActor.assumeIsolated { self?.updatePlugins(contents) }
@@ -152,10 +141,8 @@ final class NowPlayingStore: ObservableObject {
 
     func seek(to position: Double) {
         guard var playing = current else { return }
-        switch playing.source {
-        case .builtIn: builtIn?.seek(to: position)
-        case .plugin(let pluginID): plugins?.send(.seek(position), to: pluginID)
-        }
+        guard case .plugin(let pluginID) = playing.source else { return }
+        plugins?.send(.seek(position), to: pluginID)
         // Shown at once, while the player catches up
         playing.media.elapsed = max(0, position)
         playing.media.at = Date().timeIntervalSince1970
@@ -163,10 +150,7 @@ final class NowPlayingStore: ObservableObject {
     }
 
     private func control(_ command: String) {
-        switch current?.source {
-        case .builtIn: builtIn?.control(command)
-        case .plugin(let pluginID): plugins?.send(.control(command), to: pluginID)
-        case nil: break
-        }
+        guard case .plugin(let pluginID) = current?.source else { return }
+        plugins?.send(.control(command), to: pluginID)
     }
 }

@@ -85,14 +85,12 @@ struct ExpandedIslandRegion: View {
             Group {
                 switch appState.currentSection {
                 case .music:
+                    // The island's player, for whatever plays: the Music plugin's track, or another plugin's
                     ExpandedMusicView(musicStore: NowPlayingStore.shared, animation: animation)
-                case .clipboard:
-                    ClipboardView(store: appState.clipboardStore)
-                case .files:
-                    ShelfView()
-                case .agents:
-                    // Drawn by the Agents plugin that ships in the app
-                    PluginTabView(pluginID: PluginStore.shared.replacesBuiltInTab(.agents) ?? "agents")
+                case .clipboard, .files, .agents:
+                    // Drawn by the plugins that ship in the app
+                    PluginTabView(pluginID: IslandTab.builtInTabsOfPlugins.first { $0.value == appState.currentSection }?.key ?? "")
+                        .id(appState.currentSection)
                 default:
                     PluginTabView(pluginID: appState.currentSection.pluginID ?? "")
                         // A fresh view per plugin, so switching between two plugin tabs tells both

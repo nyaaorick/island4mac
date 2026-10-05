@@ -9,7 +9,7 @@ A macOS menu bar app that turns the MacBook notch into a "Dynamic Island".
 - **Clipboard**: clipboard history
 - **Files**: a drag-and-drop file shelf
 - **Themes**: solid black, or Liquid Glass like Control Center
-- **Tabs and plugins**: pick up to 6 tabs; plugins add more (a timer comes with the repo, in `Plugins/`). Write your own with IslandKit, the Swift SDK in [island4mac-plugins](https://github.com/nyaaorick/island4mac-plugins)
+- **Tabs and plugins**: pick up to 6 tabs; Music, Clipboard, Files and Agents are plugins that ship in the app, and plugins add more (a timer comes with the repo, in `Plugins/`). Write your own with IslandKit, the Swift SDK in [island4mac-plugins](https://github.com/nyaaorick/island4mac-plugins)
 
 ## Requirements
 

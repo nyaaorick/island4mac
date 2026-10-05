@@ -35,21 +35,8 @@ struct MediaSettingsView: View {
                 ToggleSettingsRow(
                     key: SettingsDefaults.enableLyrics,
                     title: "Show lyrics",
-                    help: "Show synced lyrics below the track when available"
+                    help: "Show synced lyrics below the track when available. Where they come from is the Music plugin's setting, under Plugins"
                 )
-
-                Picker("Lyrics source", selection: Binding(
-                    get: { SettingsDefaults.shared.get(SettingsDefaults.lyricsSource) },
-                    set: {
-                        SettingsDefaults.shared.set(SettingsDefaults.lyricsSource, value: $0)
-                        MusicStore.shared.settings.lyricsSource = $0
-                    }
-                )) {
-                    Text("Auto (best match)").tag("auto")
-                    Text("LrcLib").tag("lrclib")
-                    Text("NetEase Cloud Music").tag("netease")
-                }
-                .pickerStyle(.menu)
             }
 
             Section {

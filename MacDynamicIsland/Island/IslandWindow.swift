@@ -53,7 +53,6 @@ final class IslandWindow {
             // When the app is in the background, the first click on the island activates the window; by default that click isn't passed to buttons or tap gestures, so it would take two clicks to respond
             .allowsWindowActivationEvents()
             .environmentObject(appState)
-            .environmentObject(appState.clipboardStore)
             .ignoresSafeArea()
             // Pinned dark like the panel, so SwiftUI never resolves a semantic color for a light system appearance
             .environment(\.colorScheme, .dark)

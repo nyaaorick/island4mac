@@ -1,0 +1,34 @@
+{
+  "background" : true,
+  "command" : [
+    "./music"
+  ],
+  "description" : "What plays on your Mac, with synced lyrics",
+  "id" : "music",
+  "name" : "Music",
+  "preferences" : [
+    {
+      "default" : "auto",
+      "key" : "lyricsSource",
+      "kind" : "choice",
+      "options" : [
+        {
+          "title" : "auto",
+          "value" : "auto"
+        },
+        {
+          "title" : "lrclib",
+          "value" : "lrclib"
+        },
+        {
+          "title" : "netease",
+          "value" : "netease"
+        }
+      ],
+      "title" : "Lyrics from"
+    }
+  ],
+  "protocol" : 4,
+  "symbol" : "music.note",
+  "version" : "1.0.0"
+}

@@ -136,13 +136,8 @@ final class IslandController: NSObject {
     }
 
     private func setupNowPlaying() {
-        // What plays: the built-in Music and any plugin that reports media
-        NowPlayingStore.shared.start(builtIn: MusicStore.shared, plugins: .shared)
-
-        // Unit tests are hosted inside the app: don't connect the music module, so tests don't send Apple Events to the player or pop up an authorization dialog
-        guard !BuildConfig.isRunningUnitTests else { return }
-        MusicStore.shared.connect(to: NowPlayingClient(
-            adapterURL: Bundle.main.privateFrameworksURL?.appendingPathComponent("libMediaRemoteAdapter.dylib")))
+        // What plays: the Music plugin's track, and any other plugin that reports media
+        NowPlayingStore.shared.start(plugins: .shared)
     }
 
     private func setupObservers() {

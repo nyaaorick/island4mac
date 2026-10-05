@@ -24,7 +24,7 @@ struct IslandTab: RawRepresentable, Hashable {
     }
 
     /// Plugins that ship in the app and draw a built-in tab: its place and name stay yours
-    static let builtInTabsOfPlugins: [String: IslandTab] = ["agents": .agents]
+    static let builtInTabsOfPlugins: [String: IslandTab] = ["music": .music, "clipboard": .clipboard, "files": .files, "agents": .agents]
 
     /// Where a plugin shows: the built-in tab it took over, or a tab of its own
     static func tab(forPlugin id: String) -> IslandTab {

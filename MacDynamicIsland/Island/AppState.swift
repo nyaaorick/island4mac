@@ -10,7 +10,6 @@ final class AppState: ObservableObject {
     let settingsStore = SettingsDefaults.shared
 
     // Clipboard history shown in the clipboard tab
-    let clipboardStore: ClipboardStore
     /// Only the main island watches for files dragged to the notch; the drag detector knows one region
     private let tracksDrags: Bool
 
@@ -70,15 +69,8 @@ final class AppState: ObservableObject {
     private var tabsCancellable: AnyCancellable?
     private var autoCloseTimer: Timer?
 
-    /// State of one island. The main one owns the clipboard history and watches for dragged files;
-    /// islands on the other displays (with "all screens" on) share its history
+    /// State of one island. The main one watches for dragged files
     init(sharingWith main: AppState? = nil) {
-        clipboardStore = main?.clipboardStore ?? ClipboardStore(
-            // The Clipboard plugin's data folder
-            folder: PluginStore.defaultDataFolder.appendingPathComponent("clipboard", isDirectory: true),
-            settings: ClipboardStore.Settings(
-            maxItems: SettingsDefaults.shared.get(SettingsDefaults.clipboardMaxItems),
-            keepHours: SettingsDefaults.shared.get(SettingsDefaults.clipboardKeepHours)))
         tracksDrags = main == nil
 
         // Sync setting changes to AppState triggers
@@ -97,9 +89,6 @@ final class AppState: ObservableObject {
         currentSection = TabStore.shared.enabledTabs.first ?? .music
 
         guard main == nil else { return }
-        // Clipboard polling is started by AppIntegration; only load history here
-        clipboardStore.load()
-
         // Start the global drag detector (Boring Notch style)
         setupGlobalDragMonitor()
     }

@@ -2,7 +2,7 @@
 
 ## Next
 
-- Wire up the settings that exist in the UI but have no effect yet: menu bar icon toggle, window shadow, lighting effect, gradient background, colored spectrum, control slot limit, slider color, shelf on/off, show on all displays and the display picker, enlarged drop area, settings icon in the notch, idle face, notch height, remember last tab.
+- Wire up the settings that exist in the UI but have no effect yet: menu bar icon toggle, window shadow, lighting effect, gradient background, colored spectrum, control slot limit, slider color, show on all displays and the display picker, settings icon in the notch, idle face, notch height, remember last tab.
 - Add AppIcon images (the asset set is empty).
 - Implement the QQ Music lyrics source (`LyricsClient` is a stub).
 
@@ -15,9 +15,10 @@
 
 ## Plugins
 
-Built: up to 6 tabs, out-of-process plugins drawn in the island's own look, the plugins repo (github.com/nyaaorick/island4mac-plugins) with the timer, Settings > Tabs and Settings > Plugins. IslandKit, the Swift SDK and `island-plugin` tool there (declarative body, @State, @Stored, CLI with live reload, CI that releases and indexes plugins); plugin preferences (protocol 2); on-demand plugins with timelines and @Fetched (protocol 3). Installing, updating or removing one plugin restarts only that one. Later:
+Built: up to 6 tabs, out-of-process plugins drawn in the island's own look, the plugins repo (github.com/nyaaorick/island4mac-plugins) with the timer, Settings > Tabs and Settings > Plugins. IslandKit, the Swift SDK and `island-plugin` tool there (declarative body, @State, @Stored, CLI with live reload, CI that releases and indexes plugins); plugin preferences (protocol 2); on-demand plugins with timelines and @Fetched (protocol 3); pictures, row actions, background and high-priority plugins (protocol 4); cards, drops and media (protocol 5). Music, Clipboard, Files and Agents ship as bundled plugins. Installing, updating or removing one plugin restarts only that one. Later:
 
-- Music, clipboard and files as bundled plugins, the way Agents is.
+- Label the bundled plugins' choices (IslandKit shows an option's value: "24" rather than "24 hours").
+- Write the oldest protocol a plugin's content needs into its plugin.json (Media needs 5; today only the declarations count).
 - A native UI for plugins that need more than the protocol (a UI bundle loaded into the app, with library validation off).
 - Compare versions by order, not just difference (no offering a downgrade as an update).
 - Sign plugin builds with a Developer ID in the plugins repo's CI (they are ad-hoc signed now).

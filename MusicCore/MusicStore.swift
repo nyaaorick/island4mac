@@ -186,7 +186,7 @@ final class MusicStore: ObservableObject {
         }
         // After a track change, the old request's result is dropped
         guard !Task.isCancelled else { return }
-        lyrics = Array(lines.prefix(PluginLyricLine.maxCount)).map(\.trimmed)
+        lyrics = Array(lines.prefix(PluginLyricLine.maxCount))
     }
 
     /// Lyrics without times, a line each, with any leftover time tags taken out

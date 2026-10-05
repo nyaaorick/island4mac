@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4D524107000000000000000F /* music in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241070000000000000005 /* music */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241070000000000000010 /* plugin.json in Embed Bundled Plugin music */ = {isa = PBXBuildFile; fileRef = 4D5241070000000000000004 /* plugin.json */; };
+		4D5241070000000000000012 /* IslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5241070000000000000011 /* IslandKit */; };
+		4D524106000000000000000F /* files in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000005 /* files */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241060000000000000010 /* plugin.json in Embed Bundled Plugin files */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000004 /* plugin.json */; };
+		4D5241060000000000000012 /* IslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5241060000000000000011 /* IslandKit */; };
+		4D524105000000000000000F /* clipboard in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241050000000000000005 /* clipboard */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241050000000000000010 /* plugin.json in Embed Bundled Plugin clipboard */ = {isa = PBXBuildFile; fileRef = 4D5241050000000000000004 /* plugin.json */; };
+		4D5241050000000000000012 /* IslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5241050000000000000011 /* IslandKit */; };
 		4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D5241020000000000000016 /* island-claude-hook in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000012 /* island-claude-hook */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D5241040000000000000010 /* agents in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241040000000000000006 /* agents */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
@@ -15,6 +24,27 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		4D524107000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241070000000000000006;
+			remoteInfo = MusicPlugin;
+		};
+		4D524106000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241060000000000000006;
+			remoteInfo = FilesPlugin;
+		};
+		4D524105000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241050000000000000006;
+			remoteInfo = ClipboardPlugin;
+		};
 		3AC496CAE455ED04B550BBB2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
@@ -46,6 +76,39 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		4D524107000000000000000E /* Embed Bundled Plugin music */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Plugins/music;
+			dstSubfolderSpec = 7;
+			files = (
+				4D5241070000000000000010 /* plugin.json in Embed Bundled Plugin music */,
+			);
+			name = "Embed Bundled Plugin music";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D524106000000000000000E /* Embed Bundled Plugin files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Plugins/files;
+			dstSubfolderSpec = 7;
+			files = (
+				4D5241060000000000000010 /* plugin.json in Embed Bundled Plugin files */,
+			);
+			name = "Embed Bundled Plugin files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D524105000000000000000E /* Embed Bundled Plugin clipboard */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Plugins/clipboard;
+			dstSubfolderSpec = 7;
+			files = (
+				4D5241050000000000000010 /* plugin.json in Embed Bundled Plugin clipboard */,
+			);
+			name = "Embed Bundled Plugin clipboard";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		4D52410100000000000000A9 /* Embed Libraries */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -65,6 +128,9 @@
 			files = (
 				4D5241020000000000000016 /* island-claude-hook in Embed Helpers */,
 				4D5241040000000000000010 /* agents in Embed Helpers */,
+				4D524105000000000000000F /* clipboard in Embed Helpers */,
+				4D524106000000000000000F /* files in Embed Helpers */,
+				4D524107000000000000000F /* music in Embed Helpers */,
 			);
 			name = "Embed Helpers";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -83,6 +149,12 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4D5241070000000000000004 /* plugin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = plugin.json; sourceTree = "<group>"; };
+		4D5241070000000000000005 /* music */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = music; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D5241060000000000000004 /* plugin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = plugin.json; sourceTree = "<group>"; };
+		4D5241060000000000000005 /* files */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = files; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D5241050000000000000004 /* plugin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = plugin.json; sourceTree = "<group>"; };
+		4D5241050000000000000005 /* clipboard */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = clipboard; sourceTree = BUILT_PRODUCTS_DIR; };
 		51E49FAB2F0B8D41002AD746 /* MacDynamicIsland.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "MacDynamicIsland.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		16699883D1FCA93359C8C3D6 /* MacDynamicIslandTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "MacDynamicIslandTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMediaRemoteAdapter.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -102,6 +174,41 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		4D5241070000000000000001 /* MusicCore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MusicCore;
+			sourceTree = "<group>";
+		};
+		4D5241070000000000000002 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		4D5241060000000000000001 /* FilesCore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = FilesCore;
+			sourceTree = "<group>";
+		};
+		4D5241060000000000000002 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		4D5241050000000000000001 /* ClipboardCore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ClipboardCore;
+			sourceTree = "<group>";
+		};
+		4D5241050000000000000002 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		4D5241080000000000000001 /* SharedCore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SharedCore;
+			sourceTree = "<group>";
+		};
 		4D52410300000000000000A1 /* MacDynamicIsland */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -138,6 +245,30 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		4D5241070000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D5241070000000000000012 /* IslandKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241060000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D5241060000000000000012 /* IslandKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241050000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D5241050000000000000012 /* IslandKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		51E49FA82F0B8D41002AD746 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -177,6 +308,33 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4D5241070000000000000003 /* music */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241070000000000000004 /* plugin.json */,
+				4D5241070000000000000002 /* Sources */,
+			);
+			path = music;
+			sourceTree = "<group>";
+		};
+		4D5241060000000000000003 /* files */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241060000000000000004 /* plugin.json */,
+				4D5241060000000000000002 /* Sources */,
+			);
+			path = files;
+			sourceTree = "<group>";
+		};
+		4D5241050000000000000003 /* clipboard */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241050000000000000004 /* plugin.json */,
+				4D5241050000000000000002 /* Sources */,
+			);
+			path = clipboard;
+			sourceTree = "<group>";
+		};
 		51E49FA22F0B8D41002AD746 = {
 			isa = PBXGroup;
 			children = (
@@ -186,6 +344,10 @@
 				4D5241040000000000000004 /* BundledPlugins */,
 				4D52410300000000000000A5 /* Helpers */,
 				51E49FAC2F0B8D41002AD746 /* Products */,
+				4D5241080000000000000001 /* SharedCore */,
+				4D5241050000000000000001 /* ClipboardCore */,
+				4D5241060000000000000001 /* FilesCore */,
+				4D5241070000000000000001 /* MusicCore */,
 			);
 			sourceTree = "<group>";
 		};
@@ -206,6 +368,9 @@
 				4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */,
 				4D5241020000000000000012 /* island-claude-hook */,
 				4D5241040000000000000006 /* agents */,
+				4D5241050000000000000005 /* clipboard */,
+				4D5241060000000000000005 /* files */,
+				4D5241070000000000000005 /* music */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -214,6 +379,9 @@
 			isa = PBXGroup;
 			children = (
 				4D5241040000000000000003 /* agents */,
+				4D5241050000000000000003 /* clipboard */,
+				4D5241060000000000000003 /* files */,
+				4D5241070000000000000003 /* music */,
 			);
 			path = BundledPlugins;
 			sourceTree = "<group>";
@@ -230,6 +398,78 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4D5241070000000000000006 /* MusicPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D5241070000000000000009 /* Build configuration list for PBXNativeTarget "MusicPlugin" */;
+			buildPhases = (
+				4D5241070000000000000007 /* Sources */,
+				4D5241070000000000000008 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D5241070000000000000001 /* MusicCore */,
+				4D5241080000000000000001 /* SharedCore */,
+				4D5241070000000000000002 /* Sources */,
+			);
+			name = MusicPlugin;
+			packageProductDependencies = (
+				4D5241070000000000000011 /* IslandKit */,
+			);
+			productName = music;
+			productReference = 4D5241070000000000000005 /* music */;
+			productType = "com.apple.product-type.tool";
+		};
+		4D5241060000000000000006 /* FilesPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D5241060000000000000009 /* Build configuration list for PBXNativeTarget "FilesPlugin" */;
+			buildPhases = (
+				4D5241060000000000000007 /* Sources */,
+				4D5241060000000000000008 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D5241060000000000000001 /* FilesCore */,
+				4D5241080000000000000001 /* SharedCore */,
+				4D5241060000000000000002 /* Sources */,
+			);
+			name = FilesPlugin;
+			packageProductDependencies = (
+				4D5241060000000000000011 /* IslandKit */,
+			);
+			productName = files;
+			productReference = 4D5241060000000000000005 /* files */;
+			productType = "com.apple.product-type.tool";
+		};
+		4D5241050000000000000006 /* ClipboardPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D5241050000000000000009 /* Build configuration list for PBXNativeTarget "ClipboardPlugin" */;
+			buildPhases = (
+				4D5241050000000000000007 /* Sources */,
+				4D5241050000000000000008 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D5241050000000000000001 /* ClipboardCore */,
+				4D5241080000000000000001 /* SharedCore */,
+				4D5241050000000000000002 /* Sources */,
+			);
+			name = ClipboardPlugin;
+			packageProductDependencies = (
+				4D5241050000000000000011 /* IslandKit */,
+			);
+			productName = clipboard;
+			productReference = 4D5241050000000000000005 /* clipboard */;
+			productType = "com.apple.product-type.tool";
+		};
 		51E49FAA2F0B8D41002AD746 /* MacDynamicIsland */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 51E49FB62F0B8D44002AD746 /* Build configuration list for PBXNativeTarget "MacDynamicIsland" */;
@@ -240,6 +480,9 @@
 				4D52410100000000000000A9 /* Embed Libraries */,
 				4D5241020000000000000017 /* Embed Helpers */,
 				4D524104000000000000000F /* Embed Bundled Plugins */,
+				4D524105000000000000000E /* Embed Bundled Plugin clipboard */,
+				4D524106000000000000000E /* Embed Bundled Plugin files */,
+				4D524107000000000000000E /* Embed Bundled Plugin music */,
 			);
 			buildRules = (
 			);
@@ -247,10 +490,17 @@
 				4D52410100000000000000AB /* PBXTargetDependency */,
 				4D5241020000000000000019 /* PBXTargetDependency */,
 				4D524104000000000000000E /* PBXTargetDependency */,
+				4D524105000000000000000D /* PBXTargetDependency */,
+				4D524106000000000000000D /* PBXTargetDependency */,
+				4D524107000000000000000D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				4D52410300000000000000A1 /* MacDynamicIsland */,
 				4D5241040000000000000001 /* AgentsCore */,
+				4D5241080000000000000001 /* SharedCore */,
+				4D5241050000000000000001 /* ClipboardCore */,
+				4D5241060000000000000001 /* FilesCore */,
+				4D5241070000000000000001 /* MusicCore */,
 			);
 			name = "MacDynamicIsland";
 			productName = "MacDynamicIsland";
@@ -330,6 +580,7 @@
 			fileSystemSynchronizedGroups = (
 				4D5241040000000000000001 /* AgentsCore */,
 				4D5241040000000000000002 /* Sources */,
+				4D5241080000000000000001 /* SharedCore */,
 			);
 			name = AgentsPlugin;
 			packageProductDependencies = (
@@ -349,6 +600,15 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					4D5241070000000000000006 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					4D5241060000000000000006 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					4D5241050000000000000006 = {
+						CreatedOnToolsVersion = 27.0;
+					};
 					2013CF6D78CAA4315DA29D50 = {
 						CreatedOnToolsVersion = 27.0;
 						TestTargetID = 51E49FAA2F0B8D41002AD746;
@@ -389,6 +649,9 @@
 				4D52410100000000000000A6 /* MediaRemoteAdapter */,
 				4D5241020000000000000015 /* ClaudeHookBridge */,
 				4D5241040000000000000007 /* AgentsPlugin */,
+				4D5241050000000000000006 /* ClipboardPlugin */,
+				4D5241060000000000000006 /* FilesPlugin */,
+				4D5241070000000000000006 /* MusicPlugin */,
 			);
 		};
 /* End PBXProject section */
@@ -411,6 +674,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		4D5241070000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241060000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241050000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		51E49FA72F0B8D41002AD746 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -449,6 +733,21 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		4D524107000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241070000000000000006 /* MusicPlugin */;
+			targetProxy = 4D524107000000000000000C /* PBXContainerItemProxy */;
+		};
+		4D524106000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241060000000000000006 /* FilesPlugin */;
+			targetProxy = 4D524106000000000000000C /* PBXContainerItemProxy */;
+		};
+		4D524105000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241050000000000000006 /* ClipboardPlugin */;
+			targetProxy = 4D524105000000000000000C /* PBXContainerItemProxy */;
+		};
 		020B16BB8ED51250DF6147D9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 51E49FAA2F0B8D41002AD746 /* MacDynamicIsland */;
@@ -472,6 +771,108 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		4D524107000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = music;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4D524107000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = music;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4D524106000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = files;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4D524106000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = files;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4D524105000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = clipboard;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4D524105000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = clipboard;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
 		51E49FB42F0B8D44002AD746 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -789,6 +1190,33 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		4D5241070000000000000009 /* Build configuration list for PBXNativeTarget "MusicPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524107000000000000000A /* Debug */,
+				4D524107000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D5241060000000000000009 /* Build configuration list for PBXNativeTarget "FilesPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524106000000000000000A /* Debug */,
+				4D524106000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D5241050000000000000009 /* Build configuration list for PBXNativeTarget "ClipboardPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524105000000000000000A /* Debug */,
+				4D524105000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		51E49FA62F0B8D41002AD746 /* Build configuration list for PBXProject "MacDynamicIsland" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -853,6 +1281,21 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		4D5241070000000000000011 /* IslandKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */;
+			productName = IslandKit;
+		};
+		4D5241060000000000000011 /* IslandKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */;
+			productName = IslandKit;
+		};
+		4D5241050000000000000011 /* IslandKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */;
+			productName = IslandKit;
+		};
 		4D5241040000000000000013 /* IslandKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */;

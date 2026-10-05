@@ -1,0 +1,14 @@
+{
+  "accepts" : [
+    "files"
+  ],
+  "command" : [
+    "./files"
+  ],
+  "description" : "Drop files, text and links on the island to keep them at hand",
+  "id" : "files",
+  "name" : "Files",
+  "protocol" : 5,
+  "symbol" : "tray",
+  "version" : "1.0.0"
+}

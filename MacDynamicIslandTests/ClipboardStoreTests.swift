@@ -102,38 +102,12 @@ final class ClipboardStoreTests: XCTestCase {
         XCTAssertEqual(forever.items.map(\.content), ["kept"], "0 hours keeps them forever")
     }
 
-    // MARK: - The tab, in the plugin protocol
-
-    func testEachItemIsACardWithItsTextOrPicture() throws {
+    func testCopiedPicturesAreFilesWhileKept() throws {
         let (store, _) = makeStore()
-        store.addItem(content: "let x = 1", type: .code, sourceBundleID: "com.apple.dt.Xcode", sourceAppName: "Xcode", imageData: nil)
         addImage([1, 2, 3], to: store)
-
-        let content = store.islandContent
-        XCTAssertEqual(content.cards.count, 2)
-        let image = try XCTUnwrap(content.cards.first)
-        let file = try XCTUnwrap(store.imageFile(for: store.items[0]))
-        XCTAssertEqual(image.preview, .image(.file(file.path)), "the picture is shown from its file")
+        let file = try XCTUnwrap(store.imageFile(for: store.items[0]), "the card shows the picture from its file")
         XCTAssertEqual(try Data(contentsOf: file), Data([1, 2, 3]))
-        let text = content.cards[1]
-        XCTAssertEqual(text.title, "Xcode")
-        XCTAssertEqual(text.image, .app("com.apple.dt.Xcode"))
-        XCTAssertEqual(text.preview, .text("let x = 1"))
-        XCTAssertEqual(content.buttons.map(\.id), ["clear"])
-
         store.removeItem(store.items[0])
         XCTAssertFalse(FileManager.default.fileExists(atPath: file.path), "a removed picture's file goes too")
-    }
-
-    func testTapsDeleteAndClear() throws {
-        let (store, _) = makeStore()
-        addText("a", to: store)
-        addText("b", to: store)
-        let delete = try XCTUnwrap(store.islandContent.cards.first?.actions?.first?.id)
-        XCTAssertFalse(store.handle(.action(delete)))
-        XCTAssertEqual(store.items.map(\.content), ["a"])
-        store.handle(.action("clear"))
-        XCTAssertTrue(store.items.isEmpty)
-        XCTAssertEqual(store.islandContent, PluginStore.Content(), "nothing: the tab shows its empty state")
     }
 }

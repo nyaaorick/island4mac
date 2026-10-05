@@ -563,7 +563,7 @@ final class PluginTests: XCTestCase {
         XCTAssertTrue(IslandDropTarget.accepts(dropper, plugins: store))
         XCTAssertFalse(IslandDropTarget.accepts(plain, plugins: store))
         XCTAssertFalse(IslandDropTarget.accepts(.music, plugins: store))
-        XCTAssertTrue(IslandDropTarget.accepts(.files, plugins: store), "the built-in Files tab takes drops")
+        XCTAssertFalse(IslandDropTarget.accepts(.files, plugins: store), "without the Files plugin, the Files tab takes nothing")
 
         // A drag goes to the tab showing if it takes drops, or else the first of your tabs that does
         tabs.setEnabled(.files, false)
@@ -638,7 +638,7 @@ final class PluginTests: XCTestCase {
     func testThePlayingTrackWinsAndTapsGoBackToItsSource() throws {
         let store = PluginStore(pluginsFolder: try makeFolder(), dataFolder: try makeFolder(), tabs: TabStore(defaults: UserDefaults(suiteName: UUID().uuidString)!))
         let nowPlaying = NowPlayingStore()
-        nowPlaying.start(builtIn: nil, plugins: store)
+        nowPlaying.start(plugins: store)
         XCTAssertTrue(nowPlaying.isPlayerIdle)
 
         store.apply(.media(PluginMedia(title: "Paused", playing: false, at: 0)), from: "a")
@@ -663,7 +663,7 @@ final class PluginTests: XCTestCase {
         XCTAssertTrue(nowPlaying.isPlayerIdle)
 
         let onlyA = NowPlayingStore(only: .plugin("a"))
-        onlyA.start(builtIn: nil, plugins: store)
+        onlyA.start(plugins: store)
         store.apply(.media(PluginMedia(title: "B's", playing: true, at: 0)), from: "b")
         XCTAssertTrue(onlyA.isPlayerIdle, "a plugin's tab shows only its own track")
     }
@@ -770,20 +770,26 @@ final class PluginTests: XCTestCase {
         store.stop()
     }
 
-    func testTheBundledAgentsPluginDescribesItselfAsItsPluginJSON() throws {
-        let program = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/agents")
-        let process = Process()
-        process.executableURL = program
-        process.arguments = ["--describe"]
-        let output = Pipe()
-        process.standardOutput = output
-        try process.run()
-        let described = output.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        let shipped = try Data(contentsOf: try XCTUnwrap(Bundle.main.resourceURL).appendingPathComponent("Plugins/agents/plugin.json"))
-        XCTAssertEqual(try JSONSerialization.jsonObject(with: described) as? NSDictionary, try JSONSerialization.jsonObject(with: shipped) as? NSDictionary,
-                       "BundledPlugins/agents/plugin.json is out of date: write it again with `agents --describe`")
-        XCTAssertNoThrow(try PluginManifest.load(from: try XCTUnwrap(Bundle.main.resourceURL).appendingPathComponent("Plugins/agents")))
+    func testEachBundledPluginDescribesItselfAsItsPluginJSON() throws {
+        for (id, tab) in IslandTab.builtInTabsOfPlugins {
+            let program = Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/\(id)")
+            let process = Process()
+            process.executableURL = program
+            process.arguments = ["--describe"]
+            let output = Pipe()
+            process.standardOutput = output
+            try process.run()
+            let described = output.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            let folder = try XCTUnwrap(Bundle.main.resourceURL).appendingPathComponent("Plugins/\(id)")
+            let shipped = try Data(contentsOf: folder.appendingPathComponent("plugin.json"))
+            XCTAssertEqual(try JSONSerialization.jsonObject(with: described) as? NSDictionary, try JSONSerialization.jsonObject(with: shipped) as? NSDictionary,
+                           "BundledPlugins/\(id)/plugin.json is out of date: write it again with `\(id) --describe`")
+            XCTAssertNoThrow(try PluginManifest.load(from: folder))
+            XCTAssertEqual(IslandTab.tab(forPlugin: id), tab, "\(id) draws its built-in tab")
+        }
+        let files = try PluginManifest.load(from: try XCTUnwrap(Bundle.main.resourceURL).appendingPathComponent("Plugins/files"))
+        XCTAssertTrue(files.acceptsFiles, "Files takes drops")
     }
 
     /// The bundled Agents plugin, turned on, on a socket of its own

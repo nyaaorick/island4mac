@@ -6,7 +6,6 @@ class AppIntegration {
     static let shared = AppIntegration()
 
     // MARK: - Monitors
-    private var clipboardMonitor: ClipboardMonitor?
     private var hotKeyMonitor: HotKeyMonitor?
 
     private init() {}
@@ -30,14 +29,6 @@ class AppIntegration {
             IslandController.shared.getAppState()
         }
 
-        // Music playback observation is wired up by IslandController
-        MainActor.assumeIsolated {
-            clipboardMonitor = ClipboardMonitor(store: appState.clipboardStore)
-            // Something new on the clipboard shows the island for a moment
-            clipboardMonitor?.onCopy = { IslandController.shared.getAppState().showIsland(reason: .clipboard) }
-            clipboardMonitor?.start()
-        }
-
         Task { @MainActor in
             let ctrl = IslandController.shared
             hotKeyMonitor = HotKeyMonitor(appState: appState, islandController: ctrl)
@@ -46,13 +37,13 @@ class AppIntegration {
 
         let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")
 
-        // Plugins: separate processes that tell the island what to show. Agents (Claude Code, Codex and ZCode,
-        // reported by island-claude-hook) is one of them, shipped in the app
+        // Plugins: separate processes that tell the island what to show. Music, Clipboard, Files and Agents (Claude
+        // Code, Codex and ZCode, reported by island-claude-hook) are plugins too, shipped in the app
         MainActor.assumeIsolated {
             PluginStore.shared.onOpen = { IslandController.shared.showPluginTab($0, hold: $1) }
             PluginStore.shared.onClose = { IslandController.shared.closePluginTab($0) }
             PluginStore.shared.start()
-            Self.carryAgentSettingsOver()
+            Self.carrySettingsOver()
         }
 
         logger.info("All managers started")
@@ -60,30 +51,38 @@ class AppIntegration {
 
     static let agentsPluginID = "agents"
 
-    /// The first time the Agents plugin runs, it takes the settings of the Agents built into earlier versions
+    /// The first time each bundled plugin runs, it takes the settings of the version built into earlier apps
     @MainActor
-    static func carryAgentSettingsOver() {
-        let store = PluginStore.shared.preferences
+    static func carrySettingsOver() {
         let settings = SettingsDefaults.shared
-        let carried = "agentsPluginSettingsCarriedOver"
-        guard let manifest = PluginStore.shared.installed.first(where: { $0.id == agentsPluginID })?.manifest,
-              !UserDefaults.standard.bool(forKey: carried) else { return }
-        let pairs: [(key: String, value: Bool)] = [
-            ("sounds", settings.get(SettingsDefaults.agentSoundsEnabled)),
-            ("besideNotch", settings.get(SettingsDefaults.showAgentLiveActivity)),
-            ("openIsland", settings.get(SettingsDefaults.agentPromptsOpenIsland)),
-        ]
+        carry(to: agentsPluginID, [
+            ("sounds", .bool(settings.get(SettingsDefaults.agentSoundsEnabled))),
+            ("besideNotch", .bool(settings.get(SettingsDefaults.showAgentLiveActivity))),
+            ("openIsland", .bool(settings.get(SettingsDefaults.agentPromptsOpenIsland))),
+        ], doneKey: "agentsPluginSettingsCarriedOver")
+        carry(to: "clipboard", [
+            ("maxItems", .number(Double(settings.get(SettingsDefaults.clipboardMaxItems)))),
+            ("keepHours", .number(Double(settings.get(SettingsDefaults.clipboardKeepHours)))),
+        ], doneKey: "clipboardPluginSettingsCarriedOver")
+        carry(to: "music", [
+            ("lyricsSource", .string(settings.get(SettingsDefaults.lyricsSource))),
+        ], doneKey: "musicPluginSettingsCarriedOver")
+    }
+
+    @MainActor
+    private static func carry(to pluginID: String, _ pairs: [(key: String, value: PluginPreferenceValue)], doneKey: String) {
+        let store = PluginStore.shared.preferences
+        guard let manifest = PluginStore.shared.installed.first(where: { $0.id == pluginID })?.manifest,
+              !UserDefaults.standard.bool(forKey: doneKey) else { return }
         for (key, value) in pairs {
             if let preference = manifest.preferences?.first(where: { $0.key == key }) {
-                store.set(.bool(value), of: preference, for: agentsPluginID)
+                store.set(value, of: preference, for: pluginID)
             }
         }
-        UserDefaults.standard.set(true, forKey: carried)
+        UserDefaults.standard.set(true, forKey: doneKey)
     }
 
     func stop() {
-        MusicStore.shared.stop()
-        MainActor.assumeIsolated { clipboardMonitor?.stop() }
         hotKeyMonitor?.stop()
         // Waits briefly for them to quit, then ends whatever is left, so no plugin outlives the app
         MainActor.assumeIsolated { PluginStore.shared.stopForQuit() }
