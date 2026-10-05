@@ -5,6 +5,14 @@ import SwiftUI
 struct PluginTabView: View {
     let pluginID: String
     @ObservedObject private var plugins = PluginStore.shared
+    /// Its track, when it sends `media`, drawn with the island's own player
+    @StateObject private var player: NowPlayingStore
+    @Namespace private var playerAnimation
+
+    init(pluginID: String) {
+        self.pluginID = pluginID
+        _player = StateObject(wrappedValue: NowPlayingStore(only: .plugin(pluginID)))
+    }
 
     private var plugin: PluginStore.Installed? { plugins.installed.first { $0.id == pluginID } }
     private var content: PluginStore.Content { plugins.contents[pluginID] ?? PluginStore.Content() }
@@ -17,6 +25,15 @@ struct PluginTabView: View {
                 stoppedState(reason: reason)
             } else if plugins.statuses[pluginID] == .needsSetup {
                 setupState
+            } else if content.media != nil {
+                // A player plugin: the island's player, with anything else it shows below
+                ExpandedMusicView(musicStore: player, animation: playerAnimation)
+                if !(content.rows.isEmpty && content.cards.isEmpty && content.buttons.isEmpty && content.input == nil) {
+                    PluginContentView(content: content, emptySymbol: plugin?.manifest.symbol ?? "music.note",
+                                      emptyTitle: plugin?.manifest.name ?? pluginID) {
+                        plugins.send($0, to: pluginID)
+                    }
+                }
             } else {
                 PluginContentView(content: content, emptySymbol: plugin?.manifest.symbol ?? "puzzlepiece.extension",
                                   emptyTitle: plugin?.manifest.name ?? pluginID,
@@ -28,7 +45,10 @@ struct PluginTabView: View {
         .padding(.top, 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // The plugin may update often while its tab shows and rest otherwise (counted across displays)
-        .onAppear { plugins.tabAppeared(pluginID) }
+        .onAppear {
+            plugins.tabAppeared(pluginID)
+            player.start(builtIn: nil, plugins: plugins)
+        }
         .onDisappear { plugins.tabDisappeared(pluginID) }
     }
 

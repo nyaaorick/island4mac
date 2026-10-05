@@ -6,424 +6,207 @@
 //
 
 import Foundation
-import SwiftUI
 import Combine
+import CryptoKit
 import AppKit
 
+/// What the system says is playing (NowPlayingClient), turned into the plugin protocol's `media` and `lyrics`:
+/// the very data the Music plugin will send, which the island draws with its own player (NowPlayingStore). It
+/// finds the lyrics and, when the player gives none, the artwork. No SwiftUI, no pictures and no settings
+/// lookups in here: artwork is a file, an app icon or a URL (PluginImage), and the settings are handed in
 @MainActor
-class MusicStore: ObservableObject {
-    static let shared = MusicStore()
-    
-    // MARK: - Published Properties
-    
-    @Published var songTitle: String = ""
-    @Published var artistName: String = ""
-    @Published var albumTitle: String = ""
-    @Published var albumArt: NSImage = NSImage(systemSymbolName: "music.note", accessibilityDescription: nil)! {
-        didSet { updateAverageColor(for: albumArt) }
+final class MusicStore: ObservableObject {
+    struct Settings: Equatable {
+        /// "auto", "lrclib" or "netease"
+        var lyricsSource = "auto"
     }
-    @Published var avgColor: NSColor = .white
-    @Published var isPlaying: Bool = false
-    @Published var elapsedTime: Double = 0
-    @Published var songDuration: Double = 0
-    @Published var playbackRate: Double = 1.0
-    @Published var bundleIdentifier: String? = nil
-    @Published var applicationName: String? = nil
-    
-    // Timestamps
-    @Published var timestampDate: Date = Date()
-    
-    // Controller state
-    @Published var usingAppIconForArtwork: Bool = false
-    
-    // Lyrics
-    @Published var currentLyrics: String = ""
-    @Published var syncedLyrics: [(timeInSeconds: Double, line: String)] = []
-    @Published var isFetchingLyrics: Bool = false
-    
-    // MARK: - Private Properties
 
-    private var cancellables = Set<AnyCancellable>()
-    private var nowPlayingClient: NowPlayingClient?
+    @Published private(set) var media: PluginMedia?
+    @Published private(set) var lyrics: [PluginLyricLine] = []
 
-    private var avgColorTask: Task<Void, Never>?
-    private var lastAvgColorImageID: ObjectIdentifier?
+    var settings: Settings
+    /// Artwork the player gave, as files (named by their contents), so it can be a PluginImage
+    let artworkFolder: URL
 
-    private var lastArtworkData: Data?
+    private var client: NowPlayingClient?
+    private var stateChanges: AnyCancellable?
     private var lyricsTask: Task<Void, Never>?
+    private var artworkTask: Task<Void, Never>?
 
-    private static var placeholderArtwork: NSImage {
-        NSImage(systemSymbolName: "music.note", accessibilityDescription: nil)!
-    }
-
-    private func updateAverageColor(for image: NSImage) {
-        let id = ObjectIdentifier(image)
-        guard lastAvgColorImageID != id else { return }
-        lastAvgColorImageID = id
-
-        avgColorTask?.cancel()
-        // ✅ Fetch the color on the main thread, then update asynchronously
-        let color = image.averageColor
-        avgColorTask = Task { [weak self] in
-            self?.avgColor = color
-        }
-    }
-    
-    // MARK: - Computed Properties
-    
-    var isPlayerIdle: Bool {
-        return songTitle.isEmpty && artistName.isEmpty
+    init(artworkFolder: URL, settings: Settings = Settings()) {
+        self.artworkFolder = artworkFolder
+        self.settings = settings
     }
 
-    /// Whether the collapsed island shows the now-playing live activity
-    var showsCompactLiveActivity: Bool {
-        return SettingsDefaults.shared.get(SettingsDefaults.showMusicLiveActivity) && !isPlayerIdle
-    }
-    
-    
-    // MARK: - Initialization
-    
-    private init() {
-        // Controllers will be initialized when start() is called
-    }
-    
     // MARK: - Lifecycle
-    
-    func connectToNowPlayingClient(_ manager: NowPlayingClient) {
-        self.nowPlayingClient = manager
-        
-        // Subscribe to state changes from NowPlayingClient
-        manager.$currentState
+
+    func connect(to client: NowPlayingClient) {
+        self.client = client
+        stateChanges = client.$currentState
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] nowPlayingState in
-                self?.updateFromNowPlayingState(nowPlayingState)
+            .sink { [weak self] state in
+                MainActor.assumeIsolated { self?.update(from: state) }
             }
-            .store(in: &cancellables)
-
-        manager.start()
+        client.start()
     }
-    
+
     func stop() {
-        nowPlayingClient?.stop()
+        client?.stop()
     }
-    
-    // MARK: - Playback Control
-    
-    func togglePlay() {
-        nowPlayingClient?.playPause()
-    }
-    
-    func nextTrack() {
-        nowPlayingClient?.nextTrack()
-    }
-    
-    func previousTrack() {
-        nowPlayingClient?.previousTrack()
-    }
-    
-    func seek(to position: TimeInterval) {
-        // Prefer MediaRemote seeking (works for any app that participates in system media controls).
-        nowPlayingClient?.seek(to: position)
 
-        // Also update local timing anchors immediately so UI stays in sync while MediaRemote catches up.
-        elapsedTime = max(0, position)
-        timestampDate = Date()
-        currentDisplayTime = elapsedTime
-    }
-    
-    // MARK: - Lyrics
-    
-    func lyricLine(at time: Double) -> String {
-        guard !syncedLyrics.isEmpty else { return "" }
-        
-        // Find the lyric line at the current time
-        var currentLine = ""
-        for lyric in syncedLyrics {
-            if time >= lyric.timeInSeconds {
-                currentLine = lyric.line
-            } else {
-                break
-            }
-        }
-        return currentLine
-    }
-    
-    // MARK: - Fetch Lyrics
-    
-    /// Fetch lyrics: try online synced lyrics first (they follow the song), and fall back to Apple Music's built-in lyrics when none are found
-    private func fetchLyrics(title: String, artist: String) async {
-        isFetchingLyrics = true
+    // MARK: - Playback control (PluginEvent.control and .seek)
 
-        // 1️⃣ Online APIs (LrcLib, NetEase, etc.) work with any player
-        var lyrics = await fetchLyricsFromAPI(title: title, artist: artist)
-
-        // 2️⃣ Apple Music's built-in lyrics are plain text only, and most streamed songs have none (an empty string comes back and must not count as found)
-        if lyrics?.synced.isEmpty ?? true, !Task.isCancelled, bundleIdentifier == "com.apple.Music",
-           let own = await fetchLyricsFromAppleMusic(), !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            lyrics = (own, [])
-        }
-
-        // After a track change, the result of the old request is discarded
-        guard !Task.isCancelled else { return }
-
-        // 3️⃣ Clear when no lyrics are found
-        currentLyrics = lyrics?.plainText ?? ""
-        syncedLyrics = lyrics?.synced ?? []
-        isFetchingLyrics = false
-    }
-    
-    /// Fetch lyrics from Apple Music
-    private func fetchLyricsFromAppleMusic() async -> String? {
-        let script = """
-        tell application "Music"
-            try
-                return lyrics of current track
-            end try
-            return ""
-        end tell
-        """
-        return await AppleScriptClient.execute(script)
-    }
-    
-    /// Fetch lyrics from online APIs
-    private func fetchLyricsFromAPI(title: String, artist: String) async -> (plainText: String, synced: [(timeInSeconds: Double, line: String)])? {
-        // Use LyricsClient to fetch lyrics
-        if let result = await LyricsClient.shared.fetchLyrics(
-            title: title,
-            artist: artist,
-            album: albumTitle.isEmpty ? nil : albumTitle
-        ) {
-            #if DEBUG
-            print("✅ [MusicStore] Got lyrics, source: \(result.source)")
-            #endif
-            return (result.plainText, result.syncedLyrics)
-        }
-        
-        #if DEBUG
-        print("❌ [MusicStore] No lyrics found: \(title) - \(artist)")
-        #endif
-        return nil
-    }
-    
-    // MARK: - Playback Position Estimation
-    
-    func estimatedPlaybackPosition(at date: Date) -> Double {
-        guard isPlaying, playbackRate > 0 else {
-            return elapsedTime
-        }
-
-        let timeDelta = date.timeIntervalSince(timestampDate)
-        let estimatedPosition = elapsedTime + (timeDelta * playbackRate)
-
-        // ✅ If duration is unknown (0), do NOT clamp — this is needed for lyrics/progress fallback.
-        if songDuration > 0 {
-            return min(max(estimatedPosition, 0), songDuration)
-        } else {
-            return max(estimatedPosition, 0)
+    /// "playPause", "next" or "previous"
+    func control(_ command: String) {
+        switch command {
+        case "playPause": client?.playPause()
+        case "next": client?.nextTrack()
+        case "previous": client?.previousTrack()
+        default: break
         }
     }
-    
-    // MARK: - NowPlaying State Update
-    
-    private func updateFromNowPlayingState(_ state: NowPlayingState) {
+
+    func seek(to position: Double) {
+        // MediaRemote seeking works for any app that takes part in the system's media controls
+        client?.seek(to: position)
+        // Shown at once, while the player catches up
+        guard var media else { return }
+        media.elapsed = max(0, position)
+        media.at = Date().timeIntervalSince1970
+        self.media = media
+    }
+
+    // MARK: - From the system's now playing
+
+    func update(from state: NowPlayingState) {
         guard state.hasContent else {
-            clearNowPlaying()
+            clear()
             return
         }
+        let trackChanged = state.title != media?.title || state.artist != (media?.artist ?? "")
+        let app = state.sourceApp.isEmpty ? nil : state.sourceApp
 
-        let trackChanged = state.title != songTitle || state.artist != artistName
+        var next = PluginMedia(
+            title: state.title,
+            artist: state.artist,
+            album: state.album.isEmpty ? nil : state.album,
+            artwork: trackChanged ? nil : media?.artwork,
+            app: app,
+            playing: state.isPlaying,
+            // MediaRemote reports the elapsed time as of positionTimestamp, not as of now
+            elapsed: state.position,
+            at: state.positionTimestamp.timeIntervalSince1970,
+            duration: state.duration > 0 ? state.duration : (trackChanged ? nil : media?.duration),
+            rate: state.playbackRate)
 
-        songTitle = state.title
-        artistName = state.artist
-        albumTitle = state.album
-        isPlaying = state.isPlaying
-        playbackRate = state.playbackRate
-        songDuration = state.duration
-
-        // Anchor: MediaRemote reports the elapsed time as of positionTimestamp, not as of now
-        elapsedTime = state.position
-        timestampDate = state.positionTimestamp
-        updateCurrentDisplayTime()
-
-        if state.sourceApp.isEmpty {
-            bundleIdentifier = nil
-            applicationName = nil
-        } else {
-            bundleIdentifier = state.sourceApp
-            applicationName = NSWorkspace.shared.urlForApplication(withBundleIdentifier: state.sourceApp)
-                .map { FileManager.default.displayName(atPath: $0.path) } ?? state.sourceApp
+        if let data = state.artworkData, let file = saveArtwork(data) {
+            next.artwork = .file(file.path)
+        } else if trackChanged {
+            // Artwork often arrives a moment after the title; until then the app's icon shows
+            next.artwork = app.map(PluginImage.app)
+            artworkTask?.cancel()
+            // Songs usually carry an album; videos don't, and a song search would find unrelated covers for them
+            if !state.album.isEmpty { findArtwork(title: state.title, artist: state.artist) }
         }
-
-        if isPlaying {
-            startProgressTimer()
-        } else {
-            stopProgressTimer()
-        }
-
-        updateArtwork(from: state, trackChanged: trackChanged)
+        media = next
 
         if trackChanged {
             lyricsTask?.cancel()
-            currentLyrics = ""
-            syncedLyrics = []
-            let title = songTitle
-            let artist = artistName
-            lyricsTask = Task {
-                await fetchLyrics(title: title, artist: artist)
-            }
-        }
-
-        #if DEBUG
-        print("🎶 [MusicStore] \(applicationName ?? "?"): \(state.title) - \(state.artist) | Pos: \(elapsedTime)/\(songDuration)")
-        #endif
-    }
-
-    private func updateArtwork(from state: NowPlayingState, trackChanged: Bool) {
-        if let data = state.artworkData {
-            guard data != lastArtworkData, let image = NSImage(data: data) else { return }
-            lastArtworkData = data
-            albumArt = image
-            usingAppIconForArtwork = false
-            return
-        }
-
-        // Artwork often arrives a moment after the title; until then show the source app's icon
-        guard trackChanged else { return }
-        lastArtworkData = nil
-        if let bundleID = bundleIdentifier,
-           let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-            albumArt = NSWorkspace.shared.icon(forFile: appURL.path)
-        } else {
-            albumArt = Self.placeholderArtwork
-        }
-        usingAppIconForArtwork = true
-
-        // Songs usually carry an album; videos don't, and a song search would find unrelated covers for them
-        if !state.album.isEmpty {
-            let title = state.title
-            let artist = state.artist
-            Task {
-                await fetchArtworkFromNetwork(title: title, artist: artist)
-            }
+            lyrics = []
+            let album = next.album
+            lyricsTask = Task { await self.findLyrics(title: state.title, artist: state.artist, album: album, app: app) }
         }
     }
 
-    private func clearNowPlaying() {
-        guard !isPlayerIdle else { return }
-        stopProgressTimer()
+    private func clear() {
+        guard media != nil else { return }
         lyricsTask?.cancel()
-        songTitle = ""
-        artistName = ""
-        albumTitle = ""
-        isPlaying = false
-        playbackRate = 0
-        elapsedTime = 0
-        songDuration = 0
-        currentDisplayTime = 0
-        bundleIdentifier = nil
-        applicationName = nil
-        currentLyrics = ""
-        syncedLyrics = []
-        isFetchingLyrics = false
-        lastArtworkData = nil
-        albumArt = Self.placeholderArtwork
-        usingAppIconForArtwork = true
+        artworkTask?.cancel()
+        media = nil
+        lyrics = []
     }
 
-    // MARK: - Progress Timer
-    
-    @Published var currentDisplayTime: Double = 0
-    private var progressTimer: Timer?
-    
-    private func startProgressTimer() {
-        stopProgressTimer()
-        progressTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            Task { @MainActor in
-                self.updateCurrentDisplayTime()
+    // MARK: - Artwork
+
+    /// Writes the player's artwork to a file named by its contents, keeping only the current one
+    private func saveArtwork(_ data: Data) -> URL? {
+        let name = SHA256.hash(data: data).prefix(12).map { String(format: "%02x", $0) }.joined() + ".img"
+        let file = artworkFolder.appendingPathComponent(name)
+        let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: file.path) { return file }
+        try? fileManager.createDirectory(at: artworkFolder, withIntermediateDirectories: true)
+        for old in (try? fileManager.contentsOfDirectory(atPath: artworkFolder.path)) ?? [] {
+            try? fileManager.removeItem(at: artworkFolder.appendingPathComponent(old))
+        }
+        return (try? data.write(to: file, options: .atomic)) == nil ? nil : file
+    }
+
+    /// The cover from the iTunes Search API, when the player gives none; also its length when the player doesn't say
+    private func findArtwork(title: String, artist: String) {
+        artworkTask = Task {
+            var components = URLComponents(string: "https://itunes.apple.com/search")
+            components?.queryItems = [
+                URLQueryItem(name: "term", value: "\(title) \(artist)"),
+                URLQueryItem(name: "entity", value: "song"),
+                URLQueryItem(name: "limit", value: "1"),
+            ]
+            guard let url = components?.url,
+                  let (data, _) = try? await URLSession.shared.data(from: url),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let first = (json["results"] as? [[String: Any]])?.first,
+                  let small = first["artworkUrl100"] as? String,
+                  // 600 × 600 rather than 100 × 100
+                  let cover = URL(string: small.replacingOccurrences(of: "100x100bb", with: "600x600bb")),
+                  !Task.isCancelled else { return }
+            // Still the same track, still without the player's own artwork
+            guard var media, media.title == title else { return }
+            if case .file = media.artwork { return }
+            media.artwork = .url(cover)
+            if media.duration == nil, let milliseconds = first["trackTimeMillis"] as? Double, milliseconds > 0 {
+                media.duration = milliseconds / 1000
             }
+            self.media = media
         }
     }
-    
-    private func stopProgressTimer() {
-        progressTimer?.invalidate()
-        progressTimer = nil
-    }
-    
-    private func updateCurrentDisplayTime() {
-        currentDisplayTime = estimatedPlaybackPosition(at: Date())
-    }
-    
-    // MARK: - Network Artwork Fetching
-    
-    /// Fetch the album cover from the network (iTunes API)
-    private func fetchArtworkFromNetwork(title: String, artist: String) async {
-        let query = "\(title) \(artist)"
-        #if DEBUG
-        print("🎶 [MusicStore] 🖼️ Trying to fetch the cover from the network: \(query)")
-        #endif
-        
-        // Build the iTunes Search API URL
-        var components = URLComponents(string: "https://itunes.apple.com/search")
-        components?.queryItems = [
-            URLQueryItem(name: "term", value: query),
-            URLQueryItem(name: "entity", value: "song"),
-            URLQueryItem(name: "limit", value: "1")
-        ]
-        
-        guard let url = components?.url else { return }
-        
-        do {
-            // Request the API
-            let (data, _) = try await URLSession.shared.data(from: url)
-            
-            // Parse the JSON
-            if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-               let results = json["results"] as? [[String: Any]],
-               let first = results.first,
-               let artworkUrlString = first["artworkUrl100"] as? String {
-                
-                // Get a higher-resolution image (100x100 -> 600x600)
-                let highResUrlString = artworkUrlString.replacingOccurrences(of: "100x100bb", with: "600x600bb")
-                
-                // Get the track duration (milliseconds -> seconds)
-                let trackDurationMs = first["trackTimeMillis"] as? Double ?? 0
-                let trackDuration = trackDurationMs / 1000.0
-                
-                if let artworkUrl = URL(string: highResUrlString) {
-                    // Download the image
-                    let (imageData, _) = try await URLSession.shared.data(from: artworkUrl)
-                    if let image = NSImage(data: imageData) {
-                        await MainActor.run {
-                            // Check again whether the update is still needed (in case the track changed)
-                            if self.songTitle == title && self.usingAppIconForArtwork {
-                                self.albumArt = image
-                                self.usingAppIconForArtwork = false
-                                
-                                // 🆕 If the current duration is 0, use the duration from the network
-                                if self.songDuration == 0 && trackDuration > 0 {
-                                    self.songDuration = trackDuration
-                                    #if DEBUG
-                                    print("🎶 [MusicStore] ✅ Duration from network: \(trackDuration)s")
-                                    #endif
-                                }
-                                
-                                 #if DEBUG
-                                 print("🎶 [MusicStore] ✅ Network cover updated")
-                                 #endif
-                            }
-                        }
-                    }
-                }
-            } else {
-                 #if DEBUG
-                 print("🎶 [MusicStore] ❌ No network cover found")
-                 #endif
-            }
-        } catch {
-            #if DEBUG
-            print("🎶 [MusicStore] Network cover fetch error: \(error)")
-            #endif
+
+    // MARK: - Lyrics
+
+    /// Synced lyrics online first (they follow the song), then Apple Music's own, which are plain text
+    private func findLyrics(title: String, artist: String, album: String?, app: String?) async {
+        var lines: [PluginLyricLine] = []
+        if let result = await LyricsClient.shared.fetchLyrics(title: title, artist: artist, album: album, source: settings.lyricsSource) {
+            lines = result.syncedLyrics.isEmpty
+                ? Self.plainLines(result.plainText)
+                : result.syncedLyrics.map { PluginLyricLine(time: $0.timeInSeconds, text: $0.line) }
         }
+        // Most streamed songs have none in Music (an empty string comes back and must not count as found)
+        if lines.allSatisfy({ $0.time == nil }), !Task.isCancelled, app == "com.apple.Music",
+           let own = await Self.appleMusicLyrics(), !own.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            lines = Self.plainLines(own)
+        }
+        // After a track change, the old request's result is dropped
+        guard !Task.isCancelled else { return }
+        lyrics = Array(lines.prefix(PluginLyricLine.maxCount)).map(\.trimmed)
+    }
+
+    /// Lyrics without times, a line each, with any leftover time tags taken out
+    static func plainLines(_ text: String) -> [PluginLyricLine] {
+        var lines = text.replacingOccurrences(of: "\\[.*?\\]", with: "", options: .regularExpression)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { PluginLyricLine(text: $0.trimmingCharacters(in: .whitespaces)) }
+        while lines.first?.text.isEmpty == true { lines.removeFirst() }
+        while lines.last?.text.isEmpty == true { lines.removeLast() }
+        return lines
+    }
+
+    private static func appleMusicLyrics() async -> String? {
+        await AppleScriptClient.execute("""
+            tell application "Music"
+                try
+                    return lyrics of current track
+                end try
+                return ""
+            end tell
+            """)
     }
 }

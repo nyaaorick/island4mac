@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Collapsed now-playing on a notched display: album art and spectrum beside the notch
 struct MusicNotchLiveActivityView: View {
-    @ObservedObject private var musicStore = MusicStore.shared
+    @ObservedObject private var musicStore = NowPlayingStore.shared
     @ObservedObject private var settings = SettingsDefaults.shared
 
     let notch: CGSize
@@ -39,7 +39,7 @@ struct MusicNotchLiveActivityView: View {
                 .frame(width: 18, height: 12)
                 .matchedGeometryEffect(id: "spectrum", in: animation)
                 .mask {
-                    AudioSpectrumView(isPlaying: $musicStore.isPlaying)
+                    AudioSpectrumView(isPlaying: .constant(musicStore.isPlaying))
                         .frame(width: 16, height: 12)
                 }
                 .accessibilityHidden(true)

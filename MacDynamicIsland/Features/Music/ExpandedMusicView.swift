@@ -1,9 +1,9 @@
 import SwiftUI
-import Combine
-import UniformTypeIdentifiers
 
+/// The Music tab: the island's own player for whatever plays (NowPlayingStore), from the built-in Music or a
+/// plugin's `media`. Taps on the controls and the progress bar go back to where the track comes from
 struct ExpandedMusicView: View {
-    @ObservedObject var musicStore: MusicStore
+    @ObservedObject var musicStore: NowPlayingStore
     var animation: Namespace.ID
 
     @State private var isSeeking = false
@@ -32,7 +32,7 @@ struct ExpandedMusicView: View {
                     }
                     
                     // 🎤 LYRICS VIEW (New)
-                    if !musicStore.currentLyrics.isEmpty {
+                    if !(musicStore.current?.lyrics.isEmpty ?? true) {
                         LyricsView(musicStore: musicStore)
                             .frame(height: 36)
                     } else {
@@ -64,22 +64,26 @@ struct ExpandedMusicView: View {
     }
     
     private var albumArtView: some View {
-        Button(action: { selectCustomAlbumArt() }) {
-            Image(nsImage: musicStore.albumArt)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .matchedGeometryEffect(id: "album_art", in: animation)
-                .frame(width: 100, height: 100)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        }
-        .buttonStyle(.plain)
+        Image(nsImage: musicStore.albumArt)
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .matchedGeometryEffect(id: "album_art", in: animation)
+            .frame(width: 100, height: 100)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
     
     private var progressStrip: some View {
+        // The island runs the progress itself, from where the track was at a given time
+        TimelineView(.periodic(from: .now, by: 0.5)) { timeline in
+            progressStrip(at: musicStore.estimatedPlaybackPosition(at: timeline.date))
+        }
+    }
+
+    private func progressStrip(at currentTime: Double) -> some View {
         VStack(spacing: 4) {
             GeometryReader { geo in
                 let duration = max(0, musicStore.songDuration)
-                let displayTime = isSeeking ? seekTime : musicStore.currentDisplayTime
+                let displayTime = isSeeking ? seekTime : currentTime
                 let progress = duration > 0 ? min(1.0, max(0.0, displayTime / duration)) : 0
                 let barHeight: CGFloat = 4
 
@@ -120,7 +124,7 @@ struct ExpandedMusicView: View {
             .frame(height: 12)
 
             HStack {
-                Text(formatTime(isSeeking ? seekTime : musicStore.currentDisplayTime))
+                Text(formatTime(isSeeking ? seekTime : currentTime))
                 Spacer()
                 Text(musicStore.songDuration > 0 ? formatTime(musicStore.songDuration) : "--:--")
             }
@@ -167,39 +171,24 @@ struct ExpandedMusicView: View {
         let s = Int(seconds) % 60
         return String(format: "%d:%02d", m, s)
     }
-    
-    /// 📸 Choose a custom album cover
-    private func selectCustomAlbumArt() {
-        let panel = NSOpenPanel()
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.canChooseFiles = true
-        panel.allowedContentTypes = [.image]
-        panel.message = "Choose an image to use as the album cover"
-        
-        panel.begin { response in
-            guard response == .OK, let url = panel.url else { return }
-            
-            Task { @MainActor in
-                if let image = NSImage(contentsOf: url) {
-                    musicStore.albumArt = image
-                    musicStore.usingAppIconForArtwork = false
-                }
-            }
-        }
-    }
 }
 
 // MARK: - Lyrics View
 struct LyricsView: View {
-    @ObservedObject var musicStore: MusicStore
+    @ObservedObject var musicStore: NowPlayingStore
     
     var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.5)) { timeline in
+            lyrics(at: musicStore.estimatedPlaybackPosition(at: timeline.date))
+        }
+    }
+
+    private func lyrics(at time: Double) -> some View {
         GeometryReader { geo in
             VStack {
-                if !musicStore.syncedLyrics.isEmpty {
+                if musicStore.hasSyncedLyrics {
                     // Synced Lyrics
-                    let currentLine = musicStore.lyricLine(at: musicStore.currentDisplayTime)
+                    let currentLine = musicStore.lyricLine(at: time)
                     Text(currentLine.isEmpty ? "..." : currentLine)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white)
@@ -210,7 +199,7 @@ struct LyricsView: View {
                         .id("synced_\(currentLine)")
                 } else {
                     // Static Lyrics (Scrollable automatically via Marquee logic or just partial text)
-                    Text(cleanLyrics(musicStore.currentLyrics))
+                    Text(musicStore.plainLyrics)
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.white.opacity(0.8))
                         .lineLimit(2)
@@ -220,11 +209,5 @@ struct LyricsView: View {
                 }
             }
         }
-    }
-    
-    private func cleanLyrics(_ text: String) -> String {
-        // Remove time tags if any remain, though fetcher should strip them
-        return text.replacingOccurrences(of: "\\[.*?\\]", with: "", options: .regularExpression)
-                   .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

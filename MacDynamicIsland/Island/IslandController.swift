@@ -62,7 +62,6 @@ final class IslandController: NSObject {
     private var cancellables = Set<AnyCancellable>()
 
     // MANAGERS
-    private var nowPlayingClient: NowPlayingClient!
     private var globalMouseMonitor: Any?
     private var localMouseMonitor: Any?
 
@@ -83,7 +82,7 @@ final class IslandController: NSObject {
     private override init() {
         super.init()
         setupNowPlaying()
-        mainIsland = IslandWindow(appState: appState, nowPlayingClient: nowPlayingClient) { [weak self] in
+        mainIsland = IslandWindow(appState: appState) { [weak self] in
             self?.mainIslandScreen()
         }
         setupObservers()
@@ -137,16 +136,13 @@ final class IslandController: NSObject {
     }
 
     private func setupNowPlaying() {
-        // Initialize NowPlaying Stream
-        nowPlayingClient = NowPlayingClient()
+        // What plays: the built-in Music and any plugin that reports media
+        NowPlayingStore.shared.start(builtIn: MusicStore.shared, plugins: .shared)
 
         // Unit tests are hosted inside the app: don't connect the music module, so tests don't send Apple Events to the player or pop up an authorization dialog
         guard !BuildConfig.isRunningUnitTests else { return }
-
-        // Connect to MusicStore
-        Task { @MainActor in
-            MusicStore.shared.connectToNowPlayingClient(nowPlayingClient)
-        }
+        MusicStore.shared.connect(to: NowPlayingClient(
+            adapterURL: Bundle.main.privateFrameworksURL?.appendingPathComponent("libMediaRemoteAdapter.dylib")))
     }
 
     private func setupObservers() {
@@ -158,7 +154,8 @@ final class IslandController: NSObject {
             .store(in: &cancellables)
 
         // Collapse the playback wings when paused (after 1 second, so the brief pause when switching tracks doesn't count); show them again when the mouse moves onto the notch
-        MusicStore.shared.$isPlaying
+        NowPlayingStore.shared.$current
+            .map { $0?.media.playing ?? false }
             .removeDuplicates()
             .map { playing -> AnyPublisher<Bool, Never> in
                 playing
@@ -176,9 +173,8 @@ final class IslandController: NSObject {
 
         // The collapsed island extends or retracts its wings when playback content appears or disappears
         // Playback info is reassigned periodically; only whether there is any content matters
-        MusicStore.shared.$songTitle
-            .combineLatest(MusicStore.shared.$artistName)
-            .map { title, artist in !(title.isEmpty && artist.isEmpty) }
+        NowPlayingStore.shared.$current
+            .map { $0 != nil }
             .removeDuplicates()
             .sink { [weak self] _ in
                 self?.updateAllIslands()
@@ -296,7 +292,7 @@ final class IslandController: NSObject {
             otherIslands[display] = nil
         }
         for display in wanted where otherIslands[display] == nil {
-            let island = IslandWindow(appState: AppState(sharingWith: appState), nowPlayingClient: nowPlayingClient) {
+            let island = IslandWindow(appState: AppState(sharingWith: appState)) {
                 NSScreen.screens.first { $0.displayID == display }
             }
             island.musicIsPlaying = musicIsPlaying

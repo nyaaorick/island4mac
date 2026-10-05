@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Collapsed now-playing without a notch: album art, progress and lyrics
 struct CompactMusicLiveActivityView: View {
-    @ObservedObject private var musicStore = MusicStore.shared
+    @ObservedObject private var musicStore = NowPlayingStore.shared
     @ObservedObject private var settings = SettingsDefaults.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -59,7 +59,7 @@ struct CompactMusicLiveActivityView: View {
                                     text: .constant(line),
                                     font: .system(size: 10, weight: .medium),
                                     nsFont: .systemFont(ofSize: 10, weight: .medium),
-                                    textColor: musicStore.isFetchingLyrics ? Color.white.opacity(0.35) : Color.white.opacity(0.65),
+                                    textColor: Color.white.opacity(0.65),
                                     frameWidth: textWidth,
                                     centersWhenFitting: true
                                 )
@@ -91,7 +91,7 @@ struct CompactMusicLiveActivityView: View {
                             .frame(width: 18, height: 12)
                             .matchedGeometryEffect(id: "spectrum", in: animation)
                             .mask {
-                                AudioSpectrumView(isPlaying: $musicStore.isPlaying)
+                                AudioSpectrumView(isPlaying: .constant(musicStore.isPlaying))
                                     .frame(width: 16, height: 12)
                             }
                             .accessibilityHidden(true)
@@ -111,11 +111,7 @@ struct CompactMusicLiveActivityView: View {
     }
 
     private func compactLyricsLine(elapsed: Double) -> String {
-        if musicStore.isFetchingLyrics {
-            return "Loading lyrics…"
-        }
-
-        if !musicStore.syncedLyrics.isEmpty {
+        if musicStore.hasSyncedLyrics {
             let line = musicStore.lyricLine(at: elapsed)
             return line.isEmpty ? "…" : line
         }
@@ -126,7 +122,7 @@ struct CompactMusicLiveActivityView: View {
 }
 
 private struct CompactMusicProgressBar: View {
-    @ObservedObject private var musicStore = MusicStore.shared
+    @ObservedObject private var musicStore = NowPlayingStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var isSeeking = false

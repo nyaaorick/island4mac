@@ -203,16 +203,18 @@ final class IslandControllerTests: XCTestCase {
         let state = IslandController.shared.getAppState()
         let panel = try islandPanel()
         guard state.notchSize != .zero else { throw XCTSkip("needs a display with a notch") }
-        let music = MusicStore.shared
+        let music = NowPlayingStore.shared
+        let song = PluginMedia(title: "Test Song", playing: true)
         collapseAndSettle(state)
         let compact = panel.frame
 
-        music.songTitle = "Test Song"
-        music.isPlaying = true
+        music.update(song, lyrics: [], from: .plugin("test"))
         runMainLoop(for: 0.2)
         XCTAssertLessThan(panel.frame.minX, compact.minX, "playing: the artwork shows beside the notch")
 
-        music.isPlaying = false
+        var paused = song
+        paused.playing = false
+        music.update(paused, lyrics: [], from: .plugin("test"))
         runMainLoop(for: 1 + settleTime)
         assertEqual(panel.frame, compact, "paused: it folds away")
 
@@ -224,7 +226,7 @@ final class IslandControllerTests: XCTestCase {
         runMainLoop(for: settleTime)
         assertEqual(panel.frame, compact, "and it folds away again when the pointer leaves")
 
-        music.songTitle = ""
+        music.update(nil, lyrics: [], from: .plugin("test"))
         runMainLoop(for: 0.2)
     }
 

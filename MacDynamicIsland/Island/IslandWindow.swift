@@ -31,7 +31,7 @@ final class IslandWindow {
     /// The collapse spring (response 0.45, critically damped) settles within this time
     private let settleDelay: TimeInterval = 0.6
 
-    init(appState: AppState, nowPlayingClient: NowPlayingClient, preferredScreen: @escaping () -> NSScreen?) {
+    init(appState: AppState, preferredScreen: @escaping () -> NSScreen?) {
         self.appState = appState
         self.preferredScreen = preferredScreen
 
@@ -54,7 +54,6 @@ final class IslandWindow {
             .allowsWindowActivationEvents()
             .environmentObject(appState)
             .environmentObject(appState.clipboardStore)
-            .environmentObject(nowPlayingClient)
             .ignoresSafeArea()
             // Pinned dark like the panel, so SwiftUI never resolves a semantic color for a light system appearance
             .environment(\.colorScheme, .dark)
@@ -187,7 +186,7 @@ final class IslandWindow {
         let activity = LiveActivity.pick(
             priorityPlugin: PluginStore.shared.showsPriorityContent,
             pluginPopup: PluginStore.shared.showsPopupLiveActivity,
-            music: MusicStore.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch),
+            music: NowPlayingStore.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch),
             pluginCompact: PluginStore.shared.showsCompactContent
         )
         let showsLiveActivity = activity != .none

@@ -17,6 +17,10 @@ enum PluginEvent: Equatable {
     /// Protocol 5, to a plugin whose plugin.json "accepts" files: what you dropped on its tab. Files and folders
     /// as paths; text the island saved as a file in the plugin's data folder (Drops/), also a path; links as URLs
     case drop(paths: [String], urls: [String])
+    /// Protocol 5, to a plugin that sent `media`: a tap on the island's player ("playPause", "next", "previous")
+    case control(String)
+    /// Protocol 5: the progress bar was dragged to this many seconds into the track
+    case seek(Double)
 
     var line: Data {
         let object: [String: Any] = switch self {
@@ -26,6 +30,8 @@ enum PluginEvent: Equatable {
         case .preferences(let values): ["type": "preferences", "values": values.mapValues(\.object)]
         case .wake(let reason): ["type": "wake", "reason": reason]
         case .drop(let paths, let urls): ["type": "drop", "paths": paths, "urls": urls]
+        case .control(let command): ["type": "control", "command": command]
+        case .seek(let position): ["type": "seek", "position": position]
         }
         var data = (try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])) ?? Data()
         data.append(UInt8(ascii: "\n"))

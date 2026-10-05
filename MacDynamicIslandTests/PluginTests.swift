@@ -599,6 +599,75 @@ final class PluginTests: XCTestCase {
                        IslandDrop(paths: [file.path], urls: ["https://example.com"]))
     }
 
+    func testMediaAndLyricsRead() throws {
+        guard case .media(let media) = try PluginMessage.decode(line(#"{"type":"media","title":"Song","artist":"Artist","album":"Album","artwork":{"url":"https://example.com/a.jpg"},"app":"com.spotify.client","playing":true,"elapsed":42,"at":1000,"duration":215,"rate":1}"#))
+        else { return XCTFail() }
+        XCTAssertEqual(media, PluginMedia(title: "Song", artist: "Artist", album: "Album", artwork: .url(URL(string: "https://example.com/a.jpg")!),
+                                          app: "com.spotify.client", playing: true, elapsed: 42, at: 1000, duration: 215, rate: 1))
+        guard case .media(let bare) = try PluginMessage.decode(line(#"{"type":"media","title":"Radio","playing":false,"duration":-5,"rate":99}"#))
+        else { return XCTFail() }
+        XCTAssertNotNil(bare.at, "a position is as of now when the plugin doesn't say")
+        XCTAssertNil(bare.duration, "an impossible length is unknown")
+        XCTAssertEqual(bare.rate, 16)
+        XCTAssertThrowsError(try PluginMessage.decode(line(#"{"type":"media","title":"No state"}"#)), "it says whether it plays")
+
+        let lines = (0..<1200).map { #"{"time":\#($0),"text":"l\#($0)"}"# }.joined(separator: ",")
+        guard case .lyrics(let lyrics) = try PluginMessage.decode(line(#"{"type":"lyrics","lines":[\#(lines)]}"#)) else { return XCTFail() }
+        XCTAssertEqual(lyrics.count, PluginLyricLine.maxCount)
+        XCTAssertEqual(lyrics.line(at: 2.5), "l2")
+        XCTAssertEqual(lyrics.line(at: -1), "")
+        XCTAssertEqual([PluginLyricLine(text: "a"), PluginLyricLine(text: "b")].plainText, "a\nb")
+
+        XCTAssertEqual(String(decoding: PluginEvent.control("next").line, as: UTF8.self), #"{"command":"next","type":"control"}"# + "\n")
+        XCTAssertEqual(String(decoding: PluginEvent.seek(80.5).line, as: UTF8.self), #"{"position":80.5,"type":"seek"}"# + "\n")
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"clear","target":"media"}"#)), .clear(.media))
+    }
+
+    func testTheIslandRunsAMediaPosition() {
+        let at = Date(timeIntervalSince1970: 1000)
+        var media = PluginMedia(title: "Song", playing: true, elapsed: 10, at: 1000, duration: 30, rate: 2)
+        XCTAssertEqual(media.position(at: at.addingTimeInterval(5)), 20, "counted on at its rate")
+        XCTAssertEqual(media.position(at: at.addingTimeInterval(60)), 30, "never past the end")
+        media.playing = false
+        XCTAssertEqual(media.position(at: at.addingTimeInterval(5)), 10, "paused, it stays")
+        media.duration = nil
+        media.playing = true
+        XCTAssertEqual(media.position(at: at.addingTimeInterval(100)), 210, "unknown length, it keeps counting")
+    }
+
+    func testThePlayingTrackWinsAndTapsGoBackToItsSource() throws {
+        let store = PluginStore(pluginsFolder: try makeFolder(), dataFolder: try makeFolder(), tabs: TabStore(defaults: UserDefaults(suiteName: UUID().uuidString)!))
+        let nowPlaying = NowPlayingStore()
+        nowPlaying.start(builtIn: nil, plugins: store)
+        XCTAssertTrue(nowPlaying.isPlayerIdle)
+
+        store.apply(.media(PluginMedia(title: "Paused", playing: false, at: 0)), from: "a")
+        XCTAssertEqual(nowPlaying.current?.source, .plugin("a"))
+        store.apply(.media(PluginMedia(title: "Playing", app: "com.spotify.client", playing: true, at: 0)), from: "b")
+        XCTAssertEqual(nowPlaying.songTitle, "Playing", "a playing track wins over a paused one")
+        XCTAssertEqual(nowPlaying.bundleIdentifier, "com.spotify.client")
+        store.apply(.media(PluginMedia(title: "Paused again", playing: false, at: 0)), from: "a")
+        XCTAssertEqual(nowPlaying.songTitle, "Playing", "even when the paused one changed last")
+
+        store.apply(.lyrics([PluginLyricLine(time: 0, text: "first"), PluginLyricLine(time: 5, text: "second")]), from: "b")
+        XCTAssertTrue(nowPlaying.hasSyncedLyrics)
+        store.apply(.media(PluginMedia(title: "Next song", playing: true, at: 0)), from: "b")
+        XCTAssertFalse(nowPlaying.hasSyncedLyrics, "another track drops the old one's lyrics")
+
+        nowPlaying.seek(to: 12)
+        XCTAssertEqual(nowPlaying.current?.media.elapsed, 12, "a seek shows at once")
+
+        store.apply(.clear(.all), from: "b")
+        XCTAssertEqual(nowPlaying.songTitle, "Paused again", "the other source takes over")
+        store.apply(.clear(.media), from: "a")
+        XCTAssertTrue(nowPlaying.isPlayerIdle)
+
+        let onlyA = NowPlayingStore(only: .plugin("a"))
+        onlyA.start(builtIn: nil, plugins: store)
+        store.apply(.media(PluginMedia(title: "B's", playing: true, at: 0)), from: "b")
+        XCTAssertTrue(onlyA.isPlayerIdle, "a plugin's tab shows only its own track")
+    }
+
     func testCardsShowAndClear() throws {
         let store = PluginStore(pluginsFolder: try makeFolder(), dataFolder: try makeFolder(), tabs: TabStore(defaults: UserDefaults(suiteName: UUID().uuidString)!))
         store.apply(.cards([PluginCard(id: "c", title: "Card")]), from: "echo")

@@ -16,8 +16,8 @@ final class LyricsClient {
     
     private init() {}
     
-    /// Fetch lyrics (the source is chosen from settings)
-    func fetchLyrics(title: String, artist: String, album: String? = nil) async -> LyricsResult? {
+    /// Fetch lyrics from `source`: "lrclib", "netease", or "auto" (all of them in turn)
+    func fetchLyrics(title: String, artist: String, album: String? = nil, source: String = "auto") async -> LyricsResult? {
         let cacheKey = "\(title)_\(artist)".lowercased()
         
         // Check the cache
@@ -27,9 +27,6 @@ final class LyricsClient {
             #endif
             return cached
         }
-        
-        // Get the lyrics source the user chose
-        let source = SettingsDefaults.shared.get(SettingsDefaults.lyricsSource)
         
         #if DEBUG
         print("🎵 [LyricsClient] Fetching lyrics: \(title) - \(artist) [Source: \(source)]")

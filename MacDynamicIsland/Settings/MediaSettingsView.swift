@@ -40,7 +40,10 @@ struct MediaSettingsView: View {
 
                 Picker("Lyrics source", selection: Binding(
                     get: { SettingsDefaults.shared.get(SettingsDefaults.lyricsSource) },
-                    set: { SettingsDefaults.shared.set(SettingsDefaults.lyricsSource, value: $0) }
+                    set: {
+                        SettingsDefaults.shared.set(SettingsDefaults.lyricsSource, value: $0)
+                        MusicStore.shared.settings.lyricsSource = $0
+                    }
                 )) {
                     Text("Auto (best match)").tag("auto")
                     Text("LrcLib").tag("lrclib")

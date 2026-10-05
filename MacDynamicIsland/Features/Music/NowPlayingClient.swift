@@ -12,6 +12,9 @@ import OSLog
 final class NowPlayingClient: ObservableObject {
     @Published var currentState: NowPlayingState = .idle
 
+    /// libMediaRemoteAdapter.dylib: in the app's Frameworks, or beside a plugin's program
+    let adapterURL: URL?
+
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "NowPlaying")
 
     private var helper: Process?
@@ -44,7 +47,8 @@ final class NowPlayingClient: ObservableObject {
         stream();
         """
 
-    init() {
+    init(adapterURL: URL?) {
+        self.adapterURL = adapterURL
         loadCommandFunctions()
     }
 
@@ -67,9 +71,8 @@ final class NowPlayingClient: ObservableObject {
     }
 
     private func launchHelper() {
-        guard let adapterURL = Bundle.main.privateFrameworksURL?.appendingPathComponent("libMediaRemoteAdapter.dylib"),
-              FileManager.default.fileExists(atPath: adapterURL.path) else {
-            logger.error("libMediaRemoteAdapter.dylib is missing from the app bundle")
+        guard let adapterURL, FileManager.default.fileExists(atPath: adapterURL.path) else {
+            logger.error("libMediaRemoteAdapter.dylib is missing")
             return
         }
 

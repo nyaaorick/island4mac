@@ -85,7 +85,7 @@ struct ExpandedIslandRegion: View {
             Group {
                 switch appState.currentSection {
                 case .music:
-                    ExpandedMusicView(musicStore: MusicStore.shared, animation: animation)
+                    ExpandedMusicView(musicStore: NowPlayingStore.shared, animation: animation)
                 case .clipboard:
                     ClipboardView(store: appState.clipboardStore)
                 case .files:

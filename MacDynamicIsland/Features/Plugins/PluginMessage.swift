@@ -8,6 +8,8 @@ import Foundation
 ///     {"type":"compact","symbol":"timer","until":1767225600,"total":300}     counted down by the island
 ///     {"type":"list","rows":[{"id":"r1","title":"5 min","subtitle":"Pomodoro","symbol":"play"}]}
 ///     {"type":"cards","cards":[{"id":"c1","title":"Safari","preview":{"text":"let x = 1"}}]}   protocol 5: PluginCard
+///     {"type":"media","title":"Song","artist":"Artist","playing":true,"elapsed":42,"duration":215}   protocol 5: PluginMedia
+///     {"type":"lyrics","lines":[{"time":12.3,"text":"…"}]}                  protocol 5: the track's lyrics
 ///     {"type":"buttons","buttons":[{"id":"stop","title":"Stop","confirm":"Stop the timer?"}]}
 ///     {"type":"input","id":"minutes","placeholder":"Minutes","text":""}
 ///     {"type":"popup","symbol":"bell","text":"Time's up","seconds":3}
@@ -23,6 +25,10 @@ enum PluginMessage: Equatable {
     case list([PluginRow])
     /// Protocol 5: cards in a row you scroll sideways, above the rows
     case cards([PluginCard])
+    /// Protocol 5: what's playing, drawn with the island's own player
+    case media(PluginMedia)
+    /// Protocol 5: the playing track's lyrics
+    case lyrics([PluginLyricLine])
     case buttons([PluginButton])
     case input(PluginInput)
     case popup(PluginPopup)
@@ -53,6 +59,12 @@ enum PluginMessage: Equatable {
         case "compact": return .compact(try decoder.decode(PluginCompact.self, from: line).trimmed)
         case "list": return .list(Array(try decoder.decode(ListBody.self, from: line).rows.prefix(maxItems)).map(\.trimmed))
         case "cards": return .cards(Array(try decoder.decode(CardsBody.self, from: line).cards.prefix(maxItems)).map(\.trimmed))
+        case "media":
+            var media = try decoder.decode(PluginMedia.self, from: line).trimmed
+            // A position needs its time: now, if the plugin didn't say
+            if media.at == nil { media.at = Date().timeIntervalSince1970 }
+            return .media(media)
+        case "lyrics": return .lyrics(Array(try decoder.decode(LyricsBody.self, from: line).lines.prefix(PluginLyricLine.maxCount)).map(\.trimmed))
         case "buttons": return .buttons(Array(try decoder.decode(ButtonsBody.self, from: line).buttons.prefix(maxItems)).map(\.trimmed))
         case "input": return .input(try decoder.decode(PluginInput.self, from: line).trimmed)
         case "popup": return .popup(try decoder.decode(PluginPopup.self, from: line).trimmed)
@@ -72,6 +84,7 @@ enum PluginMessage: Equatable {
     private struct Envelope: Decodable { let type: String }
     private struct ListBody: Decodable { let rows: [PluginRow] }
     private struct CardsBody: Decodable { let cards: [PluginCard] }
+    private struct LyricsBody: Decodable { let lines: [PluginLyricLine] }
     private struct ButtonsBody: Decodable { let buttons: [PluginButton] }
     private struct ClearBody: Decodable { let target: PluginClearTarget }
     private struct StatusBody: Decodable { let state: String; let text: String? }
@@ -170,5 +183,5 @@ struct PluginNotice: Equatable {
 }
 
 enum PluginClearTarget: String, Decodable {
-    case compact, list, cards, buttons, input, all
+    case compact, list, cards, media, lyrics, buttons, input, all
 }

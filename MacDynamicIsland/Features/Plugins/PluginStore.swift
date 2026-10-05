@@ -18,6 +18,9 @@ final class PluginStore: ObservableObject {
         var compact: PluginCompact?
         var rows: [PluginRow] = []
         var cards: [PluginCard] = []
+        /// What it plays (protocol 5), and that track's lyrics
+        var media: PluginMedia?
+        var lyrics: [PluginLyricLine] = []
         var buttons: [PluginButton] = []
         var input: PluginInput?
         /// "Loading" or "couldn't load", drawn as one standard row
@@ -583,6 +586,15 @@ final class PluginStore: ObservableObject {
         case .list(let rows): content.rows = rows
         case .cards(let cards): content.cards = cards
         case .clear(.cards): content.cards = []
+        case .media(let media):
+            // Another track: the old one's lyrics go
+            if content.media?.title != media.title || content.media?.artist != media.artist { content.lyrics = [] }
+            content.media = media
+        case .lyrics(let lines): content.lyrics = lines
+        case .clear(.media):
+            content.media = nil
+            content.lyrics = []
+        case .clear(.lyrics): content.lyrics = []
         case .buttons(let buttons): content.buttons = buttons
         case .clear(.compact): content.compact = nil
         case .clear(.list): content.rows = []
