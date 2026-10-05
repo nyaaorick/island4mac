@@ -542,6 +542,63 @@ final class PluginTests: XCTestCase {
         XCTAssertEqual(card.actions?.count, PluginRowAction.maxCount)
     }
 
+    func testDropsReachAPluginThatAcceptsThem() throws {
+        XCTAssertEqual(String(decoding: PluginEvent.drop(paths: ["/tmp/a.pdf"], urls: ["https://example.com"]).line, as: UTF8.self),
+                       #"{"paths":["\/tmp\/a.pdf"],"type":"drop","urls":["https:\/\/example.com"]}"# + "\n")
+
+        let folder = try makeFolder()
+        _ = try writePlugin(#"{"id":"dropper","name":"Dropper","symbol":"tray","command":["/bin/cat"],"protocol":5,"accepts":["files"]}"#, id: "dropper", in: folder)
+        _ = try writePlugin(#"{"id":"plain","name":"Plain","symbol":"x","command":["/bin/cat"],"protocol":1}"#, id: "plain", in: folder)
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let tabs = TabStore(defaults: defaults)
+        let data = try makeFolder()
+        let store = PluginStore(pluginsFolder: folder, dataFolder: data, tabs: tabs, defaults: defaults)
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
+        store.reload()
+
+        let dropper = IslandTab.tab(forPlugin: "dropper"), plain = IslandTab.tab(forPlugin: "plain")
+        XCTAssertTrue(try PluginManifest.load(from: folder.appendingPathComponent("dropper")).acceptsFiles)
+        XCTAssertTrue(IslandDropTarget.accepts(dropper, plugins: store))
+        XCTAssertFalse(IslandDropTarget.accepts(plain, plugins: store))
+        XCTAssertFalse(IslandDropTarget.accepts(.music, plugins: store))
+        XCTAssertTrue(IslandDropTarget.accepts(.files, plugins: store), "the built-in Files tab takes drops")
+
+        // A drag goes to the tab showing if it takes drops, or else the first of your tabs that does
+        tabs.setEnabled(.files, false)
+        tabs.setEnabled(plain, true)
+        tabs.setEnabled(dropper, true)
+        XCTAssertEqual(IslandDropTarget.tab(preferring: plain, tabs: tabs, plugins: store), dropper)
+        XCTAssertEqual(IslandDropTarget.tab(preferring: nil, tabs: tabs, plugins: store), dropper)
+        tabs.setEnabled(.files, true)
+        XCTAssertEqual(IslandDropTarget.tab(preferring: dropper, tabs: tabs, plugins: store), dropper)
+        store.setEnabled("dropper", false)
+        XCTAssertFalse(IslandDropTarget.accepts(dropper, plugins: store), "turned off, it takes nothing")
+        XCTAssertEqual(IslandDropTarget.textFolder(for: dropper, plugins: store).path,
+                       data.appendingPathComponent("dropper/Drops").path, "dropped text goes to the plugin's data folder")
+    }
+
+    func testADropIsReadAsPathsAndLinks() async throws {
+        let folder = try makeFolder()
+        let file = folder.appendingPathComponent("a.txt")
+        try Data("a".utf8).write(to: file)
+        let drop = await IslandDrop.read([
+            try XCTUnwrap(NSItemProvider(contentsOf: file)),
+            NSItemProvider(object: URL(string: "https://example.com/page")! as NSURL),
+            NSItemProvider(object: "a note" as NSString),
+        ], savingTextIn: folder.appendingPathComponent("Drops"))
+        XCTAssertEqual(drop.urls, ["https://example.com/page"])
+        XCTAssertEqual(drop.paths.count, 2)
+        XCTAssertEqual(drop.paths.first, file.path)
+        let note = try XCTUnwrap(drop.paths.last)
+        XCTAssertTrue(note.hasPrefix(folder.appendingPathComponent("Drops").path), "text is saved as a file")
+        XCTAssertEqual(try String(contentsOfFile: note, encoding: .utf8), "a note")
+
+        XCTAssertEqual(IslandDrop.files([file, URL(string: "https://example.com")!]),
+                       IslandDrop(paths: [file.path], urls: ["https://example.com"]))
+    }
+
     func testCardsShowAndClear() throws {
         let store = PluginStore(pluginsFolder: try makeFolder(), dataFolder: try makeFolder(), tabs: TabStore(defaults: UserDefaults(suiteName: UUID().uuidString)!))
         store.apply(.cards([PluginCard(id: "c", title: "Card")]), from: "echo")

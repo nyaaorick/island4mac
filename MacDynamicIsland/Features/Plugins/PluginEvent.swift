@@ -14,6 +14,9 @@ enum PluginEvent: Equatable {
     /// Protocol 3, to a plugin that runs on demand: why it was started (launch, visible, action, timeline,
     /// preferences). Sent after its preferences, visibility and the event that woke it
     case wake(reason: String)
+    /// Protocol 5, to a plugin whose plugin.json "accepts" files: what you dropped on its tab. Files and folders
+    /// as paths; text the island saved as a file in the plugin's data folder (Drops/), also a path; links as URLs
+    case drop(paths: [String], urls: [String])
 
     var line: Data {
         let object: [String: Any] = switch self {
@@ -22,6 +25,7 @@ enum PluginEvent: Equatable {
         case .submit(let id, let text): ["type": "submit", "id": id, "text": text]
         case .preferences(let values): ["type": "preferences", "values": values.mapValues(\.object)]
         case .wake(let reason): ["type": "wake", "reason": reason]
+        case .drop(let paths, let urls): ["type": "drop", "paths": paths, "urls": urls]
         }
         var data = (try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])) ?? Data()
         data.append(UInt8(ascii: "\n"))

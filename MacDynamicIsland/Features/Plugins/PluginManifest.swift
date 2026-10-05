@@ -27,12 +27,16 @@ struct PluginManifest: Decodable, Equatable, Identifiable {
     var priority: PluginPriority?
 
     var runsInBackground: Bool { background == true }
+    /// What you can drop on its tab (protocol 5): `["files"]` takes files, text and links, sent as PluginEvent.drop
+    var accepts: [String]?
+
+    var acceptsFiles: Bool { accepts?.contains("files") == true }
 
     /// The newest PluginMessage version this app understands
     /// 2: preferences (plugin.json) and PluginEvent.preferences.
     /// 3: lifecycle "onDemand", the timeline, done and status messages, and PluginEvent.wake.
     /// 4: images on rows and compact content, row actions, and "background" and "priority" in plugin.json.
-    /// 5: cards (PluginCard)
+    /// 5: cards (PluginCard), "accepts" in plugin.json and PluginEvent.drop
     static let supportedProtocol = 5
     static let fileName = "plugin.json"
 

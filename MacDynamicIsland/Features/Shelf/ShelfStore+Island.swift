@@ -4,6 +4,12 @@ import AppKit
 /// The Files tab in the plugin protocol: what it shows, as PluginStore.Content, and what a tap does, as a
 /// PluginEvent. It is what the Files plugin will send and hear, drawn by the same PluginContentView
 extension ShelfStore {
+    /// The app's shelf, in the Files plugin's data folder
+    static let shared = ShelfStore(
+        folder: PluginStore.defaultDataFolder.appendingPathComponent("files", isDirectory: true),
+        legacyFile: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("MacDynamicIsland/shelf_items_v2.json"))
+
     /// A card per item, newest first: its thumbnail, name, size and the app that opens it; it drags out as the file
     var islandContent: PluginStore.Content {
         var content = PluginStore.Content()
@@ -62,7 +68,7 @@ extension ShelfStore {
         NSApp.activate()
         panel.begin { [weak self] response in
             guard response == .OK else { return }
-            MainActor.assumeIsolated { self?.add(panel.urls) }
+            MainActor.assumeIsolated { self?.add(paths: panel.urls.map(\.path)) }
         }
     }
 

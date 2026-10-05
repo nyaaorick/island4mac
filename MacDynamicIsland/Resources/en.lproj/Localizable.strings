@@ -31,6 +31,9 @@
 "tab.files" = "Files";
 "tab.agents" = "Agents";
 
+/* Dragging files, text or links over a tab that takes them */
+"island.drop" = "Drop to add";
+
 "settings.tabs.shown" = "Shown in the island";
 "settings.tabs.shown_help" = "Up to 6 tabs, three either side of the camera. Drag to reorder.";
 "settings.tabs.hidden" = "Not shown";

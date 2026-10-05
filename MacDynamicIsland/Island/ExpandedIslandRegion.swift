@@ -99,6 +99,8 @@ struct ExpandedIslandRegion: View {
                         .id(appState.currentSection)
                 }
             }
+            // Files, and plugins that take drops: shows where to drop and hands the drop over
+            .islandDropZone(for: appState.currentSection)
         }
         // The rest of the open island, sized per tab by NotchMetrics.expandedSize(for:largeDisplay:notch:)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -155,44 +155,39 @@ final class AppState: ObservableObject {
         logger.info("\(message)")
     }
 
-    // MARK: - Global Drag Detection (Boring Notch Style)
+    // MARK: - Dragging onto the island
 
+    /// A drag near the notch opens the island on the tab that takes drops (IslandDropTarget), which shows where
+    /// to drop (IslandDropZone). Releasing it there hands the files over even when SwiftUI's own drop doesn't
+    /// fire in the panel
     private func setupGlobalDragMonitor() {
         let detector = DragMonitor.shared
 
-        // When a drag enters the notch region
         detector.onDragEntersNotchRegion = { [weak self] in
             Task { @MainActor in
-                self?.isDraggingOver = true
-                self?.logEvent("🎯 Drag entered notch region")
-
-                // If collapsed, expand to the files section (when it's one of your tabs)
-                if self?.islandMode == .compact, TabStore.shared.isEnabled(.files) {
-                    self?.activateIsland(reason: .dragDetected)
-                    self?.currentSection = .files
-                }
+                guard let self, let tab = IslandDropTarget.tab(preferring: self.islandMode == .expanded ? self.currentSection : nil)
+                else { return }
+                self.isDraggingOver = true
+                self.currentSection = tab
+                if self.islandMode == .compact { self.activateIsland(reason: .dragDetected) }
             }
         }
 
-        // When a drag leaves the notch region
         detector.onDragExitsNotchRegion = { [weak self] in
             Task { @MainActor in
                 self?.isDraggingOver = false
-                self?.logEvent("📤 Drag exited notch region")
             }
         }
 
-        // ⚠️ Fallback drop handler: fires when SwiftUI `.onDrop` is blocked by NSPanel settings
         detector.onDropInNotchRegion = { [weak self] urls in
             Task { @MainActor in
-                self?.logEvent("💥 Fallback drop triggered with \(urls.count) files")
-
-                ShelfStore.shared.add(urls)
-                self?.isDraggingOver = false
+                guard let self else { return }
+                self.isDraggingOver = false
+                guard let tab = IslandDropTarget.tab(preferring: self.currentSection) else { return }
+                IslandDropTarget.deliver(.files(urls), to: tab)
             }
         }
 
-        // Start listening
         detector.startMonitoring()
     }
 
