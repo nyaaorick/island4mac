@@ -18,9 +18,10 @@ struct ShelfView: View {
         ZStack {
             ZStack {
                 // Solid black like the island around it; a material here would show the wallpaper through the panel.
-                // The Glass theme's island is already Liquid Glass, so only darken it a little
+                // The Glass theme's island is already Liquid Glass with its own dimming (IslandBackground), so the
+                // card adds none: darkening it again made this tab heavier than the others
                 RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .fill(appState.islandTheme == .glass ? Color.black.opacity(0.25) : Color.black)
+                    .fill(appState.islandTheme == .glass ? Color.clear : Color.black)
 
                 // Content Layer
                 VStack(spacing: 0) {

@@ -56,8 +56,11 @@ final class IslandWindow {
             .environmentObject(appState.clipboardStore)
             .environmentObject(nowPlayingClient)
             .ignoresSafeArea()
+            // Pinned dark like the panel, so SwiftUI never resolves a semantic color for a light system appearance
+            .environment(\.colorScheme, .dark)
 
         let hostingView = NSHostingView(rootView: rootView)
+        hostingView.appearance = NSAppearance(named: .darkAqua)
         hostingView.wantsLayer = true
         hostingView.layer?.backgroundColor = NSColor.clear.cgColor
 

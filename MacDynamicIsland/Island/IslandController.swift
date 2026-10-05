@@ -39,6 +39,13 @@ final class IslandPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
     override var acceptsFirstResponder: Bool { true }
+
+    // Liquid Glass (NSGlassEffectView) takes its window's active look and has no public switch for it, unlike
+    // NSVisualEffectView.state. The island opens on hover or a swipe without becoming key (it must not take
+    // the keyboard from the app you're in), so its glass came up in the inactive, opaque look until a click
+    // made it key. AppKit asks the window these to pick the look; the island always shows the active one
+    @objc func _hasActiveAppearance() -> Bool { true }
+    @objc func _hasActiveAppearanceIgnoringKeyFocus() -> Bool { true }
 }
 
 // MARK: - IslandController
