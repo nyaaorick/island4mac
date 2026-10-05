@@ -11,13 +11,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
     private var menu: NSMenu!
     
     private var appState: AppState  // Strong reference
-    private var overlayController: OverlayWindowController  // Strong reference
+    private var islandController: IslandController  // Strong reference
 
     // MARK: - Initialization
 
-    init(appState: AppState, overlayController: OverlayWindowController) {
+    init(appState: AppState, islandController: IslandController) {
         self.appState = appState
-        self.overlayController = overlayController
+        self.islandController = islandController
         
         super.init()  // REQUIRED for NSObject subclass before using self
         
@@ -83,13 +83,13 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu = NSMenu()
         menu.autoenablesItems = false
         
-        // Show Overlay
+        // Show the island
         let showItem = NSMenuItem(title: "Show Island", action: #selector(onShow), keyEquivalent: "s")
         showItem.target = self
         showItem.isEnabled = true
         menu.addItem(showItem)
         
-        // Hide Overlay
+        // Hide the island
         let hideItem = NSMenuItem(title: "Hide Island", action: #selector(onHide), keyEquivalent: "h")
         hideItem.target = self
         hideItem.isEnabled = true
@@ -108,7 +108,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         // Debug
         let debugMenu = NSMenu(title: "Debug & Development")
         
-        let centerItem = NSMenuItem(title: "Center (Reset Position)", action: #selector(onCenterDebugOverlay), keyEquivalent: "d")
+        let centerItem = NSMenuItem(title: "Center (Reset Position)", action: #selector(onCenterDebugIsland), keyEquivalent: "d")
         centerItem.target = self
         debugMenu.addItem(centerItem)
         
@@ -135,7 +135,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         print("╔══════════════════════════════════════════════════════════╗")
         print("║ [STATUS-BAR] onShow() CLICKED                             ║")
         print("╚══════════════════════════════════════════════════════════╝")
-        print("   OverlayController retained: \(Unmanaged.passUnretained(overlayController).toOpaque())")
+        print("   IslandController retained: \(Unmanaged.passUnretained(islandController).toOpaque())")
         
         // Ensure activation policy allows windows
         let policy = NSApp.activationPolicy()
@@ -146,12 +146,12 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         }
         
         NSApp.activate(ignoringOtherApps: true)
-        overlayController.show()
+        islandController.show()
     }
     
     @objc func onHide() {
         print("[STATUS-BAR] onHide called")
-        overlayController.hide()
+        islandController.hide()
     }
     
     @objc func onSettings() {
@@ -159,20 +159,20 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         SettingsWindowController.shared.showSettings()
     }
     
-    @objc func onCenterDebugOverlay() {
+    @objc func onCenterDebugIsland() {
         print("")
         print("═══════════════════════════════════════════════════════")
-        print("[STATUS-BAR] onCenterDebugOverlay called - FORCING CENTER POSITION")
+        print("[STATUS-BAR] onCenterDebugIsland called - FORCING CENTER POSITION")
         print("═══════════════════════════════════════════════════════")
         
         // Use AppState to trigger reset as we don't access window directly anymore
         appState.isPositionLocked = true
         appState.isMoveModeEnabled = false
-        overlayController.reposition()
+        islandController.reposition()
         
         // Force visibility via app state
-        appState.isOverlayVisible = true
-        appState.overlayMode = .compact
+        appState.isIslandVisible = true
+        appState.islandMode = .compact
         
         print("[DEBUG] Triggered state reset via AppState")
         print("═══════════════════════════════════════════════════════")

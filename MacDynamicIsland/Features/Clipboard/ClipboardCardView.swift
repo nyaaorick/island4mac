@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - ClipboardCardView (Premium Horizontal UI)
 struct ClipboardCardView: View {
-    let item: IslandClipItem
+    let item: ClipboardItem
     let action: () -> Void
     
     @State private var isHovered = false

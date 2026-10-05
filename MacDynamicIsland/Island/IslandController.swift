@@ -2,8 +2,8 @@ import Cocoa
 import SwiftUI
 import Combine
 
-// MARK: - OverlayPanel (Pixel-Perfect Boring Notch Setup)
-final class OverlayPanel: NSPanel {
+// MARK: - IslandPanel (Pixel-Perfect Boring Notch Setup)
+final class IslandPanel: NSPanel {
     override init(
         contentRect: NSRect,
         styleMask style: NSWindow.StyleMask,
@@ -41,21 +41,21 @@ final class OverlayPanel: NSPanel {
     override var acceptsFirstResponder: Bool { true }
 }
 
-// MARK: - OverlayWindowController
+// MARK: - IslandController
 /// Keeps the islands: the main one on the display you chose (or under the mouse, with "automatically switch display"),
 /// and with "all screens" on, one more on every other display. Everything outside that asks for "the" island
 /// (hotkeys, the clipboard, Settings) gets the main one.
 @MainActor
-final class OverlayWindowController: NSObject {
+final class IslandController: NSObject {
 
-    static let shared = OverlayWindowController()
+    static let shared = IslandController()
 
     private let appState = AppState()
     private let settingsStore = SettingsDefaults.shared
     private var cancellables = Set<AnyCancellable>()
 
     // MANAGERS
-    private var nowPlayingManager: NowPlayingManager!
+    private var nowPlayingClient: NowPlayingClient!
     private var globalMouseMonitor: Any?
     private var localMouseMonitor: Any?
 
@@ -76,7 +76,7 @@ final class OverlayWindowController: NSObject {
     private override init() {
         super.init()
         setupManagers() // INITIALIZE MUSIC STREAM
-        mainIsland = IslandWindow(appState: appState, nowPlayingManager: nowPlayingManager) { [weak self] in
+        mainIsland = IslandWindow(appState: appState, nowPlayingClient: nowPlayingClient) { [weak self] in
             self?.mainIslandScreen()
         }
         setupObservers()
@@ -95,20 +95,20 @@ final class OverlayWindowController: NSObject {
         guard settingsStore.get(SettingsDefaults.agentPromptsOpenIsland) else { return }
         let state = islandUnderMouse()?.appState ?? appState
         // Don't pull the open island away from a tab you're using
-        if state.overlayMode == .expanded && state.islandFrame.contains(NSEvent.mouseLocation) { return }
+        if state.islandMode == .expanded && state.islandFrame.contains(NSEvent.mouseLocation) { return }
         state.currentSection = .agents
         withAnimation(boringOpenAnimation) {
-            state.activateOverlay(reason: .agentPrompt)
+            state.activateIsland(reason: .agentPrompt)
         }
     }
 
     /// Closes the islands a prompt opened once no prompt is left, unless the pointer is on them
     private func closeAfterAgentPrompts() {
         for state in islands.map(\.appState) {
-            guard state.overlayMode == .expanded, state.visibilityReason == .agentPrompt,
+            guard state.islandMode == .expanded, state.visibilityReason == .agentPrompt,
                   !state.islandFrame.contains(NSEvent.mouseLocation) else { continue }
             withAnimation(boringCloseAnimation) {
-                state.deactivateOverlay()
+                state.deactivateIsland()
             }
         }
     }
@@ -122,20 +122,20 @@ final class OverlayWindowController: NSObject {
     }
 
     private func islandUnderMouse() -> IslandWindow? {
-        guard let display = ScreenManager.activeScreenContainingMouse()?.displayID else { return nil }
+        guard let display = ScreenService.activeScreenContainingMouse()?.displayID else { return nil }
         return islands.first { $0.currentDisplayID == display }
     }
 
     private func setupManagers() {
         // Initialize NowPlaying Stream
-        nowPlayingManager = NowPlayingManager()
+        nowPlayingClient = NowPlayingClient()
 
         // Unit tests are hosted inside the app: don't connect the music module, so tests don't send Apple Events to the player or pop up an authorization dialog
         guard !BuildConfig.isRunningUnitTests else { return }
 
-        // Connect to MusicManager
+        // Connect to MusicStore
         Task { @MainActor in
-            MusicManager.shared.connectToNowPlayingManager(nowPlayingManager)
+            MusicStore.shared.connectToNowPlayingClient(nowPlayingClient)
         }
     }
 
@@ -148,7 +148,7 @@ final class OverlayWindowController: NSObject {
             .store(in: &cancellables)
 
         // Collapse the playback wings when paused (after 1 second, so the brief pause when switching tracks doesn't count); show them again when the mouse moves onto the notch
-        MusicManager.shared.$isPlaying
+        MusicStore.shared.$isPlaying
             .removeDuplicates()
             .map { playing -> AnyPublisher<Bool, Never> in
                 playing
@@ -166,8 +166,8 @@ final class OverlayWindowController: NSObject {
 
         // The collapsed island extends or retracts its wings when playback content appears or disappears
         // Playback info is reassigned periodically; only whether there is any content matters
-        MusicManager.shared.$songTitle
-            .combineLatest(MusicManager.shared.$artistName)
+        MusicStore.shared.$songTitle
+            .combineLatest(MusicStore.shared.$artistName)
             .map { title, artist in !(title.isEmpty && artist.isEmpty) }
             .removeDuplicates()
             .sink { [weak self] _ in
@@ -241,7 +241,7 @@ final class OverlayWindowController: NSObject {
         guard now.timeIntervalSince(lastMouseCheckTime) > 0.1 else { return }
         lastMouseCheckTime = now
 
-        if let screen = ScreenManager.activeScreenContainingMouse(), screen.displayID != mainIsland.currentDisplayID {
+        if let screen = ScreenService.activeScreenContainingMouse(), screen.displayID != mainIsland.currentDisplayID {
             mainIsland.scheduleWindowUpdate()
         }
     }
@@ -257,9 +257,9 @@ final class OverlayWindowController: NSObject {
     private func mainIslandScreen() -> NSScreen? {
         let screens = NSScreen.screens
         let chosenUUID = settingsStore.get(SettingsDefaults.preferredDisplayUUID)
-        let display = ScreenManager.islandDisplay(
+        let display = ScreenService.islandDisplay(
             followsMouse: followsMouse,
-            mouseDisplay: ScreenManager.activeScreenContainingMouse()?.displayID,
+            mouseDisplay: ScreenService.activeScreenContainingMouse()?.displayID,
             currentDisplay: mainIsland?.currentDisplayID,
             chosenDisplay: chosenUUID.isEmpty ? nil : screens.first { $0.displayUUID == chosenUUID }?.displayID,
             builtInDisplay: screens.first(where: \.hasNotch)?.displayID,
@@ -282,7 +282,7 @@ final class OverlayWindowController: NSObject {
 
     /// With "All displays" on, every display besides the main island's gets its own island; they're removed when it's turned off or a display is unplugged
     private func syncOtherIslands() {
-        let wanted = Set(ScreenManager.otherIslandDisplays(
+        let wanted = Set(ScreenService.otherIslandDisplays(
             allScreens: settingsStore.get(SettingsDefaults.showOnAllDisplays),
             displays: NSScreen.screens.compactMap(\.displayID),
             primary: mainIslandScreen()?.displayID
@@ -292,7 +292,7 @@ final class OverlayWindowController: NSObject {
             otherIslands[display] = nil
         }
         for display in wanted where otherIslands[display] == nil {
-            let island = IslandWindow(appState: AppState(sharingWith: appState), nowPlayingManager: nowPlayingManager) {
+            let island = IslandWindow(appState: AppState(sharingWith: appState), nowPlayingClient: nowPlayingClient) {
                 NSScreen.screens.first { $0.displayID == display }
             }
             island.musicIsPlaying = musicIsPlaying
@@ -308,6 +308,6 @@ final class OverlayWindowController: NSObject {
         islands.forEach { $0.reposition() }
     }
 
-    func show() { islands.forEach { $0.appState.isOverlayVisible = true } }
-    func hide() { islands.forEach { $0.appState.isOverlayVisible = false } }
+    func show() { islands.forEach { $0.appState.isIslandVisible = true } }
+    func hide() { islands.forEach { $0.appState.isIslandVisible = false } }
 }

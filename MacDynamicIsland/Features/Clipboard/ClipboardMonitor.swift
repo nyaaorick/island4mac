@@ -1,14 +1,14 @@
 import Cocoa
 import Combine
 
-// MARK: - ClipboardManager (Polling & Notification)
-final class ClipboardManager: ObservableObject {
+// MARK: - ClipboardMonitor (Polling & Notification)
+final class ClipboardMonitor: ObservableObject {
     private var timer: Timer?
     private var lastChangeCount = NSPasteboard.general.changeCount
-    private let vault: IslandClipVault
+    private let store: ClipboardStore
     
-    init(vault: IslandClipVault) {
-        self.vault = vault
+    init(store: ClipboardStore) {
+        self.store = store
     }
     
     func start() {
@@ -35,8 +35,8 @@ final class ClipboardManager: ObservableObject {
             if let tiff = image.tiffRepresentation, let bitmap = NSBitmapImageRep(data: tiff) {
                 let pngData = bitmap.representation(using: .png, properties: [:])
                 Task { @MainActor in
-                    vault.addItem(content: "[Image]", type: IslandClipItem.ItemType.image, sourceBundleID: bundleID, sourceAppName: appName, imageData: pngData)
-                    OverlayWindowController.shared.getAppState().showOverlay(reason: .clipboard)
+                    store.addItem(content: "[Image]", type: ClipboardItem.ItemType.image, sourceBundleID: bundleID, sourceAppName: appName, imageData: pngData)
+                    IslandController.shared.getAppState().showIsland(reason: .clipboard)
                 }
             }
             return
@@ -47,16 +47,16 @@ final class ClipboardManager: ObservableObject {
             let type = detectType(trimmed)
             
             Task { @MainActor in
-                vault.addItem(content: trimmed, type: type, sourceBundleID: bundleID, sourceAppName: appName, imageData: nil)
-                OverlayWindowController.shared.getAppState().showOverlay(reason: .clipboard)
+                store.addItem(content: trimmed, type: type, sourceBundleID: bundleID, sourceAppName: appName, imageData: nil)
+                IslandController.shared.getAppState().showIsland(reason: .clipboard)
             }
         }
     }
     
-    private func detectType(_ content: String) -> IslandClipItem.ItemType {
-        if let url = URL(string: content), url.scheme != nil { return IslandClipItem.ItemType.url }
+    private func detectType(_ content: String) -> ClipboardItem.ItemType {
+        if let url = URL(string: content), url.scheme != nil { return ClipboardItem.ItemType.url }
         let codeMarkers = ["{", "}", ";", "func ", "let ", "var ", "import", "class"]
-        if codeMarkers.contains(where: { content.contains($0) }) { return IslandClipItem.ItemType.code }
-        return IslandClipItem.ItemType.text
+        if codeMarkers.contains(where: { content.contains($0) }) { return ClipboardItem.ItemType.code }
+        return ClipboardItem.ItemType.text
     }
 }

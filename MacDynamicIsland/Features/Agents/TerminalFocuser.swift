@@ -11,7 +11,7 @@ enum TerminalFocuser {
         // Terminal and iTerm2 can select the exact tab; anything else (an editor, the Claude, Codex or ZCode app) is just activated
         if let tty = terminal.tty, isDeviceName(tty), let script = selectTabScript(bundleID: bundleID, tty: "/dev/\(tty)") {
             Task {
-                if await AppleScriptHelper.execute(script) == nil {
+                if await AppleScriptClient.execute(script) == nil {
                     activate(bundleID)
                 }
             }

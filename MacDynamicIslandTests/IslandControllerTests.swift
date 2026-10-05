@@ -5,9 +5,9 @@ import Combine
 /// The island animates entirely in SwiftUI on a fixed-size canvas; the panel is only resized
 /// around it. These tests pin down that choreography.
 @MainActor
-final class OverlayWindowTests: XCTestCase {
+final class IslandControllerTests: XCTestCase {
 
-    /// Longer than OverlayWindowController's settle delay for the close spring
+    /// Longer than IslandController's settle delay for the close spring
     private let settleTime: TimeInterval = 0.8
 
     /// Keep the main run loop turning so the panel's delayed shrink can run
@@ -17,11 +17,11 @@ final class OverlayWindowTests: XCTestCase {
 
     /// The main island's panel: with "all screens" on there's one on every display
     private func islandPanel() throws -> NSWindow {
-        OverlayWindowController.shared.mainPanel
+        IslandController.shared.mainPanel
     }
 
     private var visibleIslandPanels: [NSWindow] {
-        NSApp.windows.filter { $0 is OverlayPanel && $0.isVisible }
+        NSApp.windows.filter { $0 is IslandPanel && $0.isVisible }
     }
 
     func testAllScreensPutsAnIslandOnEveryDisplay() {
@@ -58,18 +58,18 @@ final class OverlayWindowTests: XCTestCase {
     }
 
     private func collapseAndSettle(_ state: AppState) {
-        state.deactivateOverlay()
+        state.deactivateIsland()
         runMainLoop(for: settleTime)
     }
 
     func testPanelGrowsBeforeOpeningAndShrinksAfterClosing() throws {
-        let state = OverlayWindowController.shared.getAppState()
+        let state = IslandController.shared.getAppState()
         let panel = try islandPanel()
         collapseAndSettle(state)
         let compact = panel.frame
         let canvas = try canvasOnScreen(panel)
 
-        state.activateOverlay()
+        state.activateIsland()
         // Already grown when SwiftUI renders the first frame of the open spring
         let open = panel.frame
         XCTAssertGreaterThan(open.width, compact.width)
@@ -78,7 +78,7 @@ final class OverlayWindowTests: XCTestCase {
         XCTAssertEqual(open.midX, compact.midX, accuracy: 0.5, "the island stays centered")
         assertEqual(try canvasOnScreen(panel), canvas, "resizing the panel must not move the SwiftUI canvas")
 
-        state.deactivateOverlay()
+        state.deactivateIsland()
         assertEqual(panel.frame, open, "the panel keeps its size while the close spring runs")
 
         runMainLoop(for: settleTime)
@@ -87,15 +87,15 @@ final class OverlayWindowTests: XCTestCase {
     }
 
     func testReopeningWhileClosingCancelsTheShrink() throws {
-        let state = OverlayWindowController.shared.getAppState()
+        let state = IslandController.shared.getAppState()
         let panel = try islandPanel()
         collapseAndSettle(state)
 
-        state.activateOverlay()
+        state.activateIsland()
         let open = panel.frame
-        state.deactivateOverlay()
+        state.deactivateIsland()
         runMainLoop(for: 0.2)
-        state.activateOverlay()
+        state.activateIsland()
 
         runMainLoop(for: settleTime)
         assertEqual(panel.frame, open, "a pending shrink must not fire after the island reopened")
@@ -104,7 +104,7 @@ final class OverlayWindowTests: XCTestCase {
     }
 
     func testCollapsedActivityGrowsOnlyToTheLeft() throws {
-        let state = OverlayWindowController.shared.getAppState()
+        let state = IslandController.shared.getAppState()
         let panel = try islandPanel()
         guard state.notchSize != .zero else { throw XCTSkip("needs a display with a notch") }
         collapseAndSettle(state)
@@ -154,7 +154,7 @@ final class OverlayWindowTests: XCTestCase {
     }
 
     func testLiveActivityFitsIntoTheRoomBesideTheNotch() throws {
-        let state = OverlayWindowController.shared.getAppState()
+        let state = IslandController.shared.getAppState()
         let panel = try islandPanel()
         let notch = state.notchSize
         guard notch != .zero, let screen = panel.screen else { throw XCTSkip("needs a display with a notch") }
@@ -200,10 +200,10 @@ final class OverlayWindowTests: XCTestCase {
     }
 
     func testPausedMusicShowsOnlyWhileThePointerIsOnTheNotch() throws {
-        let state = OverlayWindowController.shared.getAppState()
+        let state = IslandController.shared.getAppState()
         let panel = try islandPanel()
         guard state.notchSize != .zero else { throw XCTSkip("needs a display with a notch") }
-        let music = MusicManager.shared
+        let music = MusicStore.shared
         collapseAndSettle(state)
         let compact = panel.frame
 
@@ -229,13 +229,13 @@ final class OverlayWindowTests: XCTestCase {
     }
 
     func testEachTabOpensToItsOwnSize() throws {
-        let state = OverlayWindowController.shared.getAppState()
+        let state = IslandController.shared.getAppState()
         let panel = try islandPanel()
         state.currentSection = .music
         collapseAndSettle(state)
         let canvas = try canvasOnScreen(panel)
 
-        state.activateOverlay()
+        state.activateIsland()
         let music = panel.frame
 
         state.currentSection = .clipboard
@@ -260,17 +260,17 @@ final class OverlayWindowTests: XCTestCase {
     /// What hands the keyboard back to the app you were using: sent once, when the open island closes
     func testClosingTheIslandIsReportedOnce() {
         // A state of its own, without a panel, so nothing on screen moves
-        let state = AppState(sharingWith: OverlayWindowController.shared.getAppState())
+        let state = AppState(sharingWith: IslandController.shared.getAppState())
         var collapses = 0
         let subscription = state.didCollapse.sink { collapses += 1 }
         defer { subscription.cancel() }
 
-        state.deactivateOverlay()
+        state.deactivateIsland()
         XCTAssertEqual(collapses, 0, "it was closed already")
-        state.activateOverlay()
+        state.activateIsland()
         state.currentSection = .clipboard
         XCTAssertEqual(collapses, 0, "switching tabs isn't closing")
-        state.deactivateOverlay()
+        state.deactivateIsland()
         XCTAssertEqual(collapses, 1)
     }
 
@@ -304,7 +304,7 @@ final class OverlayWindowTests: XCTestCase {
     }
 
     func testTheIslandOpensAsWideAsItsDisplayAllows() throws {
-        let state = OverlayWindowController.shared.getAppState()
+        let state = IslandController.shared.getAppState()
         let panel = try islandPanel()
         collapseAndSettle(state)
         let screen = try XCTUnwrap(panel.screen)
@@ -313,7 +313,7 @@ final class OverlayWindowTests: XCTestCase {
             XCTAssertFalse(state.isOnLargeDisplay, "the island under the notch stays as it is")
         }
 
-        state.activateOverlay()
+        state.activateIsland()
         let open = state.isOnLargeDisplay ? NotchMetrics.largeDisplayExpandedWidth : NotchMetrics.expandedWidth
         XCTAssertEqual(panel.frame.width, open + 2 * NotchMetrics.overshootMargin, accuracy: 0.5)
 
@@ -321,7 +321,7 @@ final class OverlayWindowTests: XCTestCase {
     }
 
     func testTheLiveActivityPillWidensOnALargeDisplay() throws {
-        let state = OverlayWindowController.shared.getAppState()
+        let state = IslandController.shared.getAppState()
         let panel = try islandPanel()
         guard state.isOnLargeDisplay, let screen = panel.screen else { throw XCTSkip("needs the island on a large external display") }
         collapseAndSettle(state)

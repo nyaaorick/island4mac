@@ -61,7 +61,7 @@ struct IslandBackground: View {
 
 /// The system's Liquid Glass (NSGlassEffectView, the material behind Control Center), sampling whatever is
 /// behind the panel. Always dark, like Control Center in dark mode, so the island's white text stays readable
-/// over a light window: the panel (OverlayPanel) is dark whatever the system appearance, and so is this view.
+/// over a light window: the panel (IslandPanel) is dark whatever the system appearance, and so is this view.
 /// It is drawn as the island's body (the notch outline without its top flares); the black of IslandBackground
 /// covers its top edge
 struct IslandGlass: NSViewRepresentable {

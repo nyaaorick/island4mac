@@ -9,8 +9,8 @@ import OSLog
 /// libMediaRemoteAdapter.dylib loaded into the Apple-signed /usr/bin/perl, which streams JSON lines.
 /// Sending commands is still allowed from the app itself.
 @MainActor
-final class NowPlayingManager: ObservableObject {
-    @Published var currentState: IslandNowPlayingState = .idle
+final class NowPlayingClient: ObservableObject {
+    @Published var currentState: NowPlayingState = .idle
 
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "NowPlaying")
 
@@ -168,9 +168,9 @@ final class NowPlayingManager: ObservableObject {
         var timestamp: Double?
         var artwork: String?
 
-        var state: IslandNowPlayingState {
+        var state: NowPlayingState {
             guard let playing else { return .idle }
-            return IslandNowPlayingState(
+            return NowPlayingState(
                 isPlaying: playing,
                 playbackRate: rate ?? (playing ? 1 : 0),
                 title: title ?? "",

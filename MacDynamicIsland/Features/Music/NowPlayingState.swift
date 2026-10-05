@@ -1,8 +1,8 @@
 import Foundation
 import AppKit
 
-// MARK: - IslandNowPlayingState (Globally Unique)
-struct IslandNowPlayingState: Equatable {
+// MARK: - NowPlayingState (Globally Unique)
+struct NowPlayingState: Equatable {
     let isPlaying: Bool
     let playbackRate: Double
     let title: String

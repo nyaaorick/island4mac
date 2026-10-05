@@ -10,25 +10,24 @@ final class AppState: ObservableObject {
     let settingsStore = SettingsDefaults.shared
 
     // Clipboard history shown in the clipboard tab
-    let clipVault: IslandClipVault
-    var clipboardHub: ClipboardHubStore { clipVault }
+    let clipboardStore: ClipboardStore
     /// Only the main island watches for files dragged to the notch; the drag detector knows one region
     private let tracksDrags: Bool
 
-    @Published var isOverlayVisible: Bool = true
-    @Published var visibilityReason: OverlayVisibilityReason = .none
+    @Published var isIslandVisible: Bool = true
+    @Published var visibilityReason: IslandVisibilityReason = .none
     @Published var interactionState: IslandInteractionState = .idle
-    @Published var overlayMode: OverlayMode = .compact {
+    @Published var islandMode: IslandMode = .compact {
         didSet {
             resetAutoCloseTimer()
             islandSizeDidChange.send()
-            if oldValue == .expanded && overlayMode == .compact { didCollapse.send() }
+            if oldValue == .expanded && islandMode == .compact { didCollapse.send() }
         }
     }
     @Published var currentSection: IslandSection = .music {
         didSet { resetAutoCloseTimer(); islandSizeDidChange.send() }
     }
-    /// Sent once a new overlayMode or currentSection is stored. @Published sends before the value is stored,
+    /// Sent once a new islandMode or currentSection is stored. @Published sends before the value is stored,
     /// and resizing the panel then makes SwiftUI lay out with the old value and miss the new one
     let islandSizeDidChange = PassthroughSubject<Void, Never>()
     /// Sent when the open island has closed
@@ -41,7 +40,7 @@ final class AppState: ObservableObject {
     /// widens to fit the whole title and lyric line
     @Published var isOnLargeDisplay = false
     /// Collapsed content beside the notch, as wide as the menus and status icons leave room for.
-    /// Set by OverlayWindowController after it has sized the panel, so the view never animates outside the panel.
+    /// Set by IslandController after it has sized the panel, so the view never animates outside the panel.
     @Published var liveActivityWings: IslandWings = .none
     /// Whether the collapsed island shows its live activity (now playing or an agent session) beside the notch
     var showsLiveActivity: Bool { !liveActivityWings.isEmpty }
@@ -71,7 +70,7 @@ final class AppState: ObservableObject {
     /// State of one island. The main one owns the clipboard history and watches for dragged files;
     /// islands on the other displays (with "all screens" on) share its history
     init(sharingWith main: AppState? = nil) {
-        clipVault = main?.clipVault ?? IslandClipVault()
+        clipboardStore = main?.clipboardStore ?? ClipboardStore()
         tracksDrags = main == nil
 
         // Sync setting changes to AppState triggers
@@ -81,17 +80,17 @@ final class AppState: ObservableObject {
 
         guard main == nil else { return }
         // Clipboard polling is started by AppIntegration; only load history here
-        clipVault.loadFromDisk()
+        clipboardStore.loadFromDisk()
 
         // Start the global drag detector (Boring Notch style)
-        setupGlobalDragDetector()
+        setupGlobalDragMonitor()
     }
 
     func resetAutoCloseTimer() {
         autoCloseTimer?.invalidate()
         autoCloseTimer = nil
 
-        guard overlayMode == .expanded else { return }
+        guard islandMode == .expanded else { return }
         guard settingsStore.get(SettingsDefaults.autoCloseEnabled) else { return }
 
         let timeout = settingsStore.get(SettingsDefaults.autoCloseTimeout)
@@ -100,7 +99,7 @@ final class AppState: ObservableObject {
                 // An agent's question or permission prompt stays open until you've dealt with it,
                 // and nothing closes under your typing
                 guard self?.visibilityReason != .agentPrompt, self?.isTyping != true else { return }
-                self?.deactivateOverlay()
+                self?.deactivateIsland()
             }
         }
     }
@@ -136,21 +135,21 @@ final class AppState: ObservableObject {
         }
     }
 
-    enum OverlayMode { case compact, expanded }
+    enum IslandMode { case compact, expanded }
 
     // HELPER METHODS
-    func showOverlay(reason: OverlayVisibilityReason = .userExpanded) {
-        visibilityReason = reason; isOverlayVisible = true
+    func showIsland(reason: IslandVisibilityReason = .userExpanded) {
+        visibilityReason = reason; isIslandVisible = true
     }
-    func activateOverlay(reason: OverlayVisibilityReason = .userExpanded) {
-        interactionState = .active; overlayMode = .expanded; isOverlayVisible = true; visibilityReason = reason
+    func activateIsland(reason: IslandVisibilityReason = .userExpanded) {
+        interactionState = .active; islandMode = .expanded; isIslandVisible = true; visibilityReason = reason
     }
-    func deactivateOverlay() {
-        interactionState = .idle; overlayMode = .compact
+    func deactivateIsland() {
+        interactionState = .idle; islandMode = .compact
     }
 
-    func forceCloseOverlay() {
-        deactivateOverlay()
+    func forceCloseIsland() {
+        deactivateIsland()
     }
 
     func logEvent(_ message: String) {
@@ -160,8 +159,8 @@ final class AppState: ObservableObject {
 
     // MARK: - Global Drag Detection (Boring Notch Style)
 
-    private func setupGlobalDragDetector() {
-        let detector = DragDetectorManager.shared
+    private func setupGlobalDragMonitor() {
+        let detector = DragMonitor.shared
 
         // When a drag enters the notch region
         detector.onDragEntersNotchRegion = { [weak self] in
@@ -170,8 +169,8 @@ final class AppState: ObservableObject {
                 self?.logEvent("🎯 Drag entered notch region")
 
                 // If collapsed, expand to the files section
-                if self?.overlayMode == .compact {
-                    self?.activateOverlay(reason: .dragDetected)
+                if self?.islandMode == .compact {
+                    self?.activateIsland(reason: .dragDetected)
                     self?.currentSection = .files
                 }
             }
@@ -194,14 +193,14 @@ final class AppState: ObservableObject {
                 for url in urls {
                     let bookmarkData = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
                     let item = ShelfItem(url: url, bookmarkData: bookmarkData)
-                    if !ShelfStateViewModel.shared.items.contains(where: { $0.url == item.url }) {
+                    if !ShelfStore.shared.items.contains(where: { $0.url == item.url }) {
                         withAnimation(.spring()) {
-                            ShelfStateViewModel.shared.items.insert(item, at: 0)
+                            ShelfStore.shared.items.insert(item, at: 0)
                         }
                     }
                 }
 
-                ShelfStateViewModel.shared.saveItems()
+                ShelfStore.shared.saveItems()
                 self?.isDraggingOver = false
             }
         }
@@ -212,6 +211,6 @@ final class AppState: ObservableObject {
 
     func updateNotchRegion(_ region: CGRect) {
         islandFrame = region
-        if tracksDrags { DragDetectorManager.shared.updateNotchRegion(region) }
+        if tracksDrags { DragMonitor.shared.updateNotchRegion(region) }
     }
 }

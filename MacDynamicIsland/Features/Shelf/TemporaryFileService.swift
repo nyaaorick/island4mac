@@ -1,8 +1,8 @@
 import Foundation
 
 /// Service for managing temporary file storage
-class TemporaryFileStorageService {
-    static let shared = TemporaryFileStorageService()
+class TemporaryFileService {
+    static let shared = TemporaryFileService()
     
     private let fileManager = FileManager.default
     private var tempDirectory: URL

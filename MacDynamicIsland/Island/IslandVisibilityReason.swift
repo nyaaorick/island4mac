@@ -1,8 +1,8 @@
 import Foundation
 
-/// Explicit reason why overlay is currently visible
-/// Overlay is HIDDEN unless one of these reasons is active
-enum OverlayVisibilityReason: Equatable {
+/// Explicit reason why the island is currently visible
+/// The island is HIDDEN unless one of these reasons is active
+enum IslandVisibilityReason: Equatable {
     case clipboard          // Clipboard changed, showing preview
     case clipboardHistory   // Clipboard history picker
     case dragDetected       // Global drag detected (Boring Notch style)

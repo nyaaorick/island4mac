@@ -68,7 +68,7 @@ struct ExpandedIslandRegion: View {
                 .onHover { h in if h { NSCursor.pointingHand.set() } else { NSCursor.arrow.set() } }
                 .onTapGesture {
                     withAnimation(boringInteractiveSpring) {
-                        appState.deactivateOverlay()
+                        appState.deactivateIsland()
                     }
                 }
         }
@@ -86,9 +86,9 @@ struct ExpandedIslandRegion: View {
             Group {
                 switch appState.currentSection {
                 case .music:
-                    ExpandedMusicView(musicManager: MusicManager.shared, animation: animation)
+                    ExpandedMusicView(musicStore: MusicStore.shared, animation: animation)
                 case .clipboard:
-                    ClipboardHubView(vault: appState.clipVault)
+                    ClipboardView(store: appState.clipboardStore)
                 case .files:
                     ShelfView()
                 case .agents:

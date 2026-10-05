@@ -10,7 +10,7 @@ struct NotchHomeView: View {
     @State private var isHovering: Bool = false
     @State private var hoverTask: Task<Void, Never>? = nil
 
-    private var isExpanded: Bool { appState.overlayMode == .expanded }
+    private var isExpanded: Bool { appState.islandMode == .expanded }
     private var notch: CGSize { appState.notchSize }
 
     // Match Boring Notch physics (extracted)
@@ -34,7 +34,7 @@ struct NotchHomeView: View {
         NotchMetrics.islandOffset(expanded: isExpanded, notch: notch, wings: appState.liveActivityWings)
     }
 
-    /// The size OverlayWindowController gives the panel, so the settled island fills it exactly
+    /// The size IslandController gives the panel, so the settled island fills it exactly
     private var islandSize: CGSize {
         NotchMetrics.islandSize(
             expanded: isExpanded,
@@ -65,7 +65,7 @@ struct NotchHomeView: View {
             hoverTask?.cancel()
             appState.isPeekingNotch = false
             withAnimation(closeAnimation) {
-                appState.deactivateOverlay()
+                appState.deactivateIsland()
             }
         default:
             break
@@ -143,7 +143,7 @@ struct NotchHomeView: View {
             appState.currentSection = .agents
         }
         withAnimation(openAnimation) {
-            appState.activateOverlay(reason: .userExpanded)
+            appState.activateIsland(reason: .userExpanded)
         }
     }
 
@@ -171,7 +171,7 @@ struct NotchHomeView: View {
                 guard !appState.islandFrame.contains(NSEvent.mouseLocation) else { return }
                 appState.isPeekingNotch = false
                 withAnimation(closeAnimation) {
-                    appState.deactivateOverlay()
+                    appState.deactivateIsland()
                 }
             }
             return
@@ -196,7 +196,7 @@ struct NotchHomeView: View {
                 try? await Task.sleep(nanoseconds: nanos)
                 guard !Task.isCancelled else { return }
                 guard isHovering else { return }
-                guard appState.overlayMode == .compact else { return }
+                guard appState.islandMode == .compact else { return }
 
                 openIsland()
             }

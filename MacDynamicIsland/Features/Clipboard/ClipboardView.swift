@@ -1,15 +1,15 @@
 import SwiftUI
 
-// MARK: - ClipboardHubView (The Island functional zone)
-struct ClipboardHubView: View {
+// MARK: - ClipboardView (The Island functional zone)
+struct ClipboardView: View {
     @EnvironmentObject private var appState: AppState
-    @ObservedObject var vault: IslandClipVault
+    @ObservedObject var store: ClipboardStore
     
     var body: some View {
         HStack(spacing: 0) {
             // Sidebar
             VStack {
-                Button(action: { vault.clearAll() }) {
+                Button(action: { store.clearAll() }) {
                     Image(systemName: "trash").font(.system(size: 13))
                 }
                 .buttonStyle(.plain)
@@ -20,7 +20,7 @@ struct ClipboardHubView: View {
             .frame(width: 44)
             
             // THE CARDS REEL
-            if vault.items.isEmpty {
+            if store.items.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "doc.on.clipboard").font(.system(size: 32)).foregroundColor(.gray.opacity(0.3))
                     Text("Clipboard is Empty").font(.system(size: 14)).foregroundColor(.gray.opacity(0.5))
@@ -29,11 +29,11 @@ struct ClipboardHubView: View {
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 16) {
-                        ForEach(vault.items) { item in
+                        ForEach(store.items) { item in
                             ClipboardCardView(item: item) {
-                                vault.pasteItem(item, into: OverlayWindowController.shared.previousApp)
+                                store.pasteItem(item, into: IslandController.shared.previousApp)
                                 // This island, which may not be the main one
-                                appState.deactivateOverlay()
+                                appState.deactivateIsland()
                             }
                         }
                     }

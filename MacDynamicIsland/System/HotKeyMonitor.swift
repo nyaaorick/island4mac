@@ -8,7 +8,7 @@ import OSLog
 ///
 /// Note: Global event monitoring requires Accessibility permission.
 /// The app will prompt users to enable it in System Settings.
-final class HotKeyManager {
+final class HotKeyMonitor {
 
     /// What a hotkey does
     enum Hotkey: Equatable {
@@ -18,8 +18,8 @@ final class HotKeyManager {
     }
 
     private let appState: AppState
-    private let overlayController: OverlayWindowController
-    private let logger = os.Logger(subsystem: Log.subsystem, category: "HotKeyManager")
+    private let islandController: IslandController
+    private let logger = os.Logger(subsystem: Log.subsystem, category: "HotKeyMonitor")
 
     /// Keys typed in other apps
     private var globalMonitor: Any?
@@ -29,9 +29,9 @@ final class HotKeyManager {
     /// Flag to track if we've prompted for accessibility this session
     private var hasCheckedAccessibility = false
 
-    init(appState: AppState, overlayController: OverlayWindowController) {
+    init(appState: AppState, islandController: IslandController) {
         self.appState = appState
-        self.overlayController = overlayController
+        self.islandController = islandController
     }
 
     func start() {
@@ -120,9 +120,9 @@ final class HotKeyManager {
             // Primary hotkey behavior: toggle between idle and active
             switch self.appState.interactionState {
             case .idle, .armed:
-                self.appState.activateOverlay(reason: .hotkey)
+                self.appState.activateIsland(reason: .hotkey)
             case .active, .pinned:
-                self.appState.deactivateOverlay()
+                self.appState.deactivateIsland()
             }
         }
     }
@@ -131,10 +131,10 @@ final class HotKeyManager {
         // ✅ MainActor isolation fix
         Task { @MainActor in
             // Secondary hotkey behavior: toggle visibility completely
-            if self.appState.isOverlayVisible {
-                self.appState.forceCloseOverlay()
+            if self.appState.isIslandVisible {
+                self.appState.forceCloseIsland()
             } else {
-                self.appState.showOverlay(reason: .hotkey)
+                self.appState.showIsland(reason: .hotkey)
             }
         }
     }
@@ -144,8 +144,8 @@ final class HotKeyManager {
         Task { @MainActor in
             // Clipboard hotkey: open the island on the clipboard tab
             self.appState.currentSection = .clipboard
-            self.appState.activateOverlay(reason: .clipboardHistory)
-            self.overlayController.show()
+            self.appState.activateIsland(reason: .clipboardHistory)
+            self.islandController.show()
         }
     }
 }

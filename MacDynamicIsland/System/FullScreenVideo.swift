@@ -40,7 +40,7 @@ final class FullScreenVideo {
         .store(in: &cancellables)
 
         // Another app playing, or nothing playing any more. Sent before the new value is stored
-        MusicManager.shared.$bundleIdentifier
+        MusicStore.shared.$bundleIdentifier
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
@@ -66,7 +66,7 @@ final class FullScreenVideo {
 
     /// Polls while something plays and the setting is on
     private func updatePolling() {
-        let watches = isEnabled && MusicManager.shared.bundleIdentifier != nil
+        let watches = isEnabled && MusicStore.shared.bundleIdentifier != nil
         if watches && pollTimer == nil {
             pollTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
                 Task { @MainActor in self?.check() }
@@ -89,7 +89,7 @@ final class FullScreenVideo {
     }
 
     private func check() {
-        guard isEnabled, let app = MusicManager.shared.bundleIdentifier else {
+        guard isEnabled, let app = MusicStore.shared.bundleIdentifier else {
             displays = []
             return
         }
@@ -111,7 +111,7 @@ final class FullScreenVideo {
     private func finishChecking(_ found: Set<CGDirectDisplayID>) {
         isChecking = false
         // The setting, or what plays, may have changed in the meantime
-        displays = isEnabled && MusicManager.shared.bundleIdentifier != nil ? found : []
+        displays = isEnabled && MusicStore.shared.bundleIdentifier != nil ? found : []
         if checkAgain {
             checkAgain = false
             check()

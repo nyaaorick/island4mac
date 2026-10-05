@@ -18,7 +18,7 @@ struct CompactIslandRegion: View {
             HStack(spacing: 8) {
                 if appState.showsLiveActivity, let session = agentSession {
                     CompactAgentLiveActivityView(session: session, isWide: appState.isOnLargeDisplay)
-                } else if appState.showsLiveActivity && MusicManager.shared.showsCompactLiveActivity {
+                } else if appState.showsLiveActivity && MusicStore.shared.showsCompactLiveActivity {
                     CompactMusicLiveActivityView(animation: animation)
                 } else {
                     AnimatedFaceView()
@@ -32,7 +32,7 @@ struct CompactIslandRegion: View {
             .padding(.horizontal, 14)
         } else if appState.showsLiveActivity, let session = agentSession {
             AgentNotchLiveActivityView(session: session, notch: notch, wings: appState.liveActivityWings, activeCount: agents.activeSessionCount)
-        } else if appState.showsLiveActivity && MusicManager.shared.showsCompactLiveActivity {
+        } else if appState.showsLiveActivity && MusicStore.shared.showsCompactLiveActivity {
             MusicNotchLiveActivityView(notch: notch, wings: appState.liveActivityWings, animation: animation)
         } else {
             // Nothing playing: stay hidden inside the notch

@@ -2,24 +2,24 @@ import XCTest
 @testable import MacDynamicIsland
 
 @MainActor
-final class ClipboardHubStoreTests: XCTestCase {
+final class ClipboardStoreTests: XCTestCase {
 
     /// A store backed by a throwaway defaults domain, so tests never touch the real history.
-    private func makeStore() -> (ClipboardHubStore, UserDefaults) {
-        let suiteName = "ClipboardHubStoreTests-\(UUID().uuidString)"
+    private func makeStore() -> (ClipboardStore, UserDefaults) {
+        let suiteName = "ClipboardStoreTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         addTeardownBlock {
             UserDefaults().removePersistentDomain(forName: suiteName)
         }
-        return (ClipboardHubStore(defaults: defaults), defaults)
+        return (ClipboardStore(defaults: defaults), defaults)
     }
 
-    private func addText(_ text: String, to store: ClipboardHubStore) {
+    private func addText(_ text: String, to store: ClipboardStore) {
         store.addItem(content: text, type: .text, sourceBundleID: nil, sourceAppName: nil, imageData: nil)
     }
 
-    private func addImage(_ bytes: [UInt8], to store: ClipboardHubStore) {
-        // ClipboardManager stores every image with the same placeholder content
+    private func addImage(_ bytes: [UInt8], to store: ClipboardStore) {
+        // ClipboardMonitor stores every image with the same placeholder content
         store.addItem(content: "[Image]", type: .image, sourceBundleID: nil, sourceAppName: nil, imageData: Data(bytes))
     }
 
@@ -65,7 +65,7 @@ final class ClipboardHubStoreTests: XCTestCase {
         let (store, defaults) = makeStore()
         addText("persisted", to: store)
 
-        let reloaded = ClipboardHubStore(defaults: defaults)
+        let reloaded = ClipboardStore(defaults: defaults)
         reloaded.loadFromDisk()
         XCTAssertEqual(reloaded.items.map(\.content), ["persisted"])
     }

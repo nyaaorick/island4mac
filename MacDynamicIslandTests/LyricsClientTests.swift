@@ -2,11 +2,11 @@ import XCTest
 @testable import MacDynamicIsland
 
 @MainActor
-final class LyricsServiceTests: XCTestCase {
+final class LyricsClientTests: XCTestCase {
 
     /// Each parsed line as "seconds text"
     private func parse(_ lrc: String) -> [String] {
-        LyricsService.parseLRC(lrc).map { String(format: "%.2f %@", $0.timeInSeconds, $0.line) }
+        LyricsClient.parseLRC(lrc).map { String(format: "%.2f %@", $0.timeInSeconds, $0.line) }
     }
 
     func testTimestampsWithOneToThreeDecimals() {

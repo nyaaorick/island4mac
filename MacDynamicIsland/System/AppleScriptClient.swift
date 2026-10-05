@@ -1,5 +1,5 @@
 //
-//  AppleScriptHelper.swift
+//  AppleScriptClient.swift
 //  boringNotch
 //
 //  Created by Alexander on 2025-08-20.
@@ -8,9 +8,9 @@
 import Foundation
 import AppKit
 
-/// Helper for executing AppleScript commands
+/// Runs AppleScript commands against other apps
 /// Note: AppleScript automation is not allowed in sandboxed App Store apps
-nonisolated final class AppleScriptHelper {
+nonisolated final class AppleScriptClient {
 
     /// Scripts run one at a time here rather than on the main thread: an Apple Event round trip
     /// can take hundreds of milliseconds (or wait on a permission prompt) and would stall the UI

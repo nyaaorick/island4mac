@@ -1,5 +1,5 @@
 //
-//  MusicManager.swift
+//  MusicStore.swift
 //  boringNotch
 //
 //  Created by Alexander on 2025-08-20.
@@ -11,8 +11,8 @@ import Combine
 import AppKit
 
 @MainActor
-class MusicManager: ObservableObject {
-    static let shared = MusicManager()
+class MusicStore: ObservableObject {
+    static let shared = MusicStore()
     
     // MARK: - Published Properties
     
@@ -44,7 +44,7 @@ class MusicManager: ObservableObject {
     // MARK: - Private Properties
 
     private var cancellables = Set<AnyCancellable>()
-    private var nowPlayingManager: NowPlayingManager?
+    private var nowPlayingClient: NowPlayingClient?
 
     private var avgColorTask: Task<Void, Never>?
     private var lastAvgColorImageID: ObjectIdentifier?
@@ -89,14 +89,14 @@ class MusicManager: ObservableObject {
     
     // MARK: - Lifecycle
     
-    func connectToNowPlayingManager(_ manager: NowPlayingManager) {
-        self.nowPlayingManager = manager
+    func connectToNowPlayingClient(_ manager: NowPlayingClient) {
+        self.nowPlayingClient = manager
         
-        // Subscribe to state changes from NowPlayingManager
+        // Subscribe to state changes from NowPlayingClient
         manager.$currentState
             .receive(on: DispatchQueue.main)
             .sink { [weak self] nowPlayingState in
-                self?.updateFromIslandNowPlayingState(nowPlayingState)
+                self?.updateFromNowPlayingState(nowPlayingState)
             }
             .store(in: &cancellables)
 
@@ -104,26 +104,26 @@ class MusicManager: ObservableObject {
     }
     
     func stop() {
-        nowPlayingManager?.stop()
+        nowPlayingClient?.stop()
     }
     
     // MARK: - Playback Control
     
     func togglePlay() {
-        nowPlayingManager?.playPause()
+        nowPlayingClient?.playPause()
     }
     
     func nextTrack() {
-        nowPlayingManager?.nextTrack()
+        nowPlayingClient?.nextTrack()
     }
     
     func previousTrack() {
-        nowPlayingManager?.previousTrack()
+        nowPlayingClient?.previousTrack()
     }
     
     func seek(to position: TimeInterval) {
         // Prefer MediaRemote seeking (works for any app that participates in system media controls).
-        nowPlayingManager?.seek(to: position)
+        nowPlayingClient?.seek(to: position)
 
         // Also update local timing anchors immediately so UI stays in sync while MediaRemote catches up.
         elapsedTime = max(0, position)
@@ -182,25 +182,25 @@ class MusicManager: ObservableObject {
             return ""
         end tell
         """
-        return await AppleScriptHelper.execute(script)
+        return await AppleScriptClient.execute(script)
     }
     
     /// Fetch lyrics from online APIs
     private func fetchLyricsFromAPI(title: String, artist: String) async -> (plainText: String, synced: [(timeInSeconds: Double, line: String)])? {
-        // Use LyricsService to fetch lyrics
-        if let result = await LyricsService.shared.fetchLyrics(
+        // Use LyricsClient to fetch lyrics
+        if let result = await LyricsClient.shared.fetchLyrics(
             title: title,
             artist: artist,
             album: albumTitle.isEmpty ? nil : albumTitle
         ) {
             #if DEBUG
-            print("✅ [MusicManager] Got lyrics, source: \(result.source)")
+            print("✅ [MusicStore] Got lyrics, source: \(result.source)")
             #endif
             return (result.plainText, result.syncedLyrics)
         }
         
         #if DEBUG
-        print("❌ [MusicManager] No lyrics found: \(title) - \(artist)")
+        print("❌ [MusicStore] No lyrics found: \(title) - \(artist)")
         #endif
         return nil
     }
@@ -225,7 +225,7 @@ class MusicManager: ObservableObject {
     
     // MARK: - NowPlaying State Update
     
-    private func updateFromIslandNowPlayingState(_ state: IslandNowPlayingState) {
+    private func updateFromNowPlayingState(_ state: NowPlayingState) {
         guard state.hasContent else {
             clearNowPlaying()
             return
@@ -274,11 +274,11 @@ class MusicManager: ObservableObject {
         }
 
         #if DEBUG
-        print("🎶 [MusicManager] \(applicationName ?? "?"): \(state.title) - \(state.artist) | Pos: \(elapsedTime)/\(songDuration)")
+        print("🎶 [MusicStore] \(applicationName ?? "?"): \(state.title) - \(state.artist) | Pos: \(elapsedTime)/\(songDuration)")
         #endif
     }
 
-    private func updateArtwork(from state: IslandNowPlayingState, trackChanged: Bool) {
+    private func updateArtwork(from state: NowPlayingState, trackChanged: Bool) {
         if let data = state.artworkData {
             guard data != lastArtworkData, let image = NSImage(data: data) else { return }
             lastArtworkData = data
@@ -360,7 +360,7 @@ class MusicManager: ObservableObject {
     private func fetchArtworkFromNetwork(title: String, artist: String) async {
         let query = "\(title) \(artist)"
         #if DEBUG
-        print("🎶 [MusicManager] 🖼️ Trying to fetch the cover from the network: \(query)")
+        print("🎶 [MusicStore] 🖼️ Trying to fetch the cover from the network: \(query)")
         #endif
         
         // Build the iTunes Search API URL
@@ -404,12 +404,12 @@ class MusicManager: ObservableObject {
                                 if self.songDuration == 0 && trackDuration > 0 {
                                     self.songDuration = trackDuration
                                     #if DEBUG
-                                    print("🎶 [MusicManager] ✅ Duration from network: \(trackDuration)s")
+                                    print("🎶 [MusicStore] ✅ Duration from network: \(trackDuration)s")
                                     #endif
                                 }
                                 
                                  #if DEBUG
-                                 print("🎶 [MusicManager] ✅ Network cover updated")
+                                 print("🎶 [MusicStore] ✅ Network cover updated")
                                  #endif
                             }
                         }
@@ -417,12 +417,12 @@ class MusicManager: ObservableObject {
                 }
             } else {
                  #if DEBUG
-                 print("🎶 [MusicManager] ❌ No network cover found")
+                 print("🎶 [MusicStore] ❌ No network cover found")
                  #endif
             }
         } catch {
             #if DEBUG
-            print("🎶 [MusicManager] Network cover fetch error: \(error)")
+            print("🎶 [MusicStore] Network cover fetch error: \(error)")
             #endif
         }
     }

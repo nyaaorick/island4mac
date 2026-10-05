@@ -2,8 +2,8 @@ import Foundation
 import OSLog
 
 /// Lyrics service - fetches lyrics from multiple music platforms
-final class LyricsService {
-    static let shared = LyricsService()
+final class LyricsClient {
+    static let shared = LyricsClient()
     
     private let logger = os.Logger(subsystem: "com.maclingdonggao.overlay", category: "lyrics")
     private var cache: [String: LyricsResult] = [:]
@@ -23,7 +23,7 @@ final class LyricsService {
         // Check the cache
         if let cached = cache[cacheKey] {
             #if DEBUG
-            print("🎵 [LyricsService] Using cached lyrics: \(title)")
+            print("🎵 [LyricsClient] Using cached lyrics: \(title)")
             #endif
             return cached
         }
@@ -32,7 +32,7 @@ final class LyricsService {
         let source = SettingsDefaults.shared.get(SettingsDefaults.lyricsSource)
         
         #if DEBUG
-        print("🎵 [LyricsService] Fetching lyrics: \(title) - \(artist) [Source: \(source)]")
+        print("🎵 [LyricsClient] Fetching lyrics: \(title) - \(artist) [Source: \(source)]")
         #endif
         
         // Route the request according to the setting
@@ -57,7 +57,7 @@ final class LyricsService {
             if let result = await fetchFromLrcLib(title: title, artist: artist, album: album) {
                 cache[cacheKey] = result
                 #if DEBUG
-                print("🎵 [LyricsService] ✅ Fetched from LrcLib")
+                print("🎵 [LyricsClient] ✅ Fetched from LrcLib")
                 #endif
                 return result
             }
@@ -66,7 +66,7 @@ final class LyricsService {
             if let result = await fetchFromNetease(title: title, artist: artist) {
                 cache[cacheKey] = result
                 #if DEBUG
-                print("🎵 [LyricsService] ✅ Fetched from NetEase")
+                print("🎵 [LyricsClient] ✅ Fetched from NetEase")
                 #endif
                 return result
             }
@@ -75,14 +75,14 @@ final class LyricsService {
             if let result = await fetchFromQQMusic(title: title, artist: artist) {
                 cache[cacheKey] = result
                 #if DEBUG
-                print("🎵 [LyricsService] ✅ Fetched from QQ Music")
+                print("🎵 [LyricsClient] ✅ Fetched from QQ Music")
                 #endif
                 return result
             }
         }
         
         #if DEBUG
-        print("🎵 [LyricsService] ❌ No lyrics found: \(title) - \(artist)")
+        print("🎵 [LyricsClient] ❌ No lyrics found: \(title) - \(artist)")
         #endif
         return nil
     }

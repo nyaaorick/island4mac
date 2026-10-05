@@ -3,7 +3,7 @@ import Combine
 import UniformTypeIdentifiers
 
 struct ExpandedMusicView: View {
-    @ObservedObject var musicManager: MusicManager
+    @ObservedObject var musicStore: MusicStore
     var animation: Namespace.ID
 
     @State private var isSeeking = false
@@ -20,20 +20,20 @@ struct ExpandedMusicView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     // Title & Artist
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(musicManager.songTitle.isEmpty ? "Not Playing" : musicManager.songTitle)
+                        Text(musicStore.songTitle.isEmpty ? "Not Playing" : musicStore.songTitle)
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                             .lineLimit(1)
                         
-                        Text(musicManager.artistName.isEmpty ? "Select a track" : musicManager.artistName)
+                        Text(musicStore.artistName.isEmpty ? "Select a track" : musicStore.artistName)
                             .font(.system(size: 13, weight: .medium))
                             .foregroundColor(.white.opacity(0.6))
                             .lineLimit(1)
                     }
                     
                     // 🎤 LYRICS VIEW (New)
-                    if !musicManager.currentLyrics.isEmpty {
-                        LyricsView(musicManager: musicManager)
+                    if !musicStore.currentLyrics.isEmpty {
+                        LyricsView(musicStore: musicStore)
                             .frame(height: 36)
                     } else {
                         Spacer().frame(height: 8)
@@ -51,7 +51,7 @@ struct ExpandedMusicView: View {
             .padding(.vertical, 14)
         }
         .background(Color.clear)
-        .onChange(of: musicManager.songTitle) { oldTitle, newTitle in
+        .onChange(of: musicStore.songTitle) { oldTitle, newTitle in
             // ✅ Reset drag state when the track changes
             if newTitle != oldTitle && !oldTitle.isEmpty {
                 isSeeking = false
@@ -63,7 +63,7 @@ struct ExpandedMusicView: View {
     
     private var albumArtView: some View {
         Button(action: { selectCustomAlbumArt() }) {
-            Image(nsImage: musicManager.albumArt)
+            Image(nsImage: musicStore.albumArt)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .matchedGeometryEffect(id: "album_art", in: animation)
@@ -76,8 +76,8 @@ struct ExpandedMusicView: View {
     private var progressStrip: some View {
         VStack(spacing: 4) {
             GeometryReader { geo in
-                let duration = max(0, musicManager.songDuration)
-                let displayTime = isSeeking ? seekTime : musicManager.currentDisplayTime
+                let duration = max(0, musicStore.songDuration)
+                let displayTime = isSeeking ? seekTime : musicStore.currentDisplayTime
                 let progress = duration > 0 ? min(1.0, max(0.0, displayTime / duration)) : 0
                 let barHeight: CGFloat = 4
 
@@ -106,7 +106,7 @@ struct ExpandedMusicView: View {
                         }
                         .onEnded { _ in
                             let target = min(max(0, seekTime), duration)
-                            musicManager.seek(to: target)
+                            musicStore.seek(to: target)
                             Task { @MainActor in
                                 try? await Task.sleep(for: .milliseconds(50))
                                 isSeeking = false
@@ -118,9 +118,9 @@ struct ExpandedMusicView: View {
             .frame(height: 12)
 
             HStack {
-                Text(formatTime(isSeeking ? seekTime : musicManager.currentDisplayTime))
+                Text(formatTime(isSeeking ? seekTime : musicStore.currentDisplayTime))
                 Spacer()
-                Text(musicManager.songDuration > 0 ? formatTime(musicManager.songDuration) : "--:--")
+                Text(musicStore.songDuration > 0 ? formatTime(musicStore.songDuration) : "--:--")
             }
             .font(.system(size: 9, design: .monospaced))
             .foregroundColor(.white.opacity(0.4))
@@ -130,21 +130,21 @@ struct ExpandedMusicView: View {
     private var mediaControls: some View {
         HStack(spacing: 20) {
             Spacer()
-            controlButton(icon: "backward.fill") { musicManager.previousTrack() }
+            controlButton(icon: "backward.fill") { musicStore.previousTrack() }
             
-            Button(action: { musicManager.togglePlay() }) {
+            Button(action: { musicStore.togglePlay() }) {
                 Circle()
                     .fill(Color.white.opacity(0.2))
                     .frame(width: 38, height: 38)
                     .overlay(
-                        Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
+                        Image(systemName: musicStore.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 16, weight: .bold))
                             .foregroundColor(.white)
                     )
             }
             .buttonStyle(.plain)
             
-            controlButton(icon: "forward.fill") { musicManager.nextTrack() }
+            controlButton(icon: "forward.fill") { musicStore.nextTrack() }
             Spacer()
         }
     }
@@ -180,8 +180,8 @@ struct ExpandedMusicView: View {
             
             Task { @MainActor in
                 if let image = NSImage(contentsOf: url) {
-                    musicManager.albumArt = image
-                    musicManager.usingAppIconForArtwork = false
+                    musicStore.albumArt = image
+                    musicStore.usingAppIconForArtwork = false
                 }
             }
         }
@@ -190,14 +190,14 @@ struct ExpandedMusicView: View {
 
 // MARK: - Lyrics View
 struct LyricsView: View {
-    @ObservedObject var musicManager: MusicManager
+    @ObservedObject var musicStore: MusicStore
     
     var body: some View {
         GeometryReader { geo in
             VStack {
-                if !musicManager.syncedLyrics.isEmpty {
+                if !musicStore.syncedLyrics.isEmpty {
                     // Synced Lyrics
-                    let currentLine = musicManager.lyricLine(at: musicManager.currentDisplayTime)
+                    let currentLine = musicStore.lyricLine(at: musicStore.currentDisplayTime)
                     Text(currentLine.isEmpty ? "..." : currentLine)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white)
@@ -208,7 +208,7 @@ struct LyricsView: View {
                         .id("synced_\(currentLine)")
                 } else {
                     // Static Lyrics (Scrollable automatically via Marquee logic or just partial text)
-                    Text(cleanLyrics(musicManager.currentLyrics))
+                    Text(cleanLyrics(musicStore.currentLyrics))
                         .font(.system(size: 13, weight: .regular))
                         .foregroundColor(.white.opacity(0.8))
                         .lineLimit(2)

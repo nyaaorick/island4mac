@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Island geometry shared with OverlayWindowController
+/// Island geometry shared with IslandController
 enum NotchMetrics {
     /// Outward flare of the top corners, like the curve where the notch meets the top edge
     static let compactTopRadius: CGFloat = 6

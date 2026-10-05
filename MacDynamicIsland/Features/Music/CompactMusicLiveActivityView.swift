@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Collapsed now-playing without a notch: album art, progress and lyrics
 struct CompactMusicLiveActivityView: View {
-    @ObservedObject private var musicManager = MusicManager.shared
+    @ObservedObject private var musicStore = MusicStore.shared
     @ObservedObject private var settings = SettingsDefaults.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -10,7 +10,7 @@ struct CompactMusicLiveActivityView: View {
 
     private var accent: Color {
         if settings.get(SettingsDefaults.playerColorTinting) {
-            return Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.55)
+            return Color(nsColor: musicStore.avgColor).ensureMinimumBrightness(factor: 0.55)
         }
         return .accentColor
     }
@@ -24,7 +24,7 @@ struct CompactMusicLiveActivityView: View {
 
             HStack(spacing: 8) {
                 // Album art (tiny)
-                Image(nsImage: musicManager.albumArt)
+                Image(nsImage: musicStore.albumArt)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .matchedGeometryEffect(id: "album_art", in: animation)
@@ -39,7 +39,7 @@ struct CompactMusicLiveActivityView: View {
                 VStack(spacing: 0) {
                     // Song title
                     IslandMarqueeText(
-                        text: .constant(musicManager.songTitle.isEmpty ? "Not Playing" : musicManager.songTitle),
+                        text: .constant(musicStore.songTitle.isEmpty ? "Not Playing" : musicStore.songTitle),
                         font: .system(size: 11, weight: .semibold),
                         nsFont: .systemFont(ofSize: 11, weight: .semibold),
                         textColor: .white,
@@ -52,14 +52,14 @@ struct CompactMusicLiveActivityView: View {
                     Group {
                         if settings.get(SettingsDefaults.enableLyrics) {
                             TimelineView(.animation(minimumInterval: 0.25)) { timeline in
-                                let elapsed = musicManager.estimatedPlaybackPosition(at: timeline.date)
+                                let elapsed = musicStore.estimatedPlaybackPosition(at: timeline.date)
                                 let line = compactLyricsLine(elapsed: elapsed)
 
                                 IslandMarqueeText(
                                     text: .constant(line),
                                     font: .system(size: 10, weight: .medium),
                                     nsFont: .systemFont(ofSize: 10, weight: .medium),
-                                    textColor: musicManager.isFetchingLyrics ? Color.white.opacity(0.35) : Color.white.opacity(0.65),
+                                    textColor: musicStore.isFetchingLyrics ? Color.white.opacity(0.35) : Color.white.opacity(0.65),
                                     frameWidth: textWidth,
                                     centersWhenFitting: true
                                 )
@@ -67,7 +67,7 @@ struct CompactMusicLiveActivityView: View {
                             }
                         } else {
                             IslandMarqueeText(
-                                text: .constant(musicManager.artistName.isEmpty ? "" : musicManager.artistName),
+                                text: .constant(musicStore.artistName.isEmpty ? "" : musicStore.artistName),
                                 font: .system(size: 10, weight: .medium),
                                 nsFont: .systemFont(ofSize: 10, weight: .medium),
                                 textColor: Color.white.opacity(0.55),
@@ -91,15 +91,15 @@ struct CompactMusicLiveActivityView: View {
                             .frame(width: 18, height: 12)
                             .matchedGeometryEffect(id: "spectrum", in: animation)
                             .mask {
-                                AudioSpectrumView(isPlaying: $musicManager.isPlaying)
+                                AudioSpectrumView(isPlaying: $musicStore.isPlaying)
                                     .frame(width: 16, height: 12)
                             }
                             .accessibilityHidden(true)
                     } else {
                         Image(systemName: "waveform")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(musicManager.isPlaying ? .green : Color.white.opacity(0.35))
-                            .symbolEffect(.bounce, options: .repeating, value: musicManager.isPlaying)
+                            .foregroundColor(musicStore.isPlaying ? .green : Color.white.opacity(0.35))
+                            .symbolEffect(.bounce, options: .repeating, value: musicStore.isPlaying)
                     }
                 }
                 .frame(width: slot)
@@ -111,22 +111,22 @@ struct CompactMusicLiveActivityView: View {
     }
 
     private func compactLyricsLine(elapsed: Double) -> String {
-        if musicManager.isFetchingLyrics {
+        if musicStore.isFetchingLyrics {
             return "Loading lyrics…"
         }
 
-        if !musicManager.syncedLyrics.isEmpty {
-            let line = musicManager.lyricLine(at: elapsed)
+        if !musicStore.syncedLyrics.isEmpty {
+            let line = musicStore.lyricLine(at: elapsed)
             return line.isEmpty ? "…" : line
         }
 
         // Lyrics without timing can't follow the song: the whole song in one scrolling line is no use here
-        return musicManager.artistName
+        return musicStore.artistName
     }
 }
 
 private struct CompactMusicProgressBar: View {
-    @ObservedObject private var musicManager = MusicManager.shared
+    @ObservedObject private var musicStore = MusicStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var isSeeking = false
@@ -135,10 +135,10 @@ private struct CompactMusicProgressBar: View {
     let accent: Color
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: musicManager.playbackRate > 0 ? 0.2 : nil)) { timeline in
+        TimelineView(.animation(minimumInterval: musicStore.playbackRate > 0 ? 0.2 : nil)) { timeline in
             GeometryReader { geo in
-                let duration = musicManager.songDuration
-                let elapsed = isSeeking ? seekTime : musicManager.estimatedPlaybackPosition(at: timeline.date)
+                let duration = musicStore.songDuration
+                let elapsed = isSeeking ? seekTime : musicStore.estimatedPlaybackPosition(at: timeline.date)
                 let progress = duration > 0 ? min(1.0, max(0.0, elapsed / duration)) : 0
 
                 ZStack(alignment: .leading) {
@@ -149,7 +149,7 @@ private struct CompactMusicProgressBar: View {
                             .fill(accent.opacity(0.9))
                             .frame(width: geo.size.width * progress)
                             .animation(reduceMotion ? nil : .linear(duration: 0.2), value: progress)
-                    } else if musicManager.isPlaying {
+                    } else if musicStore.isPlaying {
                         // Indeterminate shimmer when duration is unknown
                         let barWidth = max(12, geo.size.width * 0.35)
                         let period: TimeInterval = 1.3
@@ -184,7 +184,7 @@ private struct CompactMusicProgressBar: View {
                         .onEnded { _ in
                             let target = min(max(0, seekTime), duration)
                             isSeeking = false
-                            musicManager.seek(to: target)
+                            musicStore.seek(to: target)
                         }
                     : nil
                 )

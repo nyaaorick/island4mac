@@ -2,19 +2,19 @@ import Cocoa
 import SwiftUI
 import Combine
 
-/// One island: a panel on one display and the state of what it shows. OverlayWindowController keeps the main one
+/// One island: a panel on one display and the state of what it shows. IslandController keeps the main one
 /// on the display you chose (or under the mouse) and, with "all screens" on, one on every other display.
 @MainActor
 final class IslandWindow {
     let appState: AppState
-    let panel: OverlayPanel
+    let panel: IslandPanel
     private let hostingView: NSView
     private let settingsStore = SettingsDefaults.shared
     private var cancellables = Set<AnyCancellable>()
     /// The display this island belongs on right now
     private let preferredScreen: () -> NSScreen?
 
-    /// Playing (paused for over a second counts as stopped); OverlayWindowController keeps it up to date
+    /// Playing (paused for over a second counts as stopped); IslandController keeps it up to date
     var musicIsPlaying = false {
         didSet { if musicIsPlaying != oldValue { scheduleWindowUpdate() } }
     }
@@ -31,11 +31,11 @@ final class IslandWindow {
     /// The collapse spring (response 0.45, critically damped) settles within this time
     private let settleDelay: TimeInterval = 0.6
 
-    init(appState: AppState, nowPlayingManager: NowPlayingManager, preferredScreen: @escaping () -> NSScreen?) {
+    init(appState: AppState, nowPlayingClient: NowPlayingClient, preferredScreen: @escaping () -> NSScreen?) {
         self.appState = appState
         self.preferredScreen = preferredScreen
 
-        panel = OverlayPanel(
+        panel = IslandPanel(
             contentRect: .zero,
             styleMask: [.borderless],  // ✅ Removed .nonactivatingPanel
             backing: .buffered,
@@ -53,8 +53,8 @@ final class IslandWindow {
             // When the app is in the background, the first click on the island activates the window; by default that click isn't passed to buttons or tap gestures, so it would take two clicks to respond
             .allowsWindowActivationEvents()
             .environmentObject(appState)
-            .environmentObject(appState.clipboardHub)
-            .environmentObject(nowPlayingManager)
+            .environmentObject(appState.clipboardStore)
+            .environmentObject(nowPlayingClient)
             .ignoresSafeArea()
 
         let hostingView = NSHostingView(rootView: rootView)
@@ -99,7 +99,7 @@ final class IslandWindow {
         // Adjust the panel synchronously once the new value is stored (didSet), so the panel is already big enough when SwiftUI renders the first frame of the expansion (or a switch to a larger section).
         // The @Published publisher can't be used: it fires at willSet, so resizing the panel then makes SwiftUI lay out with the old value and the new value only shows on the next event
         appState.islandSizeDidChange
-            .compactMap { [weak appState] in appState.map { ($0.overlayMode, $0.currentSection) } }
+            .compactMap { [weak appState] in appState.map { ($0.islandMode, $0.currentSection) } }
             .removeDuplicates { $0 == $1 }
             .sink { [weak self] mode, section in
                 self?.updateWindowFrame(for: mode, section: section)
@@ -107,7 +107,7 @@ final class IslandWindow {
             .store(in: &cancellables)
 
         // Defer to the next runloop turn, when the new value is already stored
-        appState.$isOverlayVisible
+        appState.$isIslandVisible
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.updatePanelVisibility()
@@ -133,19 +133,19 @@ final class IslandWindow {
         appState.didCollapse
             .sink { [weak self] in
                 guard let self else { return }
-                OverlayWindowController.shared.returnFocus(from: self.panel)
+                IslandController.shared.returnFocus(from: self.panel)
             }
             .store(in: &cancellables)
     }
 
     func reposition() {
-        updateWindowFrame(for: appState.overlayMode, section: appState.currentSection)
+        updateWindowFrame(for: appState.islandMode, section: appState.currentSection)
     }
 
     /// The panel only shows when you haven't hidden the island and the island's display isn't playing full-screen video
     private func updatePanelVisibility() {
         let coveredByVideo = currentDisplayID.map { FullScreenVideo.shared.displays.contains($0) } ?? false
-        let shows = appState.isOverlayVisible && !coveredByVideo
+        let shows = appState.isIslandVisible && !coveredByVideo
         guard shows != panel.isVisible else { return }
         if shows {
             panel.orderFront(nil)
@@ -163,12 +163,12 @@ final class IslandWindow {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             self.windowUpdateScheduled = false
-            self.updateWindowFrame(for: self.appState.overlayMode, section: self.appState.currentSection)
+            self.updateWindowFrame(for: self.appState.islandMode, section: self.appState.currentSection)
         }
     }
 
     /// Growing takes effect immediately to leave room for the island's animation; shrinking waits until the island's spring settles
-    private func updateWindowFrame(for mode: AppState.OverlayMode, section: AppState.IslandSection) {
+    private func updateWindowFrame(for mode: AppState.IslandMode, section: AppState.IslandSection) {
         guard let screen = targetScreen(for: mode) else { return }
         currentDisplayID = screen.displayID
         // The display it moved to may be playing full-screen video (or it just left such a display); decide whether to show the panel after it has been moved
@@ -181,7 +181,7 @@ final class IslandWindow {
             appState.isOnLargeDisplay = largeDisplay
             layoutCanvas()
         }
-        let showsMusic = MusicManager.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch)
+        let showsMusic = MusicStore.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch)
         let showsLiveActivity = showsMusic || AgentSessionStore.shared.showsCompactLiveActivity
         let wings = showsLiveActivity ? liveActivityWings(on: screen) : .none
         // Keep measuring while something is shown beside the notch: status bar icons widen and come and go (only displays with a notch need to make room)
@@ -262,8 +262,8 @@ final class IslandWindow {
     }
 
     /// Stay on the current display while expanding, expanded, or collapsing, so the animation doesn't jump to another display
-    private func targetScreen(for mode: AppState.OverlayMode) -> NSScreen? {
-        let isOpenOrClosing = mode == .expanded || appState.overlayMode == .expanded || pendingShrink != nil
+    private func targetScreen(for mode: AppState.IslandMode) -> NSScreen? {
+        let isOpenOrClosing = mode == .expanded || appState.islandMode == .expanded || pendingShrink != nil
         if isOpenOrClosing, let screen = currentScreen {
             return screen
         }
@@ -277,7 +277,7 @@ final class IslandWindow {
     }
 
     /// Panel position: flush with the top edge of the screen, horizontally centered; with a notch, the top half of the island hides right inside it
-    private func windowFrame(for mode: AppState.OverlayMode, section: AppState.IslandSection, wings: IslandWings, screen: NSScreen) -> NSRect {
+    private func windowFrame(for mode: AppState.IslandMode, section: AppState.IslandSection, wings: IslandWings, screen: NSScreen) -> NSRect {
         var size = NotchMetrics.islandSize(
             expanded: mode == .expanded,
             section: section,

@@ -3,8 +3,8 @@ import AppKit
 import QuickLookThumbnailing
 
 /// Service for generating thumbnails for files
-class ThumbnailGenerationService {
-    static let shared = ThumbnailGenerationService()
+class ThumbnailService {
+    static let shared = ThumbnailService()
     
     private let cache = NSCache<NSURL, NSImage>()
     private let thumbnailSize = CGSize(width: 256, height: 256)

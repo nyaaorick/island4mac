@@ -11,7 +11,7 @@ public final class SettingsWindowController: NSObject {
     
     public func showSettings() {
         if window == nil {
-            let appState = OverlayWindowController.shared.getAppState()
+            let appState = IslandController.shared.getAppState()
             let settingsView = MainSettingsView()
                 .environmentObject(appState)
             
@@ -109,7 +109,7 @@ struct MainSettingsView: View {
         case .appearance: AppearanceSettingsView()
         case .media: MediaSettingsView()
         case .agents: AgentSettingsView()
-        case .clipboard: ClipboardSettingsView(hubStore: OverlayWindowController.shared.getAppState().clipVault)
+        case .clipboard: ClipboardSettingsView(clipboardStore: IslandController.shared.getAppState().clipboardStore)
         case .shelf: ShelfSettingsView()
         case .shortcuts: ShortcutsSettingsView()
         case .advanced: AdvancedSettingsView()

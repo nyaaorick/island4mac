@@ -7,8 +7,8 @@ import UniformTypeIdentifiers
 /// Central state manager for the shelf system
 /// Robust logic inspired by Boring Notch
 @MainActor
-class ShelfStateViewModel: ObservableObject {
-    static let shared = ShelfStateViewModel()
+class ShelfStore: ObservableObject {
+    static let shared = ShelfStore()
     
     @Published var items: [ShelfItem] = []
     @Published var isDraggingOver: Bool = false
@@ -58,7 +58,7 @@ class ShelfStateViewModel: ObservableObject {
                 newItems.append(ShelfItem(url: url))
             } else if let text = await provider.extractText() {
                 print("✅ [ShelfState] extracted text (len=\(text.count))")
-                if let tempURL = try? TemporaryFileStorageService.shared.createTemporary(content: text, filename: "Note_\(Int(Date().timeIntervalSince1970)).txt") {
+                if let tempURL = try? TemporaryFileService.shared.createTemporary(content: text, filename: "Note_\(Int(Date().timeIntervalSince1970)).txt") {
                     newItems.append(ShelfItem(url: tempURL))
                 }
             } else {

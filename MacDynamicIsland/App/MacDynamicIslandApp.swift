@@ -13,7 +13,7 @@ struct Mac_Dynamic_IslandApp: App {
     // 🔥 This plugs the AppDelegate into the app
     // Without this line the AppDelegate never runs and no window ever appears
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @StateObject private var appState = OverlayWindowController.shared.getAppState()
+    @StateObject private var appState = IslandController.shared.getAppState()
 
     var body: some Scene {
         // Since this is a Dynamic Island app (windows are controlled purely in code), don't put a WindowGroup here

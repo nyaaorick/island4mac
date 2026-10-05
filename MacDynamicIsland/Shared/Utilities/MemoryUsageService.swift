@@ -4,8 +4,8 @@ import AppKit
 import os
 
 /// Memory management and optimization utility
-class MemoryManager {
-    static let shared = MemoryManager()
+class MemoryUsageService {
+    static let shared = MemoryUsageService()
     
     private init() {}
     
@@ -36,7 +36,7 @@ class MemoryManager {
     }
     
     private func logInfo(_ message: String) {
-        let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "MemoryManager")
+        let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "MemoryUsageService")
         logger.info("\(message, privacy: .public)")
     }
 }

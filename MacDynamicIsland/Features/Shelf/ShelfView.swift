@@ -4,10 +4,10 @@ import UniformTypeIdentifiers
 
 struct ShelfView: View {
     @EnvironmentObject private var appState: AppState
-    @ObservedObject var viewModel = ShelfStateViewModel.shared
+    @ObservedObject var store = ShelfStore.shared
     
     private var isDragging: Bool {
-        appState.isDraggingOver || viewModel.isDraggingOver
+        appState.isDraggingOver || store.isDraggingOver
     }
     
     private let gridColumns: [GridItem] = [
@@ -24,7 +24,7 @@ struct ShelfView: View {
 
                 // Content Layer
                 VStack(spacing: 0) {
-                    if viewModel.isEmpty {
+                    if store.isEmpty {
                         emptyStateView
                     } else {
                         VStack(spacing: 0) {
@@ -60,12 +60,12 @@ struct ShelfView: View {
         .onDrop(of: [.fileURL, .url, .item, .data], isTargeted: Binding(
             get: { isDragging },
             set: { dragging in
-                viewModel.isDraggingOver = dragging
+                store.isDraggingOver = dragging
                 appState.isDraggingOver = dragging
             }
         )) { providers in
             Task {
-                await viewModel.handleDrop(providers: providers)
+                await store.handleDrop(providers: providers)
             }
             return true
         }
@@ -119,7 +119,7 @@ struct ShelfView: View {
             
             Spacer()
             
-            Text("\(viewModel.items.count)")
+            Text("\(store.items.count)")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.7))
             
@@ -127,9 +127,9 @@ struct ShelfView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(.white.opacity(0.45))
             
-            if !viewModel.items.isEmpty {
+            if !store.items.isEmpty {
                 Button("Clear") {
-                    viewModel.clearAll()
+                    store.clearAll()
                 }
                 .buttonStyle(.plain)
                 .font(.system(size: 11, weight: .semibold))
@@ -151,11 +151,11 @@ struct ShelfView: View {
     private var itemsGridView: some View {
         ScrollView {
             LazyVGrid(columns: gridColumns, spacing: 20) {
-                ForEach(viewModel.items) { item in
+                ForEach(store.items) { item in
                     ShelfItemCell(item: item)
                         .onDrag {
                             // ✅ Drag out as a real file URL for Finder/Desktop
-                            guard let resolvedURL = viewModel.resolveFileURL(for: item) else {
+                            guard let resolvedURL = store.resolveFileURL(for: item) else {
                                 print("❌ [ShelfView] Failed to resolve URL for drag: \(item.displayName)")
                                 return NSItemProvider()
                             }
@@ -240,13 +240,13 @@ struct ShelfItemCell: View {
             }
         }
         .task {
-            guard let resolvedURL = ShelfStateViewModel.shared.resolveFileURL(for: item) else { return }
+            guard let resolvedURL = ShelfStore.shared.resolveFileURL(for: item) else { return }
 
             // ✅ For images, show a real thumbnail (preview) instead of only a JPG icon
             if item.isImage {
                 let didStartAccessing = resolvedURL.startAccessingSecurityScopedResource()
 
-                ThumbnailGenerationService.shared.generateThumbnail(for: resolvedURL) { image in
+                ThumbnailService.shared.generateThumbnail(for: resolvedURL) { image in
                     if didStartAccessing {
                         resolvedURL.stopAccessingSecurityScopedResource()
                     }

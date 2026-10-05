@@ -1,6 +1,6 @@
 import Foundation
 
-/// Four-state interaction model for notch overlay
+/// Four-state interaction model for the island
 /// - idle: visible but non-interactive (compact)
 /// - armed: hover detected, visual feedback only (still compact)
 /// - active: expanded and fully functional (accepts input)
@@ -11,7 +11,7 @@ enum IslandInteractionState: Equatable {
     case active
     case pinned
     
-    /// Whether the overlay should be expanded (showing full UI)
+    /// Whether the island should be expanded (showing full UI)
     var isExpanded: Bool {
         switch self {
         case .idle, .armed:

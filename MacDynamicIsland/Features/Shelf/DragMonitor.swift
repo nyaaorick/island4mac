@@ -3,9 +3,9 @@ import UniformTypeIdentifiers
 
 /// Global drag detector, modeled on Boring Notch
 /// Detects system-wide file drags and fires a callback when a drag enters the notch region
-final class DragDetectorManager {
+final class DragMonitor {
     
-    static let shared = DragDetectorManager()
+    static let shared = DragMonitor()
     
     // MARK: - Callbacks
     
@@ -108,10 +108,10 @@ final class DragDetectorManager {
 
                 let urls = self.extractFileURLsFromDragPasteboard()
                 if !urls.isEmpty {
-                    print("💥 [DragDetectorManager] Fallback drop detected. urls=\(urls.count)")
+                    print("💥 [DragMonitor] Fallback drop detected. urls=\(urls.count)")
                     self.onDropInNotchRegion?(urls)
                 } else {
-                    print("⚠️ [DragDetectorManager] Fallback drop detected but no file URLs found.")
+                    print("⚠️ [DragMonitor] Fallback drop detected but no file URLs found.")
                 }
             }
             

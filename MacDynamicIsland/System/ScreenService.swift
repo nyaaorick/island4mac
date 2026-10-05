@@ -1,6 +1,6 @@
 import Cocoa
 
-enum ScreenManager {
+enum ScreenService {
     /// Detect the screen containing the mouse cursor
     static func activeScreenContainingMouse() -> NSScreen? {
         let mouse = NSEvent.mouseLocation

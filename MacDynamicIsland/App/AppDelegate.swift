@@ -16,9 +16,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// master integration coordinator
     let integration = AppIntegration.shared
 
-    /// Overlay window controller - manages the dynamic island window.
+    /// Island controller - manages the dynamic island windows.
     /// MUST be stored as a strong property to prevent deallocation!
-    var overlayController: OverlayWindowController!
+    var islandController: IslandController!
 
     /// Status bar (menu bar) controller - STRONG reference
     var statusBarController: StatusBarController!
@@ -28,7 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // ✅ MainActor isolation fix - nonisolated lets this property be called from non-MainActor contexts
     nonisolated var appState: AppState {
         MainActor.assumeIsolated {
-            overlayController.getAppState()
+            islandController.getAppState()
         }
     }
 
@@ -48,9 +48,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
         LOG("Set activation policy to .accessory")
 
-        // 1. Initialize overlay controller (SINGLETON - stored as strong property)
-        overlayController = OverlayWindowController.shared
-        LOG("✅ OverlayWindowController initialized")
+        // 1. Initialize the island controller (SINGLETON - stored as strong property)
+        islandController = IslandController.shared
+        LOG("✅ IslandController initialized")
 
         // 2. Initialize App Integration
         LOG("🔧 Initializing App Integration...")
@@ -59,7 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // 3. Initialize status bar
         statusBarController = StatusBarController(
             appState: appState,
-            overlayController: overlayController
+            islandController: islandController
         )
         LOG("✅ StatusBarController initialized")
 
@@ -67,7 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         LOG("🟢 Starting App Integration...")
         integration.start()
 
-        // Global drag monitoring is handled by DragDetectorManager in AppState
+        // Global drag monitoring is handled by DragMonitor in AppState
 
         LOG("══════════════════════════════════════════════════")
         LOG("✅ applicationDidFinishLaunching COMPLETED")
@@ -92,8 +92,8 @@ class AppIntegration {
     static let shared = AppIntegration()
 
     // MARK: - Managers
-    private var clipboardManager: ClipboardManager?
-    private var hotKeyManager: HotKeyManager?
+    private var clipboardMonitor: ClipboardMonitor?
+    private var hotKeyMonitor: HotKeyMonitor?
     private var agentHookServer: AgentHookServer?
 
     private init() {}
@@ -105,7 +105,7 @@ class AppIntegration {
         logger.info("Initializing app integration...")
 
         // Log memory usage at launch
-        MemoryManager.shared.logMemoryUsage()
+        MemoryUsageService.shared.logMemoryUsage()
 
         logger.info("App integration complete")
     }
@@ -114,17 +114,17 @@ class AppIntegration {
 
     func start() {
         let appState = MainActor.assumeIsolated { // ✅ MainActor isolation fix
-            OverlayWindowController.shared.getAppState()
+            IslandController.shared.getAppState()
         }
 
-        // Music playback observation is wired up by OverlayWindowController
-        clipboardManager = ClipboardManager(vault: appState.clipVault)
-        clipboardManager?.start()
+        // Music playback observation is wired up by IslandController
+        clipboardMonitor = ClipboardMonitor(store: appState.clipboardStore)
+        clipboardMonitor?.start()
 
         Task { @MainActor in
-            let ctrl = OverlayWindowController.shared
-            hotKeyManager = HotKeyManager(appState: appState, overlayController: ctrl)
-            hotKeyManager?.start()
+            let ctrl = IslandController.shared
+            hotKeyMonitor = HotKeyMonitor(appState: appState, islandController: ctrl)
+            hotKeyMonitor?.start()
         }
 
         let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")
@@ -146,7 +146,7 @@ class AppIntegration {
         }
         // Claude asks you a question or for a permission: open the island on it, so you can answer there
         AgentSessionStore.shared.onPrompt = { _ in
-            OverlayWindowController.shared.showAgentPrompt()
+            IslandController.shared.showAgentPrompt()
         }
         AgentSessionStore.shared.startPruning()
 
@@ -154,9 +154,9 @@ class AppIntegration {
     }
 
     func stop() {
-        MusicManager.shared.stop()
-        clipboardManager?.stop()
-        hotKeyManager?.stop()
+        MusicStore.shared.stop()
+        clipboardMonitor?.stop()
+        hotKeyMonitor?.stop()
         agentHookServer?.stop()
 
         let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")

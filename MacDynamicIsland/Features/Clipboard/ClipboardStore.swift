@@ -3,8 +3,8 @@ import AppKit
 import Combine
 import SwiftUI
 
-// MARK: - IslandClipItem
-struct IslandClipItem: Identifiable, Codable, Equatable {
+// MARK: - ClipboardItem
+struct ClipboardItem: Identifiable, Codable, Equatable {
     let id: UUID
     let content: String
     let type: ItemType
@@ -31,7 +31,7 @@ struct IslandClipItem: Identifiable, Codable, Equatable {
         return NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: nil) ?? NSImage()
     }
 
-    static func == (lhs: IslandClipItem, rhs: IslandClipItem) -> Bool {
+    static func == (lhs: ClipboardItem, rhs: ClipboardItem) -> Bool {
         return lhs.id == rhs.id
     }
 
@@ -46,13 +46,9 @@ struct IslandClipItem: Identifiable, Codable, Equatable {
     }
 }
 
-typealias IslandClipVault = ClipboardHubStore
-
-// MARK: - ClipboardHubStore (The Island functional vault)
-// Migrated from IslandClipVault to support advanced settings
 @MainActor
-final class ClipboardHubStore: ObservableObject {
-    @Published var items: [IslandClipItem] = []
+final class ClipboardStore: ObservableObject {
+    @Published var items: [ClipboardItem] = []
 
     private let defaults: UserDefaults
 
@@ -81,7 +77,7 @@ final class ClipboardHubStore: ObservableObject {
     }
     
     func clearUnpinned() {
-        // Simple implementation: clear all (since IslandClipItem doesn't have pinned state yet)
+        // Simple implementation: clear all (since ClipboardItem doesn't have pinned state yet)
         clearAll()
     }
     
@@ -92,12 +88,12 @@ final class ClipboardHubStore: ObservableObject {
         }
     }
     
-    func addItem(content: String, type: IslandClipItem.ItemType, sourceBundleID: String?, sourceAppName: String?, imageData: Data?) {
+    func addItem(content: String, type: ClipboardItem.ItemType, sourceBundleID: String?, sourceAppName: String?, imageData: Data?) {
         // Skip consecutive duplicates. Images all share the "[Image]" placeholder
         // content, so their bytes must be compared as well.
         if let last = items.first, last.content == content, last.type == type, last.imageData == imageData { return }
         
-        let newItem = IslandClipItem(
+        let newItem = ClipboardItem(
             id: UUID(),
             content: content,
             type: type,
@@ -121,7 +117,7 @@ final class ClipboardHubStore: ObservableObject {
     
     /// Pastes the item into `app`, the app you were using. Clicking the card brought this app to the front,
     /// so that one comes back first, or the ⌘V would land in the island
-    func pasteItem(_ item: IslandClipItem, into app: NSRunningApplication?) {
+    func pasteItem(_ item: ClipboardItem, into app: NSRunningApplication?) {
         copyToClipboard(item)
         guard let app, !app.isTerminated else { return }
         app.activate(options: [])
@@ -137,7 +133,7 @@ final class ClipboardHubStore: ObservableObject {
             // Its window becomes key just after
             try? await Task.sleep(for: .milliseconds(50))
             // Off the main thread: an Apple Event can wait on a permission prompt
-            _ = await AppleScriptHelper.execute(Self.pasteScript)
+            _ = await AppleScriptClient.execute(Self.pasteScript)
         }
     }
 
@@ -147,7 +143,7 @@ final class ClipboardHubStore: ObservableObject {
         end tell
         """
     
-    func copyToClipboard(_ item: IslandClipItem) {
+    func copyToClipboard(_ item: ClipboardItem) {
         let pb = NSPasteboard.general
         pb.clearContents()
         
@@ -161,7 +157,7 @@ final class ClipboardHubStore: ObservableObject {
         }
     }
     
-    func removeItem(_ item: IslandClipItem) {
+    func removeItem(_ item: ClipboardItem) {
         withAnimation {
             items.removeAll { $0.id == item.id }
         }
@@ -176,7 +172,7 @@ final class ClipboardHubStore: ObservableObject {
 
     func loadFromDisk() {
         if let data = defaults.data(forKey: "mac_island_clipvault_v1"),
-           let decoded = try? JSONDecoder().decode([IslandClipItem].self, from: data) {
+           let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
             items = decoded
         }
     }
