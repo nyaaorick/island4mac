@@ -2,12 +2,13 @@ import SwiftUI
 
 struct ExpandedIslandRegion: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject private var tabs = TabStore.shared
     var animation: Namespace.ID
     /// Camera housing. With a notch the tabs sit either side of it, level with the camera, and the content
     /// starts right below it; without one they get their own tab bar
     var notch: CGSize
 
-    @State private var hoveredSection: AppState.IslandSection? = nil
+    @State private var hoveredSection: IslandTab? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -21,10 +22,10 @@ struct ExpandedIslandRegion: View {
         }
     }
 
-    /// Music and Clipboard left of the camera, Files and Agents right of it, each pair centered on its side.
+    /// Your tabs, the first half left of the camera and the rest right of it, each group centered on its side.
     /// No close button up here: the island closes when the pointer leaves it, on a swipe up or with ⇧⌘Space
     private var cameraRow: some View {
-        let sections = AppState.IslandSection.allCases
+        let sections = tabs.enabledTabs[...]
         let leading = (sections.count + 1) / 2
         return HStack(spacing: 0) {
             tabGroup(sections.prefix(leading))
@@ -35,7 +36,7 @@ struct ExpandedIslandRegion: View {
         .frame(height: notch.height)
     }
 
-    private func tabGroup(_ sections: ArraySlice<AppState.IslandSection>) -> some View {
+    private func tabGroup(_ sections: ArraySlice<IslandTab>) -> some View {
         HStack(spacing: 4) {
             ForEach(sections, id: \.self) { section in
                 tabItem(for: section)
@@ -48,7 +49,7 @@ struct ExpandedIslandRegion: View {
     private var tabBar: some View {
         HStack(spacing: 12) {
             HStack(spacing: 4) {
-                ForEach(AppState.IslandSection.allCases, id: \.self) { section in
+                ForEach(tabs.enabledTabs, id: \.self) { section in
                     tabItem(for: section)
                 }
             }
@@ -93,6 +94,10 @@ struct ExpandedIslandRegion: View {
                     ShelfView()
                 case .agents:
                     AgentsView()
+                default:
+                    PluginTabView(pluginID: appState.currentSection.pluginID ?? "")
+                        // A fresh view per plugin, so switching between two plugin tabs tells both
+                        .id(appState.currentSection)
                 }
             }
         }
@@ -107,7 +112,7 @@ struct ExpandedIslandRegion: View {
         }
     }
 
-    private func tabItem(for section: AppState.IslandSection) -> some View {
+    private func tabItem(for section: IslandTab) -> some View {
         let isSelected = appState.currentSection == section
         let isHovered = hoveredSection == section
         

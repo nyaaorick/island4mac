@@ -103,6 +103,8 @@ final class IslandController: NSObject {
         let state = islandUnderMouse()?.appState ?? appState
         // Don't pull the open island away from a tab you're using
         if state.islandMode == .expanded && state.islandFrame.contains(NSEvent.mouseLocation) { return }
+        // Without the Agents tab there's nowhere to answer, so the island stays as it is
+        guard TabStore.shared.isEnabled(.agents) else { return }
         state.currentSection = .agents
         withAnimation(boringOpenAnimation) {
             state.activateIsland(reason: .agentPrompt)
@@ -185,6 +187,18 @@ final class IslandController: NSObject {
         // The wings also extend while Claude Code is working, waiting for your approval, or just finished, and retract afterwards
         AgentSessionStore.shared.$liveSession
             .map { $0 != nil }
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateAllIslands()
+            }
+            .store(in: &cancellables)
+
+        // And while a plugin shows something beside the notch: a popup, or its compact content. Both are
+        // watched, since a popup over a running countdown changes what fills the wings, not whether they show
+        PluginStore.shared.$popup.map { _ in () }
+            .merge(with: PluginStore.shared.$contents.map { _ in () }, TabStore.shared.$enabledTabs.map { _ in () })
+            .receive(on: DispatchQueue.main)
+            .map { [PluginStore.shared.showsPopupLiveActivity, PluginStore.shared.showsCompactContent] }
             .removeDuplicates()
             .sink { [weak self] _ in
                 self?.updateAllIslands()

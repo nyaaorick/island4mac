@@ -64,6 +64,9 @@ class AppIntegration {
         }
         AgentSessionStore.shared.startPruning()
 
+        // Plugins: separate processes that tell the island what to show
+        MainActor.assumeIsolated { PluginStore.shared.start() }
+
         logger.info("All managers started")
     }
 
@@ -72,6 +75,7 @@ class AppIntegration {
         clipboardMonitor?.stop()
         hotKeyMonitor?.stop()
         agentHookServer?.stop()
+        MainActor.assumeIsolated { PluginStore.shared.stop() }
 
         let logger = os.Logger(subsystem: Bundle.main.bundleIdentifier ?? "app", category: "AppIntegration")
         logger.info("All managers stopped")

@@ -143,6 +143,7 @@ final class HotKeyMonitor {
         // ✅ MainActor isolation fix
         Task { @MainActor in
             // Clipboard hotkey: open the island on the clipboard tab
+            guard TabStore.shared.isEnabled(.clipboard) else { return }
             self.appState.currentSection = .clipboard
             self.appState.activateIsland(reason: .clipboardHistory)
             self.islandController.show()

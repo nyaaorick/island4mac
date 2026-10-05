@@ -171,7 +171,7 @@ final class IslandWindow {
     }
 
     /// Growing takes effect immediately to leave room for the island's animation; shrinking waits until the island's spring settles
-    private func updateWindowFrame(for mode: AppState.IslandMode, section: AppState.IslandSection) {
+    private func updateWindowFrame(for mode: AppState.IslandMode, section: IslandTab) {
         guard let screen = targetScreen(for: mode) else { return }
         currentDisplayID = screen.displayID
         // The display it moved to may be playing full-screen video (or it just left such a display); decide whether to show the panel after it has been moved
@@ -184,8 +184,13 @@ final class IslandWindow {
             appState.isOnLargeDisplay = largeDisplay
             layoutCanvas()
         }
-        let showsMusic = MusicStore.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch)
-        let showsLiveActivity = showsMusic || AgentSessionStore.shared.showsCompactLiveActivity
+        let activity = LiveActivity.pick(
+            agent: AgentSessionStore.shared.showsCompactLiveActivity,
+            pluginPopup: PluginStore.shared.showsPopupLiveActivity,
+            music: MusicStore.shared.showsCompactLiveActivity && (musicIsPlaying || appState.isPeekingNotch),
+            pluginCompact: PluginStore.shared.showsCompactContent
+        )
+        let showsLiveActivity = activity != .none
         let wings = showsLiveActivity ? liveActivityWings(on: screen) : .none
         // Keep measuring while something is shown beside the notch: status bar icons widen and come and go (only displays with a notch need to make room)
         if notchSize != .zero {
@@ -209,6 +214,10 @@ final class IslandWindow {
         // The panel is big enough now; let the view extend the playback wings
         if appState.liveActivityWings != wings {
             appState.liveActivityWings = wings
+        }
+        let shown = wings.isEmpty ? LiveActivity.none : activity
+        if appState.liveActivity != shown {
+            appState.liveActivity = shown
         }
 
         guard !framesAreEffectivelyEqual(immediate, target) else { return }
@@ -280,7 +289,7 @@ final class IslandWindow {
     }
 
     /// Panel position: flush with the top edge of the screen, horizontally centered; with a notch, the top half of the island hides right inside it
-    private func windowFrame(for mode: AppState.IslandMode, section: AppState.IslandSection, wings: IslandWings, screen: NSScreen) -> NSRect {
+    private func windowFrame(for mode: AppState.IslandMode, section: IslandTab, wings: IslandWings, screen: NSScreen) -> NSRect {
         var size = NotchMetrics.islandSize(
             expanded: mode == .expanded,
             section: section,

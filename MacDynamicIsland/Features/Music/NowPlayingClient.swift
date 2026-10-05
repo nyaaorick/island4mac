@@ -87,6 +87,12 @@ final class NowPlayingClient: ObservableObject {
         outputBuffer.removeAll()
         output.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let chunk = handle.availableData
+            // End of file: stop listening, or this is called again at once, forever (stop() clears the
+            // termination handler that would otherwise do it)
+            guard !chunk.isEmpty else {
+                handle.readabilityHandler = nil
+                return
+            }
             // A line can span chunks, so keep them in order (Task hops don't guarantee that).
             DispatchQueue.main.async {
                 MainActor.assumeIsolated { self?.consume(chunk) }

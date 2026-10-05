@@ -70,6 +70,28 @@ let build = run("/usr/bin/xcodebuild", [
 ])
 guard build == 0 else { fail("Build failed (xcodebuild exit \(build)). Check the output above.") }
 
+// The sample plugins in Plugins/ go to the app's plugins folder, compiled. Only rebuilt when their source changed.
+let pluginsFolder = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    .appendingPathComponent("MacDynamicIsland/Plugins")
+let pluginSources = (try? FileManager.default.contentsOfDirectory(at: root.appendingPathComponent("Plugins"),
+                                                                  includingPropertiesForKeys: nil)) ?? []
+func modified(_ url: URL) -> Date {
+    (try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+}
+for source in pluginSources where FileManager.default.fileExists(atPath: source.appendingPathComponent("main.swift").path) {
+    let target = pluginsFolder.appendingPathComponent(source.lastPathComponent)
+    let program = target.appendingPathComponent(source.lastPathComponent)
+    let sourceFiles = [source.appendingPathComponent("main.swift"), source.appendingPathComponent("plugin.json")]
+    guard sourceFiles.map(modified).max()! > modified(program) else { continue }
+    print("Building the \(source.lastPathComponent) plugin...")
+    try? FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+    guard run("/usr/bin/xcrun", ["swiftc", "-O", sourceFiles[0].path, "-o", program.path]) == 0 else {
+        fail("Building the \(source.lastPathComponent) plugin failed. Check the output above.")
+    }
+    try? FileManager.default.removeItem(at: target.appendingPathComponent("plugin.json"))
+    try? FileManager.default.copyItem(at: sourceFiles[1], to: target.appendingPathComponent("plugin.json"))
+}
+
 // Quit a running copy so the fresh build is the one that shows up.
 run("/usr/bin/pkill", ["-x", "MacDynamicIsland"])
 guard run("/usr/bin/open", [appPath]) == 0 else { fail("Could not open \(appPath).") }

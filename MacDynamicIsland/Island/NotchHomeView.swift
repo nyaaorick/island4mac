@@ -139,7 +139,7 @@ struct NotchHomeView: View {
 
     /// Opens the island; when an agent session is showing beside the notch, on the Agents tab
     private func openIsland() {
-        if appState.showsLiveActivity && AgentSessionStore.shared.showsCompactLiveActivity {
+        if appState.showsLiveActivity && AgentSessionStore.shared.showsCompactLiveActivity && TabStore.shared.isEnabled(.agents) {
             appState.currentSection = .agents
         }
         withAnimation(openAnimation) {

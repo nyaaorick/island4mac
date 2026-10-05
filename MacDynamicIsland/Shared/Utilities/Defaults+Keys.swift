@@ -57,6 +57,11 @@ final class SettingsDefaults: ObservableObject {
     static let agentSoundsEnabled = SettingsKey(key: "agentSoundsEnabled", defaultValue: true)
     static let agentPromptsOpenIsland = SettingsKey(key: "agentPromptsOpenIsland", defaultValue: true)
 
+    // MARK: - Plugins
+    static let showPluginLiveActivity = SettingsKey(key: "showPluginLiveActivity", defaultValue: true)
+    /// index.json of the plugins repo (PluginCatalogClient)
+    static let pluginIndexURL = SettingsKey(key: "pluginIndexURL", defaultValue: "https://raw.githubusercontent.com/nyaaorick/island4mac-plugins/main/index.json")
+
     // MARK: - Display
     static let showOnAllDisplays = SettingsKey(key: "showOnAllDisplays", defaultValue: false)
     /// UUID of the display chosen for the island (NSScreen.displayUUID); empty: the built-in display
@@ -72,6 +77,8 @@ final class SettingsDefaults: ObservableObject {
     
     // MARK: - Sizing & Behavior
     static let nonNotchHeight = SettingsKey(key: "nonNotchHeight", defaultValue: 32.0)
+    /// IslandTab raw values of the tabs the island shows, in order (TabStore)
+    static let enabledTabs = SettingsKey(key: "enabledTabs", defaultValue: IslandTab.builtIn.map(\.rawValue))
     static let rememberLastTab = SettingsKey(key: "rememberLastTab", defaultValue: false)
     static let autoCloseEnabled = SettingsKey(key: "autoCloseEnabled", defaultValue: false)
     static let autoCloseTimeout = SettingsKey(key: "autoCloseTimeout", defaultValue: 5.0)

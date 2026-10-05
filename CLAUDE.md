@@ -32,12 +32,15 @@ macOS menu bar app (Swift, SwiftUI + AppKit) that turns the MacBook notch into a
 MacDynamicIsland/              App target. Folders are synced with Xcode: add or move files on disk, no project edits
   App/                         @main entry, AppDelegate, AppIntegration (starts the monitors and the agent hook server), StatusBarController
   Island/                      The island itself: IslandController (one IslandWindow per display), NotchHomeView (root view)
-                               and its regions, NotchMetrics, AppState, interaction/visibility enums, background, swipes
+                               and its regions, NotchMetrics, AppState, IslandTab + TabStore (which tabs show),
+                               interaction/visibility enums, background, swipes
   Features/
     Music/                     MusicStore, NowPlayingClient (MediaRemote via adapter), LyricsClient, music views
     Agents/                    Hook events, socket server, session store, hook installer, terminal focusing, agent views
     Clipboard/                 ClipboardMonitor (pasteboard polling), ClipboardStore, clipboard views
     Shelf/                     Shelf items, view model, persistence, thumbnails, Quick Look, drag detection
+    Plugins/                   PluginStore, PluginClient (one process per plugin), PluginMessage/PluginEvent (the protocol),
+                               PluginCatalogClient (plugins repo), plugin views
   Settings/                    Settings window and one view per tab
   System/                      macOS integration: hotkeys, screens, menu bar space, full-screen video, login item, AppleScript
   Shared/                      Extensions, reusable components, utilities (settings keys, L("key"), logging, build config)
@@ -46,6 +49,8 @@ MacDynamicIslandTests/         Unit tests (hosted by the app)
 Helpers/
   ClaudeHookBridge/            island-claude-hook: the command every agent's hooks run
   MediaRemoteAdapter/          Library loaded into perl by the now-playing helper process (exports mediaremote_adapter_stream)
+Plugins/
+  timer/                       Sample plugin and the template for new ones; Launch.command builds and installs it
 ```
 
 ## Conventions
@@ -72,5 +77,7 @@ Helpers/
 - Glass theme: `NSGlassEffectView` follows its window's active state and has no public switch for it. The island opens on hover or swipe without becoming key, so `IslandPanel` overrides the private `_hasActiveAppearance` / `_hasActiveAppearanceIgnoringKeyFocus` to keep the active look. Without them the glass opens opaque until a click makes the panel key. If the first open turns opaque again on a new macOS, check these first.
 - The clear glass has no dimming of its own and blows out over light windows; `IslandBackground` lays a black dimming layer and soft top/side fades over it. Views inside the island should not add their own black over the glass.
 - Agent hooks: connecting adds one command hook per event to the agent's config (Claude Code `~/.claude/settings.json`, Codex `~/.codex/hooks.json`, ZCode `~/.zcode/cli/config.json`), backed up to `<file>.mac-island-backup`. The helper talks to the app over a per-user Unix socket, prints nothing and always exits 0. Claude Code's `PermissionRequest` hook runs in the foreground (`claude wait`) so the island can answer questions.
+- Tabs: `IslandTab` is a string id (built-in ones, or `plugin.<id>`); `TabStore` keeps up to 6 enabled, saved under `enabledTabs`. Code that jumps to a tab (drag to Files, ⌥⌘V, agent prompts) checks `TabStore.isEnabled` first. Plugin tabs are 270 pt tall, the tallest built-in tab, so they never grow the SwiftUI canvas.
+- Plugins: a folder in `~/Library/Application Support/MacDynamicIsland/Plugins/<id>` with `plugin.json` and a program. The app runs it while its tab is enabled and reads JSON lines from stdout (`PluginMessage`); taps go to its stdin (`PluginEvent`); closing stdin tells it to quit; 6 exits in 60 s and it is given up. SIGPIPE is ignored app-wide for this. Bump `PluginManifest.supportedProtocol` for an incompatible protocol change. Beside the notch: agents, then plugin popups, then music, then plugin compact content.
 - Permissions: Accessibility (hotkeys, full-screen detection on the built-in display), Automation/Apple Events (Music lyrics, paste via System Events, terminal tab focus).
 - Shortcuts: ⇧⌘Space toggle, ⌥⌘Space show/hide, ⌥⌘V clipboard tab.

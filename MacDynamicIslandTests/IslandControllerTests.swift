@@ -283,7 +283,7 @@ final class IslandControllerTests: XCTestCase {
                        "the built-in display keeps its island, however much space it's set to show")
         XCTAssertFalse(NotchMetrics.isLargeDisplay(width: 2240, notch: .zero, isBuiltIn: true), "nor one without a notch")
 
-        func width(expanded: Bool, section: AppState.IslandSection = .music, wings: IslandWings = .none, largeDisplay: Bool) -> CGFloat {
+        func width(expanded: Bool, section: IslandTab = .music, wings: IslandWings = .none, largeDisplay: Bool) -> CGFloat {
             NotchMetrics.islandSize(expanded: expanded, section: section, notch: .zero, wings: wings,
                                     largeDisplay: largeDisplay, nonNotchHeight: 32).width
         }
@@ -294,7 +294,7 @@ final class IslandControllerTests: XCTestCase {
         XCTAssertEqual(width(expanded: false, wings: live, largeDisplay: true), NotchMetrics.largeDisplayLiveActivityWidth,
                        "now playing, it widens for the whole title and lyric line")
         XCTAssertEqual(width(expanded: false, wings: live, largeDisplay: false), NotchMetrics.nonNotchWidth)
-        for section in AppState.IslandSection.allCases {
+        for section in IslandTab.builtIn + [IslandTab.plugin("sample")] {
             XCTAssertEqual(width(expanded: true, section: section, largeDisplay: true), NotchMetrics.largeDisplayExpandedWidth,
                            "every tab opens as wide, so the tab bar never moves")
             XCTAssertEqual(width(expanded: true, section: section, largeDisplay: false), NotchMetrics.expandedWidth)

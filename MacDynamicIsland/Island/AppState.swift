@@ -24,7 +24,7 @@ final class AppState: ObservableObject {
             if oldValue == .expanded && islandMode == .compact { didCollapse.send() }
         }
     }
-    @Published var currentSection: IslandSection = .music {
+    @Published var currentSection: IslandTab = .music {
         didSet { resetAutoCloseTimer(); islandSizeDidChange.send() }
     }
     /// Sent once a new islandMode or currentSection is stored. @Published sends before the value is stored,
@@ -42,6 +42,8 @@ final class AppState: ObservableObject {
     /// Collapsed content beside the notch, as wide as the menus and status icons leave room for.
     /// Set by IslandController after it has sized the panel, so the view never animates outside the panel.
     @Published var liveActivityWings: IslandWings = .none
+    /// What fills the wings; set by IslandController together with them
+    @Published var liveActivity: LiveActivity = .none
     /// Whether the collapsed island shows its live activity (now playing or an agent session) beside the notch
     var showsLiveActivity: Bool { !liveActivityWings.isEmpty }
     /// The pointer is on the collapsed island: paused music shows beside the notch while it stays there
@@ -65,6 +67,7 @@ final class AppState: ObservableObject {
     }
 
     private var settingsCancellable: AnyCancellable?
+    private var tabsCancellable: AnyCancellable?
     private var autoCloseTimer: Timer?
 
     /// State of one island. The main one owns the clipboard history and watches for dragged files;
@@ -77,6 +80,16 @@ final class AppState: ObservableObject {
         settingsCancellable = settingsStore.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
+
+        // A tab you switch off while it's showing hands over to the first one left. On the next turn:
+        // @Published sends before the new list is stored
+        tabsCancellable = TabStore.shared.$enabledTabs
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] tabs in
+                guard let self, !tabs.contains(self.currentSection), let first = tabs.first else { return }
+                self.currentSection = first
+            }
+        currentSection = TabStore.shared.enabledTabs.first ?? .music
 
         guard main == nil else { return }
         // Clipboard polling is started by AppIntegration; only load history here
@@ -115,26 +128,6 @@ final class AppState: ObservableObject {
     }
 
     // ENUMS
-    enum IslandSection: String, CaseIterable {
-        case music, clipboard, files, agents
-        var displayName: String {
-             switch self {
-             case .music: return "Music"
-             case .clipboard: return "Clipboard"
-             case .files: return "Files"
-             case .agents: return "Agents"
-             }
-        }
-        var iconName: String {
-             switch self {
-             case .music: return "music.note"
-             case .clipboard: return "doc.on.clipboard"
-             case .files: return "folder"
-             case .agents: return "terminal"
-             }
-        }
-    }
-
     enum IslandMode { case compact, expanded }
 
     // HELPER METHODS
@@ -168,8 +161,8 @@ final class AppState: ObservableObject {
                 self?.isDraggingOver = true
                 self?.logEvent("🎯 Drag entered notch region")
 
-                // If collapsed, expand to the files section
-                if self?.islandMode == .compact {
+                // If collapsed, expand to the files section (when it's one of your tabs)
+                if self?.islandMode == .compact, TabStore.shared.isEnabled(.files) {
                     self?.activateIsland(reason: .dragDetected)
                     self?.currentSection = .files
                 }

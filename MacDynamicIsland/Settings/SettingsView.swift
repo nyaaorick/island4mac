@@ -49,7 +49,7 @@ public final class SettingsWindowController: NSObject {
 
 /// One page of the settings window
 enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, appearance, media, agents, clipboard, shelf, shortcuts, advanced, about
+    case general, appearance, tabs, plugins, media, agents, clipboard, shelf, shortcuts, advanced, about
 
     var id: String { rawValue }
 
@@ -57,6 +57,8 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .general: return L("settings.tab.general")
         case .appearance: return L("settings.tab.appearance")
+        case .tabs: return L("settings.tab.tabs")
+        case .plugins: return L("settings.tab.plugins")
         case .media: return L("settings.tab.media")
         case .agents: return L("settings.tab.agents")
         case .clipboard: return L("settings.tab.clipboard")
@@ -71,6 +73,8 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "gear"
         case .appearance: return "paintpalette"
+        case .tabs: return "square.grid.3x2"
+        case .plugins: return "puzzlepiece.extension"
         case .media: return "music.note"
         case .agents: return "terminal"
         case .clipboard: return "doc.on.clipboard"
@@ -107,6 +111,8 @@ struct MainSettingsView: View {
         switch pane {
         case .general: GeneralSettingsView()
         case .appearance: AppearanceSettingsView()
+        case .tabs: TabsSettingsView()
+        case .plugins: PluginsSettingsView()
         case .media: MediaSettingsView()
         case .agents: AgentSettingsView()
         case .clipboard: ClipboardSettingsView(clipboardStore: IslandController.shared.getAppState().clipboardStore)

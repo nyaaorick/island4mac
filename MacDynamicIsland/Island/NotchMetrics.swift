@@ -17,7 +17,10 @@ enum NotchMetrics {
 
     /// Open island below the camera housing: a content area as tall as what each tab shows, under the tab bar
     /// on a display without a notch (with one, the tabs sit beside the camera, above this)
-    static func expandedSize(for section: AppState.IslandSection, largeDisplay: Bool, notch: CGSize) -> CGSize {
+    /// Content height of a plugin's tab: as tall as the tallest built-in tab, so a plugin never grows the canvas
+    static let pluginTabContentHeight: CGFloat = 270
+
+    static func expandedSize(for section: IslandTab, largeDisplay: Bool, notch: CGSize) -> CGSize {
         let contentHeight: CGFloat
         switch section {
         case .music:
@@ -32,6 +35,8 @@ enum NotchMetrics {
         case .agents:
             // A couple of session rows with their task lists; the list scrolls
             contentHeight = 270
+        default:
+            contentHeight = pluginTabContentHeight
         }
         let tabs = notch == .zero ? tabBarHeight : 0
         return CGSize(width: largeDisplay ? largeDisplayExpandedWidth : expandedWidth, height: tabs + contentHeight)
@@ -87,7 +92,7 @@ enum NotchMetrics {
     }
 
     /// Settled size of the island; the panel matches it (plus `overshootMargin` when open)
-    static func islandSize(expanded: Bool, section: AppState.IslandSection, notch: CGSize, wings: IslandWings,
+    static func islandSize(expanded: Bool, section: IslandTab, notch: CGSize, wings: IslandWings,
                            largeDisplay: Bool, nonNotchHeight: CGFloat) -> CGSize {
         if expanded {
             // Content starts below the camera housing
@@ -107,7 +112,8 @@ enum NotchMetrics {
 
     /// Fixed size of the SwiftUI canvas: the largest open island plus its overshoot margin
     static func canvasSize(notch: CGSize, largeDisplay: Bool) -> CGSize {
-        let openSizes = AppState.IslandSection.allCases.map { expandedSize(for: $0, largeDisplay: largeDisplay, notch: notch) }
+        // Plugin tabs are no taller than the tallest built-in one, so the built-in tabs set the size
+        let openSizes = IslandTab.builtIn.map { expandedSize(for: $0, largeDisplay: largeDisplay, notch: notch) }
         return CGSize(
             width: (openSizes.map(\.width).max() ?? 0) + 2 * overshootMargin,
             height: (openSizes.map(\.height).max() ?? 0) + notch.height + overshootMargin
