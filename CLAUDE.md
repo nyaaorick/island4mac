@@ -4,8 +4,8 @@ macOS menu bar app (Swift, SwiftUI + AppKit) that turns the MacBook notch into a
 
 ## Rules for this repo
 
-- English only: code, comments, log messages, UI strings and test fixtures. The only localization is `en.lproj/Localizable.strings` (read through `L("key")` in `Utilities/Localization.swift`).
-- Swift only: no C, Objective-C or shell files, including the two helpers (`ClaudeHookBridge/main.swift`, `MediaRemoteAdapter/MediaRemoteAdapter.swift`). The hook helper runs on every agent hook event, so keep it to `import Darwin` and check its startup time (about 27 ms per run, same as the old C version) after changing it.
+- English only: code, comments, log messages, UI strings and test fixtures. The only localization is `MacDynamicIsland/Resources/en.lproj/Localizable.strings` (read through `L("key")` in `Shared/Utilities/Localization.swift`).
+- Swift only: no C, Objective-C or shell files, including the two helpers (`Helpers/ClaudeHookBridge/main.swift`, `Helpers/MediaRemoteAdapter/MediaRemoteAdapter.swift`). The hook helper runs on every agent hook event, so keep it to `import Darwin` and check its startup time (about 27 ms per run, same as the old C version) after changing it.
 - Docs are limited to this file, `README.md`, `roadmap.md` and `backup.md`. Do not add a `docs/` folder. Keep the README short.
 - The app is not sandboxed (MediaRemote and AppleScript need that). Distribution is Developer ID + notarization, outside the Mac App Store.
 
@@ -29,20 +29,23 @@ macOS menu bar app (Swift, SwiftUI + AppKit) that turns the MacBook notch into a
 ## Layout
 
 ```text
-MacDynamicIsland/     App entry (MacDynamicIslandApp.swift), Info.plist, entitlements, assets
-AppDelegate.swift     App delegate and AppIntegration (starts background managers)
-Controllers/          OverlayWindowController + IslandWindow (the island panel), StatusBarController
-State/                AppState (shared UI state), interaction/visibility enums
-Views/                NotchHomeView (root view, NotchMetrics), Music, Clipboard, Shelf, Agents, Settings tabs
-Settings/             Settings window controller, clipboard settings tab
-Music/                MusicManager: playback state, controls, artwork, lyrics
-Services/             NowPlayingManager (MediaRemote via adapter), LyricsService, clipboard store, shelf persistence, thumbnails, Quick Look
-Managers/             Clipboard polling, hotkeys, drag detection, screens, full-screen video detection
-Agents/               Hook events, socket server, session store, hook installer, terminal focusing
-ClaudeHookBridge/     island-claude-hook: the command every agent's hooks run
-MediaRemoteAdapter/   Library loaded into perl by the now-playing helper process (exports mediaremote_adapter_stream)
-Models/, ViewModels/, Utilities/, Extensions/, Animations/, Configuration/, Protocols/
-en.lproj/             Localizable.strings
+MacDynamicIsland/              App target. Folders are synced with Xcode: add or move files on disk, no project edits
+  App/                         @main entry, AppDelegate + AppIntegration (starts background managers), StatusBarController
+  Island/                      The island itself: OverlayWindowController, IslandWindow (the panel), NotchHomeView
+                               (root view, NotchMetrics), AppState, interaction/visibility enums, background, swipes
+  Features/
+    Music/                     MusicManager, NowPlayingManager (MediaRemote via adapter), LyricsService, music views
+    Agents/                    Hook events, socket server, session store, hook installer, terminal focusing, agent views
+    Clipboard/                 Clipboard polling, ClipboardHubStore, clipboard views
+    Shelf/                     Shelf items, view model, persistence, thumbnails, Quick Look, drag detection
+  Settings/                    Settings window and one view per tab
+  System/                      macOS integration: hotkeys, screens, menu bar space, full-screen video, login item, AppleScript
+  Shared/                      Extensions, reusable components, utilities (settings keys, L("key"), logging, build config)
+  Resources/                   Assets, en.lproj/Localizable.strings, Info.plist, entitlements
+MacDynamicIslandTests/         Unit tests (hosted by the app)
+Helpers/
+  ClaudeHookBridge/            island-claude-hook: the command every agent's hooks run
+  MediaRemoteAdapter/          Library loaded into perl by the now-playing helper process (exports mediaremote_adapter_stream)
 ```
 
 ## How it starts
