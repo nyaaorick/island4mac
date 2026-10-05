@@ -8,11 +8,12 @@ struct ClipboardView: View {
 
     var body: some View {
         PluginContentView(content: store.islandContent, emptySymbol: "doc.on.clipboard", emptyTitle: L("tab.clipboard")) { event in
-            if store.handle(event, pastingInto: IslandController.shared.previousApp) {
+            if store.handle(event) {
                 // This island, which may not be the main one
                 appState.deactivateIsland()
             }
         }
+        .animation(.spring(response: 0.35, dampingFraction: 0.7), value: store.items.map(\.id))
         .padding(.top, 6)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }

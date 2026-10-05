@@ -1,63 +1,135 @@
 import Foundation
 import AppKit
 import Combine
-import SwiftUI
 
-// MARK: - ClipboardItem
-struct ClipboardItem: Identifiable, Codable, Equatable {
-    let id: UUID
-    let content: String
-    let type: ItemType
-    let timestamp: Date
-    let sourceBundleID: String?
-    let sourceAppName: String?
-    let imageData: Data?
-    
-    enum ItemType: String, Codable {
-        case text, image, url, code
-    }
-    
-    var relativeTime: String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .short
-        return formatter.localizedString(for: timestamp, relativeTo: Date())
-    }
-    
-    static func == (lhs: ClipboardItem, rhs: ClipboardItem) -> Bool {
-        return lhs.id == rhs.id
-    }
-
-    init(id: UUID = UUID(), content: String, type: ItemType, timestamp: Date = Date(), sourceBundleID: String?, sourceAppName: String?, imageData: Data?) {
-        self.id = id
-        self.content = content
-        self.type = type
-        self.timestamp = timestamp
-        self.sourceBundleID = sourceBundleID
-        self.sourceAppName = sourceAppName
-        self.imageData = imageData
-    }
-}
-
+/// Your clipboard history, newest first, kept in its own folder: `history.json` and a file per copied picture.
+/// The folder is the Clipboard plugin's data folder (PluginData/clipboard), so the history is already where the
+/// plugin will keep it. No SwiftUI and no island in here: the tab animates its own changes
 @MainActor
 final class ClipboardStore: ObservableObject {
-    @Published var items: [ClipboardItem] = [] {
+    /// What you can set: how many items it keeps and for how long
+    struct Settings: Equatable {
+        var maxItems = 50
+        /// 0: forever
+        var keepHours = 24
+    }
+
+    @Published private(set) var items: [ClipboardItem] = [] {
         didSet { syncImageFiles() }
     }
 
-    private let defaults: UserDefaults
-    /// Copied images as files, one per item (`<id>.png`), so the tab can show them as pictures (PluginImage)
-    let imageFolder: URL
-
-    init(defaults: UserDefaults = .standard, imageFolder: URL = ClipboardStore.defaultImageFolder) {
-        self.defaults = defaults
-        self.imageFolder = imageFolder
+    @Published var settings: Settings {
+        didSet { applySettings() }
     }
 
-    nonisolated static var defaultImageFolder: URL {
-        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.macdynamicisland.app", isDirectory: true)
-            .appendingPathComponent("ClipboardImages", isDirectory: true)
+    let folder: URL
+    /// Copied pictures as files, one per item (`<id>.png`), so the tab can show them as pictures (PluginImage)
+    var imageFolder: URL { folder.appendingPathComponent("Images", isDirectory: true) }
+    private var historyFile: URL { folder.appendingPathComponent("history.json") }
+
+    /// The app you were using: pasting goes into it. Ignores this process unless told otherwise (a plugin
+    /// ignores the island app that runs it)
+    let frontmostApps: FrontmostAppMonitor
+
+    /// The app's own clipboard history before it moved into the folder (UserDefaults, `mac_island_clipvault_v1`)
+    private let legacyDefaults: UserDefaults?
+    static let legacyKey = "mac_island_clipvault_v1"
+
+    nonisolated static var defaultFolder: URL { PluginStore.defaultDataFolder.appendingPathComponent("clipboard", isDirectory: true) }
+
+    init(folder: URL = ClipboardStore.defaultFolder, settings: Settings = Settings(), legacyDefaults: UserDefaults? = .standard,
+         frontmostApps: FrontmostAppMonitor? = nil) {
+        self.folder = folder
+        self.settings = settings
+        self.legacyDefaults = legacyDefaults
+        self.frontmostApps = frontmostApps ?? FrontmostAppMonitor(ignoring: ProcessInfo.processInfo.processIdentifier)
     }
+
+    var imageItemCount: Int { items.filter { $0.type == .image }.count }
+
+    // MARK: - Changing the history
+
+    func addItem(content: String, type: ClipboardItem.ItemType, sourceBundleID: String?, sourceAppName: String?, imageData: Data?) {
+        // Skip consecutive duplicates. Images all share the "[Image]" placeholder
+        // content, so their bytes must be compared as well.
+        if let last = items.first, last.content == content, last.type == type, last.imageData == imageData { return }
+        let item = ClipboardItem(content: content, type: type, sourceBundleID: sourceBundleID, sourceAppName: sourceAppName,
+                                 imageData: imageData)
+        items = Array(([item] + items).prefix(settings.maxItems))
+        save()
+    }
+
+    func removeItem(_ item: ClipboardItem) {
+        items.removeAll { $0.id == item.id }
+        save()
+    }
+
+    func clearAll() {
+        items.removeAll()
+        save()
+    }
+
+    /// Drops what's older than you keep
+    func pruneExpiredItems(now: Date = Date()) {
+        guard settings.keepHours > 0 else { return }
+        let kept = items.filter { now.timeIntervalSince($0.timestamp) <= Double(settings.keepHours * 3600) }
+        guard kept.count != items.count else { return }
+        items = kept
+        save()
+    }
+
+    private func applySettings() {
+        if items.count > settings.maxItems {
+            items = Array(items.prefix(settings.maxItems))
+            save()
+        }
+        pruneExpiredItems()
+    }
+
+    // MARK: - Pasting
+
+    /// Pastes the item into `app`, the app you were using (by default the one before the island). Clicking the
+    /// card brought the island to the front, so that app comes back first, or the ⌘V would land in the island
+    func pasteItem(_ item: ClipboardItem, into app: NSRunningApplication? = nil) {
+        copyToClipboard(item)
+        guard let app = app ?? frontmostApps.previousApp, !app.isTerminated else { return }
+        app.activate(options: [])
+        Task {
+            // Activating takes a moment. If it doesn't come forward the item stays on the clipboard,
+            // rather than being pasted into whatever is in front
+            var isInFront: Bool { NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier }
+            for _ in 0..<20 {
+                if isInFront { break }
+                try? await Task.sleep(for: .milliseconds(25))
+            }
+            guard isInFront else { return }
+            // Its window becomes key just after
+            try? await Task.sleep(for: .milliseconds(50))
+            // Off the main thread: an Apple Event can wait on a permission prompt
+            _ = await AppleScriptClient.execute(Self.pasteScript)
+        }
+    }
+
+    private static let pasteScript = """
+        tell application "System Events"
+            keystroke "v" using {command down}
+        end tell
+        """
+
+    func copyToClipboard(_ item: ClipboardItem) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        switch item.type {
+        case .image:
+            if let data = item.imageData, let image = NSImage(data: data) {
+                pasteboard.writeObjects([image])
+            }
+        default:
+            pasteboard.setString(item.content, forType: .string)
+        }
+    }
+
+    // MARK: - Pictures as files
 
     /// The file of an image item, once written
     func imageFile(for item: ClipboardItem) -> URL? {
@@ -82,124 +154,26 @@ final class ClipboardStore: ObservableObject {
         }
     }
 
-    // UI Settings
-    @Published var maxItems: Int = 50
-    @Published var ttlHours: Int = 24
-    
-    // Statistics
-    var totalItemCount: Int { items.count }
-    var imageItemCount: Int { items.filter { $0.type == .image }.count }
-    var fileItemCount: Int { fileVaultCount() }
-    
-    private func fileVaultCount() -> Int {
-        // Safe access to fileVault if it were here
-        return 0 
-    }
-    
-    func updateSettings(maxItems: Int? = nil, ttlHours: Int? = nil) {
-        if let m = maxItems { self.maxItems = m }
-        if let t = ttlHours { self.ttlHours = t }
-        // Note: Real implementation would persist these to UserDefaults
-    }
-    
-    func clearUnpinned() {
-        // Simple implementation: clear all (since ClipboardItem doesn't have pinned state yet)
-        clearAll()
-    }
-    
-    func pruneExpiredItems() {
-        let now = Date()
-        withAnimation {
-            items.removeAll { now.timeIntervalSince($0.timestamp) > Double(ttlHours * 3600) }
-        }
-    }
-    
-    func addItem(content: String, type: ClipboardItem.ItemType, sourceBundleID: String?, sourceAppName: String?, imageData: Data?) {
-        // Skip consecutive duplicates. Images all share the "[Image]" placeholder
-        // content, so their bytes must be compared as well.
-        if let last = items.first, last.content == content, last.type == type, last.imageData == imageData { return }
-        
-        let newItem = ClipboardItem(
-            id: UUID(),
-            content: content,
-            type: type,
-            timestamp: Date(),
-            sourceBundleID: sourceBundleID,
-            sourceAppName: sourceAppName,
-            imageData: imageData
-        )
-        
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
-            items.insert(newItem, at: 0)
-            if items.count > maxItems { items.removeLast() }
-        }
-        saveToDisk()
-    }
-    
-    func clearAll() {
-        withAnimation { items.removeAll() }
-        saveToDisk()
-    }
-    
-    /// Pastes the item into `app`, the app you were using. Clicking the card brought this app to the front,
-    /// so that one comes back first, or the ⌘V would land in the island
-    func pasteItem(_ item: ClipboardItem, into app: NSRunningApplication?) {
-        copyToClipboard(item)
-        guard let app, !app.isTerminated else { return }
-        app.activate(options: [])
-        Task {
-            // Activating takes a moment. If it doesn't come forward the item stays on the clipboard,
-            // rather than being pasted into whatever is in front
-            var isInFront: Bool { NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier }
-            for _ in 0..<20 {
-                if isInFront { break }
-                try? await Task.sleep(for: .milliseconds(25))
-            }
-            guard isInFront else { return }
-            // Its window becomes key just after
-            try? await Task.sleep(for: .milliseconds(50))
-            // Off the main thread: an Apple Event can wait on a permission prompt
-            _ = await AppleScriptClient.execute(Self.pasteScript)
-        }
+    // MARK: - On disk
+
+    private func save() {
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        guard let data = try? JSONEncoder().encode(items) else { return }
+        try? data.write(to: historyFile, options: .atomic)
     }
 
-    private static let pasteScript = """
-        tell application "System Events"
-            keystroke "v" using {command down}
-        end tell
-        """
-    
-    func copyToClipboard(_ item: ClipboardItem) {
-        let pb = NSPasteboard.general
-        pb.clearContents()
-        
-        switch item.type {
-        case .image:
-            if let data = item.imageData, let img = NSImage(data: data) {
-                pb.writeObjects([img])
-            }
-        default:
-            pb.setString(item.content, forType: .string)
-        }
-    }
-    
-    func removeItem(_ item: ClipboardItem) {
-        withAnimation {
-            items.removeAll { $0.id == item.id }
-        }
-        saveToDisk()
-    }
-    
-    private func saveToDisk() {
-        if let data = try? JSONEncoder().encode(items) {
-            defaults.set(data, forKey: "mac_island_clipvault_v1")
-        }
-    }
-
-    func loadFromDisk() {
-        if let data = defaults.data(forKey: "mac_island_clipvault_v1"),
+    /// Reads the history, moving the app's old one (UserDefaults) into the folder the first time
+    func load() {
+        if let data = try? Data(contentsOf: historyFile),
            let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
             items = decoded
+        } else if let legacyDefaults, let data = legacyDefaults.data(forKey: Self.legacyKey),
+                  let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
+            items = decoded
+            save()
+            // Only once the history is safely in the folder
+            if (try? Data(contentsOf: historyFile)) != nil { legacyDefaults.removeObject(forKey: Self.legacyKey) }
         }
+        pruneExpiredItems()
     }
 }

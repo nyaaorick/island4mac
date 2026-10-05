@@ -4,16 +4,17 @@ import XCTest
 @MainActor
 final class ClipboardStoreTests: XCTestCase {
 
-    /// A store backed by a throwaway defaults domain and image folder, so tests never touch the real history.
-    private func makeStore() -> (ClipboardStore, UserDefaults) {
+    /// A store in a throwaway folder, with a throwaway defaults domain for the old history, so tests never touch
+    /// the real one
+    private func makeStore(settings: ClipboardStore.Settings = ClipboardStore.Settings()) -> (ClipboardStore, UserDefaults) {
         let suiteName = "ClipboardStoreTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
-        let images = FileManager.default.temporaryDirectory.appendingPathComponent(suiteName, isDirectory: true)
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(suiteName, isDirectory: true)
         addTeardownBlock {
             UserDefaults().removePersistentDomain(forName: suiteName)
-            try? FileManager.default.removeItem(at: images)
+            try? FileManager.default.removeItem(at: folder)
         }
-        return (ClipboardStore(defaults: defaults, imageFolder: images), defaults)
+        return (ClipboardStore(folder: folder, settings: settings, legacyDefaults: defaults), defaults)
     }
 
     private func addText(_ text: String, to store: ClipboardStore) {
@@ -55,8 +56,7 @@ final class ClipboardStoreTests: XCTestCase {
     }
 
     func testMaxItemsDropsOldest() {
-        let (store, _) = makeStore()
-        store.maxItems = 3
+        let (store, _) = makeStore(settings: ClipboardStore.Settings(maxItems: 3))
         for text in ["a", "b", "c", "d"] {
             addText(text, to: store)
         }
@@ -67,9 +67,39 @@ final class ClipboardStoreTests: XCTestCase {
         let (store, defaults) = makeStore()
         addText("persisted", to: store)
 
-        let reloaded = ClipboardStore(defaults: defaults, imageFolder: store.imageFolder)
-        reloaded.loadFromDisk()
+        let reloaded = ClipboardStore(folder: store.folder, legacyDefaults: defaults)
+        reloaded.load()
         XCTAssertEqual(reloaded.items.map(\.content), ["persisted"])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: store.folder.appendingPathComponent("history.json").path))
+    }
+
+    func testTheOldHistoryMovesIntoTheFolderOnce() throws {
+        let (store, defaults) = makeStore()
+        let old = [ClipboardItem(content: "from before", type: .text, sourceBundleID: nil, sourceAppName: nil, imageData: nil)]
+        defaults.set(try JSONEncoder().encode(old), forKey: ClipboardStore.legacyKey)
+
+        store.load()
+        XCTAssertEqual(store.items.map(\.content), ["from before"])
+        XCTAssertNil(defaults.data(forKey: ClipboardStore.legacyKey), "moved, not copied")
+
+        let reloaded = ClipboardStore(folder: store.folder, legacyDefaults: defaults)
+        reloaded.load()
+        XCTAssertEqual(reloaded.items.map(\.content), ["from before"])
+    }
+
+    func testSettingsTrimAndExpireTheHistory() {
+        let (store, _) = makeStore()
+        for text in ["a", "b", "c"] { addText(text, to: store) }
+        store.settings.maxItems = 2
+        XCTAssertEqual(store.items.map(\.content), ["c", "b"], "fewer items keeps the newest")
+
+        store.pruneExpiredItems(now: Date().addingTimeInterval(25 * 3600))
+        XCTAssertTrue(store.items.isEmpty, "a day later they're gone")
+
+        let (forever, _) = makeStore(settings: ClipboardStore.Settings(keepHours: 0))
+        addText("kept", to: forever)
+        forever.pruneExpiredItems(now: Date().addingTimeInterval(1000 * 3600))
+        XCTAssertEqual(forever.items.map(\.content), ["kept"], "0 hours keeps them forever")
     }
 
     // MARK: - The tab, in the plugin protocol
@@ -100,9 +130,9 @@ final class ClipboardStoreTests: XCTestCase {
         addText("a", to: store)
         addText("b", to: store)
         let delete = try XCTUnwrap(store.islandContent.cards.first?.actions?.first?.id)
-        XCTAssertFalse(store.handle(.action(delete), pastingInto: nil))
+        XCTAssertFalse(store.handle(.action(delete)))
         XCTAssertEqual(store.items.map(\.content), ["a"])
-        store.handle(.action("clear"), pastingInto: nil)
+        store.handle(.action("clear"))
         XCTAssertTrue(store.items.isEmpty)
         XCTAssertEqual(store.islandContent, PluginStore.Content(), "nothing: the tab shows its empty state")
     }

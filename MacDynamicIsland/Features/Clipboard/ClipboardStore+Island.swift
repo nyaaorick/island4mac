@@ -24,10 +24,10 @@ extension ClipboardStore {
         return content
     }
 
-    /// A tap in the tab: paste a card's item into `app`, delete one, or clear them all. Returns whether it
-    /// pasted, so the island can close
+    /// A tap in the tab: paste a card's item into the app you were using, delete one, or clear them all. Returns
+    /// whether it pasted, so the island can close (the plugin says `close`)
     @discardableResult
-    func handle(_ event: PluginEvent, pastingInto app: NSRunningApplication?) -> Bool {
+    func handle(_ event: PluginEvent) -> Bool {
         guard case .action(let id) = event else { return false }
         if id == "clear" {
             clearAll()
@@ -38,7 +38,7 @@ extension ClipboardStore {
               let item = items.first(where: { $0.id == itemID }) else { return false }
         switch parts[0] {
         case "paste":
-            pasteItem(item, into: app)
+            pasteItem(item)
             return true
         case "delete":
             removeItem(item)

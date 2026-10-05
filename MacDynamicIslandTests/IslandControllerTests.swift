@@ -260,6 +260,26 @@ final class IslandControllerTests: XCTestCase {
         collapseAndSettle(state)
     }
 
+    func testAPluginClosesTheIslandOpenOnItsTab() throws {
+        let controller = IslandController.shared
+        let state = controller.getAppState()
+        let tab = IslandTab.tab(forPlugin: "closer")
+        collapseAndSettle(state)
+
+        // Open on its tab for you (a paste): close takes it away, wherever the pointer is
+        state.currentSection = tab
+        state.activateIsland(reason: .userExpanded)
+        controller.closePluginTab("closer")
+        XCTAssertEqual(state.islandMode, .compact)
+
+        // Another plugin's close leaves it alone
+        state.activateIsland(reason: .userExpanded)
+        controller.closePluginTab("other")
+        XCTAssertEqual(state.islandMode, .expanded)
+
+        collapseAndSettle(state)
+    }
+
     /// What hands the keyboard back to the app you were using: sent once, when the open island closes
     func testClosingTheIslandIsReportedOnce() {
         // A state of its own, without a panel, so nothing on screen moves

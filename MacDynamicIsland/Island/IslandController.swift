@@ -110,12 +110,13 @@ final class IslandController: NSObject {
         }
     }
 
-    /// Closes the islands a plugin held open on its tab, unless the pointer is on them
-    func closeHeldPluginTab(_ pluginID: String) {
+    /// A plugin says `close`: the islands open on its tab close. One it held open for you stays while the pointer
+    /// is on it; any other closes at once, since the plugin is answering what you just did there (a paste)
+    func closePluginTab(_ pluginID: String) {
         let tab = IslandTab.tab(forPlugin: pluginID)
         for state in islands.map(\.appState) {
-            guard state.islandMode == .expanded, state.visibilityReason == .heldByPlugin, state.currentSection == tab,
-                  !state.islandFrame.contains(NSEvent.mouseLocation) else { continue }
+            guard state.islandMode == .expanded, state.currentSection == tab else { continue }
+            if state.visibilityReason == .heldByPlugin && state.islandFrame.contains(NSEvent.mouseLocation) { continue }
             withAnimation(boringCloseAnimation) {
                 state.deactivateIsland()
             }

@@ -46,6 +46,11 @@ final class SettingsDefaults: ObservableObject {
     static let musicControlSlotLimit = SettingsKey(key: "musicControlSlotLimit", defaultValue: 5)
     static let sliderColor = SettingsKey(key: "sliderColor", defaultValue: "white")
 
+    // MARK: - Clipboard
+    static let clipboardMaxItems = SettingsKey(key: "clipboardMaxItems", defaultValue: 50)
+    /// 0: forever
+    static let clipboardKeepHours = SettingsKey(key: "clipboardKeepHours", defaultValue: 24)
+
     // MARK: - Shelf
     static let boringShelf = SettingsKey(key: "boringShelf", defaultValue: true)
     

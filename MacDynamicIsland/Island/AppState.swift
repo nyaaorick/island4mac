@@ -73,7 +73,9 @@ final class AppState: ObservableObject {
     /// State of one island. The main one owns the clipboard history and watches for dragged files;
     /// islands on the other displays (with "all screens" on) share its history
     init(sharingWith main: AppState? = nil) {
-        clipboardStore = main?.clipboardStore ?? ClipboardStore()
+        clipboardStore = main?.clipboardStore ?? ClipboardStore(settings: ClipboardStore.Settings(
+            maxItems: SettingsDefaults.shared.get(SettingsDefaults.clipboardMaxItems),
+            keepHours: SettingsDefaults.shared.get(SettingsDefaults.clipboardKeepHours)))
         tracksDrags = main == nil
 
         // Sync setting changes to AppState triggers
@@ -93,7 +95,7 @@ final class AppState: ObservableObject {
 
         guard main == nil else { return }
         // Clipboard polling is started by AppIntegration; only load history here
-        clipboardStore.loadFromDisk()
+        clipboardStore.load()
 
         // Start the global drag detector (Boring Notch style)
         setupGlobalDragMonitor()

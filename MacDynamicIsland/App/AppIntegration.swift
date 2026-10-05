@@ -31,8 +31,12 @@ class AppIntegration {
         }
 
         // Music playback observation is wired up by IslandController
-        clipboardMonitor = ClipboardMonitor(store: appState.clipboardStore)
-        clipboardMonitor?.start()
+        MainActor.assumeIsolated {
+            clipboardMonitor = ClipboardMonitor(store: appState.clipboardStore)
+            // Something new on the clipboard shows the island for a moment
+            clipboardMonitor?.onCopy = { IslandController.shared.getAppState().showIsland(reason: .clipboard) }
+            clipboardMonitor?.start()
+        }
 
         Task { @MainActor in
             let ctrl = IslandController.shared
@@ -46,7 +50,7 @@ class AppIntegration {
         // reported by island-claude-hook) is one of them, shipped in the app
         MainActor.assumeIsolated {
             PluginStore.shared.onOpen = { IslandController.shared.showPluginTab($0, hold: $1) }
-            PluginStore.shared.onClose = { IslandController.shared.closeHeldPluginTab($0) }
+            PluginStore.shared.onClose = { IslandController.shared.closePluginTab($0) }
             PluginStore.shared.start()
             Self.carryAgentSettingsOver()
         }
@@ -79,7 +83,7 @@ class AppIntegration {
 
     func stop() {
         MusicStore.shared.stop()
-        clipboardMonitor?.stop()
+        MainActor.assumeIsolated { clipboardMonitor?.stop() }
         hotKeyMonitor?.stop()
         // Waits briefly for them to quit, then ends whatever is left, so no plugin outlives the app
         MainActor.assumeIsolated { PluginStore.shared.stopForQuit() }
