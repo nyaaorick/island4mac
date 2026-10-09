@@ -150,7 +150,7 @@ final class FullScreenVideo {
     }
 
     /// Whether the app's window at `bounds` (global, from the top left, as Accessibility counts too) is in full screen.
-    /// Needs Accessibility permission, which the app asks for anyway
+    /// Needs Accessibility permission, which Settings > General asks for
     nonisolated private static func isInFullScreen(pid: pid_t, bounds: CGRect) -> Bool {
         guard AXIsProcessTrusted() else { return false }
         let app = AXUIElementCreateApplication(pid)

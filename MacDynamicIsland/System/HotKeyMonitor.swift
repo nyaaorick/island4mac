@@ -7,7 +7,7 @@ import OSLog
 /// ⌥⌘V      open the island on the clipboard tab
 ///
 /// Note: Global event monitoring requires Accessibility permission.
-/// The app will prompt users to enable it in System Settings.
+/// The app does not ask at launch; Settings > General has the button.
 final class HotKeyMonitor {
 
     /// What a hotkey does
@@ -26,7 +26,7 @@ final class HotKeyMonitor {
     /// Keys typed in this app, which the global monitor never sees: after a click on the island, or in Settings
     private var localMonitor: Any?
 
-    /// Flag to track if we've prompted for accessibility this session
+    /// Whether the missing Accessibility permission has been logged this session
     private var hasCheckedAccessibility = false
 
     init(appState: AppState, islandController: IslandController) {
@@ -93,16 +93,10 @@ final class HotKeyMonitor {
         if isTrusted {
             registerAllMonitors()
         } else {
-            // Prompt user on first check only
+            // No prompt at launch: Settings > General has the button that asks for it
             if !hasCheckedAccessibility {
                 hasCheckedAccessibility = true
                 logger.warning("Global hotkeys disabled - Accessibility permission not granted")
-                
-                // Trigger system accessibility prompt
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-                    _ = AXIsProcessTrustedWithOptions(options as CFDictionary)
-                }
             }
             
             // Still try to register - will fail silently if not trusted
