@@ -11,18 +11,21 @@ A macOS menu bar app that turns the MacBook notch into a "Dynamic Island".
 - **Themes**: solid black, or Liquid Glass like Control Center
 - **Tabs and plugins**: pick up to 6 tabs; Music, Clipboard, Files and Agents are plugins that ship in the app, and plugins add more. Write your own with IslandKit, the Swift SDK in [island4mac-plugins](https://github.com/nyaaorick/island4mac-plugins) ([guide](https://github.com/nyaaorick/island4mac-plugins#writing-a-plugin-with-islandkit), [protocol](https://github.com/nyaaorick/island4mac-plugins#the-protocol))
 
-## Requirements
+## Install
 
-- macOS 26.0 or later
-- Xcode 26
+Requires macOS 26.0 or later. Download [island4mac.dmg](https://github.com/nyaaorick/island4mac/releases/latest/download/island4mac.dmg), open it and drag the app into Applications.
 
-## Run it
+The app isn't notarized by Apple, so the first time you open it macOS says it can't verify it. Click Done, then open System Settings > Privacy & Security and click Open Anyway beside "MacDynamicIsland" (or run `xattr -dr com.apple.quarantine /Applications/MacDynamicIsland.app` once). After that it opens normally. When asked, grant Accessibility (hotkeys, full-screen detection) and Automation (lyrics, paste, terminal focus).
 
-Double-click `Launch.command` in Finder. It builds the app into `build/` and opens it.
+Each time it starts, the app checks for a newer release and offers to install it. What changed: [CHANGELOG.md](CHANGELOG.md).
+
+## Build from source
+
+Requires Xcode 26. Double-click `Launch.command` in Finder. It builds the app into `build/` and opens it.
 
 Or open `MacDynamicIsland.xcodeproj` in Xcode and run the `MacDynamicIsland` scheme.
 
-When asked, grant Accessibility (hotkeys, full-screen detection) and Automation (lyrics, paste, terminal focus).
+Either way you get "Mac Dynamic Island Dev", a separate app from an installed copy, with its own settings, data and permissions. While it runs, the installed copy steps aside, and it comes back when the dev build quits.
 
 ## Shortcuts
 

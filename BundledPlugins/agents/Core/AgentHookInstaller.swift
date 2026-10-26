@@ -19,16 +19,18 @@ nonisolated struct AgentHookInstaller {
     var agent: AgentKind
     /// The agents' config files live under it; a throwaway directory in tests
     var homeURL: URL
-    /// Holds the copy of the helper the agents run, and the socket
+    /// Holds the copy of the helper the agents run, and the socket: Application Support/<the app's bundle id>, so the
+    /// installed release and a dev build (`.dev`) each have their own
     var supportURL: URL
     var bundledHelperURL: URL
 
     /// Our hook entries are recognized by the helper's file name in the command
     static let helperName = "island-claude-hook"
 
-    /// The app, whose Contents/Helpers holds the helper. The Agents plugin runs as its own program, so it sets
-    /// this from ISLAND_APP_BUNDLE
-    nonisolated(unsafe) static var appBundleURL = Bundle.main.bundleURL
+    /// The app, whose Contents/Helpers holds the helper. The Agents plugin runs as its own program, which the app
+    /// tells where it is in ISLAND_APP_BUNDLE
+    nonisolated(unsafe) static var appBundleURL = ProcessInfo.processInfo.environment["ISLAND_APP_BUNDLE"]
+        .map { URL(fileURLWithPath: $0, isDirectory: true) } ?? Bundle.main.bundleURL
 
     static func standard(_ agent: AgentKind) -> AgentHookInstaller {
         let fileManager = FileManager.default
@@ -36,7 +38,7 @@ nonisolated struct AgentHookInstaller {
             agent: agent,
             homeURL: fileManager.homeDirectoryForCurrentUser,
             supportURL: fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent(Bundle.main.bundleIdentifier ?? "com.macdynamicisland.app", isDirectory: true),
+                .appendingPathComponent(Bundle(url: appBundleURL)?.bundleIdentifier ?? "com.macdynamicisland.app", isDirectory: true),
             bundledHelperURL: appBundleURL.appendingPathComponent("Contents/Helpers/\(helperName)")
         )
     }

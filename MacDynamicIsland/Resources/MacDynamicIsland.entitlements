@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<!-- ============================================ -->
-	<!-- Mac Dynamic Island - Developer ID Entitlements         -->
+	<!-- Mac Dynamic Island entitlements              -->
 	<!-- Not sandboxed; signed with Hardened Runtime  -->
 	<!-- ============================================ -->
 

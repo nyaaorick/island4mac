@@ -73,10 +73,10 @@ final class PluginStore: ObservableObject {
     /// Whether each plugin of your tabs runs, or why it stopped for good; shown in its tab and in Settings
     @Published private(set) var statuses: [String: Status] = [:]
 
-    /// `~/Library/Application Support/MacDynamicIsland/Plugins`: one folder per plugin
+    /// `~/Library/Application Support/MacDynamicIsland/Plugins` (`MacDynamicIsland Dev` for a dev build): one folder per plugin
     let pluginsFolder: URL
-    /// `~/Library/Application Support/MacDynamicIsland/PluginData`: one folder per plugin for what it keeps
-    /// (ISLAND_DATA_DIR), apart from its install folder so an update doesn't wipe it
+    /// `~/Library/Application Support/MacDynamicIsland/PluginData` (or `MacDynamicIsland Dev`): one folder per plugin for
+    /// what it keeps (ISLAND_DATA_DIR), apart from its install folder so an update doesn't wipe it
     let dataFolder: URL
     /// Opens the island on a plugin's tab ({"type":"open"}); IslandController sets it
     var onOpen: (_ pluginID: String, _ hold: Bool) -> Void = { _, _ in }
@@ -125,9 +125,9 @@ final class PluginStore: ObservableObject {
     var clock: () -> Date = Date.init
 
     nonisolated static let defaultFolder: URL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("MacDynamicIsland/Plugins", isDirectory: true)
+        .appendingPathComponent("\(BuildConfig.supportFolderName)/Plugins", isDirectory: true)
     nonisolated static let defaultDataFolder: URL = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        .appendingPathComponent("MacDynamicIsland/PluginData", isDirectory: true)
+        .appendingPathComponent("\(BuildConfig.supportFolderName)/PluginData", isDirectory: true)
 
     private let restartDelay: TimeInterval
 

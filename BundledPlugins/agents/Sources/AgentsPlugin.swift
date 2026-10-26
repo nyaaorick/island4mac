@@ -329,10 +329,6 @@ final class AgentsService {
     private var promptsAnswered: AnyCancellable?
 
     func start(soundsOn: @escaping () -> Bool, opensIsland: @escaping () -> Bool) {
-        // The helper the hooks run lives in the app, not beside this program
-        if let app = ProcessInfo.processInfo.environment["ISLAND_APP_BUNDLE"] {
-            AgentHookInstaller.appBundleURL = URL(fileURLWithPath: app, isDirectory: true)
-        }
         let store = AgentSessionStore.shared
         // ISLAND_AGENTS_SOCKET: a socket of its own, for tests, which then leave the agents' config files alone
         let socketOverride = ProcessInfo.processInfo.environment["ISLAND_AGENTS_SOCKET"].map { URL(fileURLWithPath: $0) }

@@ -45,6 +45,11 @@ final class AgentHookInstallerTests: XCTestCase {
         ],
     ]
 
+    /// The installed release and a dev build each keep the helper and the socket under their own bundle id
+    func testTheHelperAndSocketAreTheApps() {
+        XCTAssertEqual(AgentHookInstaller.standard(.claude).supportURL.lastPathComponent, Bundle.main.bundleIdentifier)
+    }
+
     func testInstallKeepsOtherHooksAndSettings() throws {
         let installer = makeInstaller()
         try write(existing, to: installer)

@@ -1,6 +1,7 @@
 #!/usr/bin/env swift
-// Double-click to build MacDynamicIsland and launch it. Written in Swift so the repo stays Swift-only.
-import Foundation
+// Double-click to build the dev app (Debug: "Mac Dynamic Island Dev") and launch it. Written in Swift so the repo stays
+// Swift-only.
+import AppKit
 
 let root = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath().deletingLastPathComponent()
 let derivedData = root.appendingPathComponent("build").path
@@ -70,7 +71,13 @@ let build = run("/usr/bin/xcodebuild", [
 ])
 guard build == 0 else { fail("Build failed (xcodebuild exit \(build)). Check the output above.") }
 
-// Quit a running copy so the fresh build is the one that shows up.
-run("/usr/bin/pkill", ["-x", "MacDynamicIsland"])
+// Quit a running dev build so the fresh one is what shows up. Only the dev app: the installed release is a separate
+// app (com.macdynamicisland.app), which a dev build quits while it runs and reopens when it quits.
+let running = NSRunningApplication.runningApplications(withBundleIdentifier: "com.macdynamicisland.app.dev")
+running.forEach { $0.forceTerminate() }
+let deadline = Date().addingTimeInterval(5)
+while running.contains(where: { !$0.isTerminated }), Date() < deadline {
+    RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+}
 guard run("/usr/bin/open", [appPath]) == 0 else { fail("Could not open \(appPath).") }
 print("Launched.")

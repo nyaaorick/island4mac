@@ -12,6 +12,7 @@
 - Show apps that don't report to the system Now Playing.
 - Customizable keyboard shortcuts (currently fixed).
 - Volume waveform visualizer for the music view.
+- Notarize releases (needs a paid Apple developer account), so the first launch needs no Open Anyway.
 
 ## Plugins
 
@@ -21,5 +22,4 @@ Built: up to 6 tabs, out-of-process plugins drawn in the island's own look, the 
 - Write the oldest protocol a plugin's content needs into its plugin.json (Media needs 5; today only the declarations count).
 - A native UI for plugins that need more than the protocol (a UI bundle loaded into the app, with library validation off).
 - Compare versions by order, not just difference (no offering a downgrade as an update).
-- Sign plugin builds with a Developer ID in the plugins repo's CI (they are ad-hoc signed now).
 - Keep what an on-demand plugin last showed across app launches, so it needn't run once at launch.
