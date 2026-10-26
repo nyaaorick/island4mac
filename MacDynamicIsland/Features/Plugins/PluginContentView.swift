@@ -12,8 +12,8 @@ struct PluginContentView: View {
     let send: (PluginEvent) -> Void
 
     @State private var typed = ""
-    /// The button waiting for you to confirm it
-    @State private var confirming: PluginButton?
+    /// The button, or the row or card action, waiting for you to confirm it
+    @State private var confirming: PluginConfirmation?
 
     private var showsOnlyButtons: Bool {
         !content.buttons.isEmpty && content.rows.isEmpty && content.cards.isEmpty && content.input == nil && content.notice == nil
@@ -35,7 +35,7 @@ struct PluginContentView: View {
                         // Room around the cards for their shadows (IslandSurface)
                         HStack(spacing: 12) {
                             ForEach(Array(content.cards.enumerated()), id: \.offset) { _, card in
-                                PluginCardView(card: card, action: { tap(card.id) }, onAction: { tap($0) })
+                                PluginCardView(card: card, action: { tap(card.id) }, onAction: { tap(action: $0) })
                             }
                         }
                         .padding(.horizontal, 12)
@@ -55,7 +55,11 @@ struct PluginContentView: View {
                                 PluginNoticeView(notice: notice)
                             }
                             ForEach(Array(content.rows.enumerated()), id: \.offset) { _, row in
-                                PluginRowView(row: row, action: { tap(row.id) }, onAction: { tap($0) })
+                                if row.kind == .section {
+                                    PluginSectionView(row: row)
+                                } else {
+                                    PluginRowView(row: row, action: { tap(row.id) }, onAction: { tap(action: $0) })
+                                }
                             }
                         }
                         .padding(.horizontal, 12)
@@ -69,8 +73,8 @@ struct PluginContentView: View {
                     inputField(input)
                 }
 
-                if let button = confirming {
-                    confirmRow(for: button)
+                if let confirming {
+                    confirmRow(for: confirming)
                 } else if !content.buttons.isEmpty {
                     HStack(spacing: 8) {
                         ForEach(content.buttons) { button in
@@ -86,17 +90,17 @@ struct PluginContentView: View {
         }
         // A new field from the plugin starts from its own text
         .onChange(of: content.input?.id, initial: true) { _, _ in typed = content.input?.text ?? "" }
-        // Buttons that change under a pending confirmation take it away
-        .onChange(of: content.buttons) { _, buttons in
-            if let pending = confirming, !buttons.contains(pending) { confirming = nil }
+        // What changes under a pending confirmation takes it away
+        .onChange(of: content) { _, content in
+            if let pending = confirming, !content.hasAction(pending.id) { confirming = nil }
         }
     }
 
     /// Only buttons: larger, in the middle of the tab, like the tab's own states (Restart, Open Settings)
     private var buttonsOnly: some View {
         Group {
-            if let button = confirming {
-                confirmRow(for: button)
+            if let confirming {
+                confirmRow(for: confirming)
             } else {
                 HStack(spacing: 10) {
                     ForEach(content.buttons) { button in
@@ -142,16 +146,16 @@ struct PluginContentView: View {
             }
     }
 
-    private func confirmRow(for button: PluginButton) -> some View {
+    private func confirmRow(for pending: PluginConfirmation) -> some View {
         HStack(spacing: 8) {
-            Text(button.confirm ?? "")
+            Text(pending.question)
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.8))
                 .lineLimit(1)
             PluginButtonView(title: L("plugins.tab.cancel"), symbol: nil) { confirming = nil }
-            PluginButtonView(title: button.title, symbol: button.symbol) {
+            PluginButtonView(title: pending.title, symbol: pending.symbol) {
                 confirming = nil
-                tap(button.id)
+                tap(pending.id)
             }
         }
         .padding(.horizontal, 12)
@@ -159,10 +163,19 @@ struct PluginContentView: View {
     }
 
     private func tap(_ button: PluginButton) {
-        if button.confirm != nil {
-            confirming = button
+        if let question = button.confirm {
+            confirming = PluginConfirmation(id: button.id, title: button.title, symbol: button.symbol, question: question)
         } else {
             tap(button.id)
+        }
+    }
+
+    /// A row's or card's secondary action; one with `confirm` asks first, like a button (protocol 7)
+    private func tap(action: PluginRowAction) {
+        if let question = action.confirm {
+            confirming = PluginConfirmation(id: action.id, title: action.title, symbol: action.symbol, question: question)
+        } else {
+            tap(action.id)
         }
     }
 
@@ -177,21 +190,28 @@ struct PluginContentView: View {
     }
 }
 
+/// What a tap is about to do, once you say yes: a button with `confirm`, or a row or card action with one
+struct PluginConfirmation: Equatable {
+    let id: String
+    let title: String
+    let symbol: String?
+    let question: String
+}
+
 private struct PluginRowView: View {
     let row: PluginRow
     let action: () -> Void
-    /// One of its secondary actions was tapped, with that action's id
-    let onAction: (String) -> Void
+    /// One of its secondary actions was tapped
+    let onAction: (PluginRowAction) -> Void
     @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: 10) {
-            if let image = row.image {
+            if let image = row.image, row.progress == nil {
                 PluginImageView(image: image, size: 28, fallbackSymbol: row.symbol)
-            } else if let symbol = row.symbol {
-                Image(systemName: symbol)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.8))
+            } else if row.symbol != nil || row.state != nil || row.progress != nil || row.image != nil {
+                PluginSymbolView(symbol: row.symbol, progress: row.progress, size: row.progress == nil ? 16 : 20, image: row.image,
+                                 state: row.state)
                     .frame(width: 20)
             }
             VStack(alignment: .leading, spacing: 1) {
@@ -200,18 +220,16 @@ private struct PluginRowView: View {
                     .foregroundStyle(.white)
                     .lineLimit(1)
                 if let subtitle = row.subtitle {
-                    Text(subtitle)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.5))
-                        .lineLimit(3)
+                    subtitleText(subtitle)
                 }
             }
             Spacer(minLength: 0)
-            // Secondary actions show on hover, like the archive button of an agent session
+            // Secondary actions show on hover, like the archive button of an agent session; the detail
+            // (a time, a count) or the switch takes their place otherwise
             if isHovered, let actions = row.actions, !actions.isEmpty {
                 HStack(spacing: 4) {
                     ForEach(actions) { rowAction in
-                        Button { onAction(rowAction.id) } label: {
+                        Button { onAction(rowAction) } label: {
                             Image(systemName: rowAction.symbol ?? "ellipsis")
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundStyle(.white.opacity(0.7))
@@ -222,6 +240,19 @@ private struct PluginRowView: View {
                         .help(rowAction.title)
                     }
                 }
+            } else if let detail = row.detail {
+                Text(detail)
+                    .font(.system(size: 10, weight: .medium).monospacedDigit())
+                    .foregroundStyle(row.state == .attention ? PluginItemState.attention.color : .white.opacity(0.45))
+                    .lineLimit(1)
+            }
+            if let isOn = row.toggle {
+                // The switch and the row both send the row's action; the plugin flips it and shows the new value
+                Toggle("", isOn: Binding(get: { isOn }, set: { _ in action() }))
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .labelsHidden()
+                    .accessibilityLabel(row.title)
             }
         }
         .padding(.horizontal, 10)
@@ -232,7 +263,7 @@ private struct PluginRowView: View {
         .onTapGesture(perform: action)
         .contextMenu {
             ForEach(row.actions ?? []) { rowAction in
-                Button { onAction(rowAction.id) } label: {
+                Button { onAction(rowAction) } label: {
                     if let symbol = rowAction.symbol {
                         Label(rowAction.title, systemImage: symbol)
                     } else {
@@ -241,6 +272,56 @@ private struct PluginRowView: View {
                 }
             }
         }
+    }
+
+    /// Up to 3 lines. With a state, the first line is the status line, in the state's color
+    @ViewBuilder
+    private func subtitleText(_ subtitle: String) -> some View {
+        if let state = row.state {
+            let lines = subtitle.split(separator: "\n", maxSplits: 1, omittingEmptySubsequences: false)
+            Text(lines[0])
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(state.color)
+                .lineLimit(1)
+            if lines.count > 1 {
+                Text(lines[1])
+                    .font(.system(size: 10))
+                    .foregroundStyle(.white.opacity(0.5))
+                    .lineLimit(2)
+            }
+        } else {
+            Text(subtitle)
+                .font(.system(size: 10))
+                .foregroundStyle(.white.opacity(0.5))
+                .lineLimit(3)
+        }
+    }
+}
+
+/// A section heading over the rows after it (protocol 7): a caption, not a pane, with the detail (a count) at the end
+private struct PluginSectionView: View {
+    let row: PluginRow
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let symbol = row.symbol {
+                Image(systemName: symbol)
+                    .font(.system(size: 9, weight: .semibold))
+            }
+            Text(row.title)
+                .font(.system(size: 10, weight: .semibold))
+                .lineLimit(1)
+            Spacer(minLength: 0)
+            if let detail = row.detail {
+                Text(detail)
+                    .font(.system(size: 10, weight: .medium).monospacedDigit())
+                    .lineLimit(1)
+            }
+        }
+        .foregroundStyle(.white.opacity(0.45))
+        .padding(.horizontal, 6)
+        .padding(.top, 6)
+        .accessibilityAddTraits(.isHeader)
     }
 }
 

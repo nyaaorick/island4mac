@@ -188,7 +188,9 @@ final class PluginTests: XCTestCase {
         try Data(#"{"plugins":[{"id":"timer","name":"Timer","version":"1.0.0","protocol":1,"archive":"\#(archive.absoluteString)"}]}"#.utf8)
             .write(to: index)
 
-        let client = PluginCatalogClient(pluginsFolder: installed)
+        // Removed for good here, so tests leave nothing in your Trash
+        var client = PluginCatalogClient(pluginsFolder: installed)
+        client.movesToTrash = false
         let entries = try await client.fetchIndex(from: index)
         XCTAssertEqual(entries.map(\.id), ["timer"])
 
@@ -514,6 +516,37 @@ final class PluginTests: XCTestCase {
     }
 
     // MARK: - Protocol 5
+
+    /// Protocol 6: a state and a detail on rows, cards and the compact content; a state this app doesn't know
+    /// (from a plugin written for a newer one) reads as none rather than failing the message
+    func testStatesAndDetailsRead() throws {
+        guard case .list(let rows) = try PluginMessage.decode(line(#"{"type":"list","rows":[{"title":"Tests","subtitle":"Running","state":"working","detail":"1:23"},{"title":"Lint","state":"done"},{"title":"Later","state":"paused","detail":"x"}]}"#)) else {
+            return XCTFail("not a list")
+        }
+        XCTAssertEqual(rows.map(\.state), [.working, .done, nil])
+        XCTAssertEqual(rows.map(\.detail), ["1:23", nil, "x"])
+        XCTAssertEqual(try PluginMessage.decode(line(#"{"type":"compact","symbol":"hammer","text":"1:23","state":"attention"}"#)),
+                       .compact(PluginCompact(symbol: "hammer", text: "1:23", state: .attention)))
+        guard case .cards(let cards) = try PluginMessage.decode(line(#"{"type":"cards","cards":[{"title":"Report","state":"failed"}]}"#)) else {
+            return XCTFail("not cards")
+        }
+        XCTAssertEqual(cards.first?.state, .failed)
+    }
+
+    /// Protocol 7: sections, toggles and progress on rows, and row actions that ask first
+    func testSectionsTogglesProgressAndConfirmsRead() throws {
+        guard case .list(let rows) = try PluginMessage.decode(line(#"{"type":"list","rows":[{"title":"Power","kind":"section","detail":"1"},{"id":"awake","title":"Keep awake","toggle":true},{"title":"Upgrading","progress":1.4},{"title":"Odd","kind":"banner"},{"id":"c1","title":"Container","actions":[{"id":"rm","title":"Remove","confirm":"Remove it?"}]}]}"#)) else {
+            return XCTFail("not a list")
+        }
+        XCTAssertEqual(rows.map(\.kind), [.section, .row, .row, .row, .row], "an unknown kind reads as a row")
+        XCTAssertEqual(rows[1].toggle, true)
+        XCTAssertEqual(rows[2].progress, 1, "clamped")
+        XCTAssertEqual(rows[4].actions?.first?.confirm, "Remove it?")
+        var content = PluginStore.Content()
+        content.rows = rows
+        XCTAssertTrue(content.hasAction("rm"))
+        XCTAssertFalse(content.hasAction("awake"), "a row's own id isn't an action's")
+    }
 
     func testCardsRead() throws {
         let message = try PluginMessage.decode(line(#"{"type":"cards","cards":[{"id":"c1","title":"Safari","subtitle":"now","image":{"app":"com.apple.Safari"},"preview":{"text":"hello"},"actions":[{"id":"delete:c1","title":"Delete","symbol":"trash"}]},{"title":"a.pdf","preview":{"image":{"file":"/tmp/a.pdf"}},"file":"/tmp/a.pdf"},{"title":"Bare","symbol":"star"}]}"#))
@@ -849,7 +882,9 @@ final class PluginTests: XCTestCase {
         XCTAssertTrue(waitUntil(5) { store.contents["agents"]?.buttons.contains { $0.title == "Allow" } == true }, "the request shows with its buttons")
         let rows = store.contents["agents"]?.rows ?? []
         XCTAssertTrue(rows.contains { $0.subtitle == "make test" || $0.title.contains("make test") }, "\(rows)")
+        XCTAssertEqual(rows.first?.state, .attention, "the request's row says the agent needs you: \(rows)")
         XCTAssertNotNil(store.priorityPlugin, "and beside the notch, ahead of music")
+        XCTAssertEqual(store.contents["agents"]?.compact?.state, .attention, "and so does the glyph beside the notch")
 
         let allow = try XCTUnwrap(store.contents["agents"]?.buttons.first { $0.title == "Allow" })
         let tapped = Date()

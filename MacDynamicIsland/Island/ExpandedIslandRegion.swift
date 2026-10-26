@@ -27,34 +27,58 @@ struct ExpandedIslandRegion: View {
     private var cameraRow: some View {
         let sections = tabs.enabledTabs[...]
         let leading = (sections.count + 1) / 2
+        let groups = [sections.prefix(leading), sections.dropFirst(leading)]
+        // Only the built-in display has a camera housing, and it never gets the large layout
+        let side = (NotchMetrics.expandedWidth - 2 * NotchMetrics.expandedTopRadius - notch.width) / 2 - 2 * Self.tabGroupMargin
+        let layout = TabBarLayout.fitting(groups.map { $0.map(\.displayName) }, in: side)
         return HStack(spacing: 0) {
-            tabGroup(sections.prefix(leading))
+            tabGroup(groups[0], layout: layout)
+                .padding(.horizontal, Self.tabGroupMargin)
             Color.clear
                 .frame(width: notch.width)
-            tabGroup(sections.dropFirst(leading))
+            tabGroup(groups[1], layout: layout)
+                .padding(.horizontal, Self.tabGroupMargin)
         }
         .frame(height: notch.height)
     }
 
-    private func tabGroup(_ sections: ArraySlice<IslandTab>) -> some View {
-        HStack(spacing: 4) {
-            ForEach(sections, id: \.self) { section in
-                tabItem(for: section)
+    /// Air between a group of tabs and the island's edge or the camera
+    private static let tabGroupMargin: CGFloat = 8
+    /// What the tab bar keeps for its padding, the settings and close buttons and the gaps between them
+    private static let tabBarControlsWidth: CGFloat = 28 + 12 + 28 + 12 + 32 + 8
+
+    private func tabGroup(_ sections: ArraySlice<IslandTab>, layout: TabBarLayout) -> some View {
+        Group {
+            if layout.scrolls {
+                ScrollView(.horizontal) { tabRow(sections, layout: layout) }
+                    .scrollIndicators(.never)
+            } else {
+                tabRow(sections, layout: layout)
             }
         }
         .frame(maxWidth: .infinity)
     }
 
+    private func tabRow(_ sections: ArraySlice<IslandTab>, layout: TabBarLayout) -> some View {
+        HStack(spacing: layout.itemSpacing) {
+            ForEach(sections, id: \.self) { section in
+                tabItem(for: section, layout: layout)
+            }
+        }
+    }
+
     /// Tabs row on a display without a notch, with the close button and the Agents tab's controls
     private var tabBar: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 4) {
-                ForEach(tabs.enabledTabs, id: \.self) { section in
-                    tabItem(for: section)
-                }
+        let width = (appState.isOnLargeDisplay ? NotchMetrics.largeDisplayExpandedWidth : NotchMetrics.expandedWidth)
+            - 2 * NotchMetrics.expandedTopRadius
+        let layout = TabBarLayout.fitting([tabs.enabledTabs.map(\.displayName)], in: width - Self.tabBarControlsWidth)
+        return HStack(spacing: 12) {
+            if layout.scrolls {
+                tabGroup(tabs.enabledTabs[...], layout: layout)
+            } else {
+                tabRow(tabs.enabledTabs[...], layout: layout)
+                Spacer()
             }
-
-            Spacer()
 
             PluginSettingsButton(tab: appState.currentSection)
             
@@ -111,19 +135,25 @@ struct ExpandedIslandRegion: View {
         }
     }
 
-    private func tabItem(for section: IslandTab) -> some View {
+    private func tabItem(for section: IslandTab, layout: TabBarLayout) -> some View {
         let isSelected = appState.currentSection == section
         let isHovered = hoveredSection == section
         
         // Every tab keeps its label and weight, so selecting one never resizes the tabs or pushes them around
-        return HStack(spacing: 6) {
-            Image(systemName: section.iconName)
-                .font(.system(size: 11, weight: .semibold))
+        // Labels always show whole (TabBarLayout leaves them the room), never cut short or shrunk
+        return HStack(spacing: layout.iconSpacing) {
+            if layout.showsIcons {
+                Image(systemName: section.iconName)
+                    .font(.system(size: TabBarLayout.fontSize, weight: .semibold))
+                    .frame(width: TabBarLayout.iconWidth)
+            }
             Text(section.displayName)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: TabBarLayout.fontSize, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize()
         }
         .padding(.vertical, 6)
-        .padding(.horizontal, 10)
+        .padding(.horizontal, layout.horizontalPadding)
         .background {
             if isSelected {
                 IslandSurface(level: .tile, cornerRadius: 999, isHighlighted: isHovered)

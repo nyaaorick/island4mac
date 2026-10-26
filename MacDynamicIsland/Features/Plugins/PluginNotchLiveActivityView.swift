@@ -10,11 +10,12 @@ struct PluginNotchLiveActivityView: View {
     var body: some View {
         PluginTimeline(compact: compact) { text, progress in
             NotchWingsLayout(notch: notch, wings: wings) { _ in
-                PluginSymbolView(symbol: compact.symbol, progress: progress, size: max(12, notch.height - 18), image: compact.image)
+                PluginSymbolView(symbol: compact.symbol, progress: progress, size: max(12, notch.height - 18), image: compact.image, state: compact.state)
             } secondary: { _ in
                 Text(text ?? "")
                     .font(.system(size: 11, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.85))
+                    // "Needs permission" in the attention color, as the glyph is
+                    .foregroundStyle(compact.state == .attention ? PluginItemState.attention.color : .white.opacity(0.85))
                     .lineLimit(1)
                     // A narrow right wing still fits "12:34"
                     .minimumScaleFactor(0.6)

@@ -6,8 +6,8 @@ import AppKit
 struct PluginCardView: View {
     let card: PluginCard
     let action: () -> Void
-    /// One of its secondary actions was tapped, with that action's id
-    let onAction: (String) -> Void
+    /// One of its secondary actions was tapped
+    let onAction: (PluginRowAction) -> Void
     @State private var isHovered = false
 
     static let width: CGFloat = 170
@@ -20,10 +20,8 @@ struct PluginCardView: View {
             HStack(spacing: 6) {
                 if let image = card.image {
                     PluginImageView(image: image, size: 16, fallbackSymbol: card.symbol)
-                } else if let symbol = card.symbol {
-                    Image(systemName: symbol)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.7))
+                } else if card.symbol != nil || card.state != nil {
+                    PluginSymbolView(symbol: card.symbol, progress: nil, size: 14, state: card.state)
                         .frame(width: 16, height: 16)
                 }
                 Text(card.title)
@@ -33,8 +31,8 @@ struct PluginCardView: View {
                 Spacer(minLength: 4)
                 if let subtitle = card.subtitle {
                     Text(subtitle)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .font(.system(size: 10, weight: card.state == nil ? .regular : .medium))
+                        .foregroundStyle(card.state?.color ?? .white.opacity(0.4))
                         .lineLimit(1)
                 }
             }
@@ -48,7 +46,7 @@ struct PluginCardView: View {
                     if isHovered, let actions = card.actions, !actions.isEmpty {
                         HStack(spacing: 4) {
                             ForEach(actions) { cardAction in
-                                Button { onAction(cardAction.id) } label: {
+                                Button { onAction(cardAction) } label: {
                                     Image(systemName: cardAction.symbol ?? "ellipsis")
                                         .font(.system(size: 11, weight: .semibold))
                                         .foregroundStyle(.white.opacity(0.7))
@@ -72,7 +70,7 @@ struct PluginCardView: View {
         .modifier(FileDrag(path: card.file))
         .contextMenu {
             ForEach(card.actions ?? []) { cardAction in
-                Button { onAction(cardAction.id) } label: {
+                Button { onAction(cardAction) } label: {
                     if let symbol = cardAction.symbol {
                         Label(cardAction.title, systemImage: symbol)
                     } else {

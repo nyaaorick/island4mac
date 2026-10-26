@@ -6,12 +6,14 @@ struct PluginRowAction: Decodable, Equatable, Identifiable, Hashable {
     let id: String
     let title: String
     var symbol: String?
+    /// Asked first, in the tab, before the tap goes to the plugin (protocol 7), like a button's
+    var confirm: String?
 
     /// A row has at most this many
     static let maxCount = 4
 
     var trimmed: PluginRowAction {
-        PluginRowAction(id: id, title: PluginMessage.cut(title), symbol: symbol)
+        PluginRowAction(id: id, title: PluginMessage.cut(title), symbol: symbol, confirm: PluginMessage.cut(confirm))
     }
 }
 

@@ -1,7 +1,8 @@
 import SwiftUI
 import AppKit
 
-/// Installed plugins, and the ones in the plugins repo you can install. Turning a plugin's tab on is under Tabs
+/// Installed plugins, and the ones in the plugins repo, each installed or uninstalled with one click. Installing
+/// turns the plugin's tab on when there's room; Tabs has the rest
 struct PluginsSettingsView: View {
     @ObservedObject private var plugins = PluginStore.shared
     @ObservedObject private var settings = SettingsDefaults.shared
@@ -10,9 +11,10 @@ struct PluginsSettingsView: View {
     @State private var isLoading = false
     @State private var busyID: String?
     @State private var errorText: String?
+    /// What the last install or uninstall did
+    @State private var notice: String?
     /// Why the catalog couldn't be read, shown quietly: not published yet, or offline
     @State private var catalogNote: String?
-    @State private var pendingInstall: PluginCatalogEntry?
 
     private var client: PluginCatalogClient {
         PluginCatalogClient(pluginsFolder: plugins.pluginsFolder, dataFolder: plugins.dataFolder)
@@ -73,6 +75,8 @@ struct PluginsSettingsView: View {
                 }
                 if let errorText {
                     SettingsNote(errorText, color: .red)
+                } else if let notice {
+                    SettingsNote(notice)
                 }
             } header: {
                 HStack {
@@ -81,18 +85,11 @@ struct PluginsSettingsView: View {
                     Button(L("settings.plugins.refresh")) { Task { await loadCatalog() } }
                         .disabled(isLoading)
                 }
+            } footer: {
+                SettingsNote(L("settings.plugins.trust_note"))
             }
         }
         .task { await loadCatalog() }
-        .alert(L("settings.plugins.confirm_title"), isPresented: Binding(
-            get: { pendingInstall != nil },
-            set: { if !$0 { pendingInstall = nil } }
-        ), presenting: pendingInstall) { entry in
-            Button(L("settings.plugins.install")) { Task { await install(entry) } }
-            Button(L("settings.plugins.cancel"), role: .cancel) {}
-        } message: { entry in
-            Text(L("settings.plugins.confirm_message", entry.name))
-        }
     }
 
     private func installedRow(_ plugin: PluginStore.Installed) -> some View {
@@ -110,8 +107,7 @@ struct PluginsSettingsView: View {
                     Button(L("plugins.tab.restart")) { plugins.restart(plugin.id) }
                 }
                 if !plugin.isBundled {
-                    Button(L("settings.plugins.remove"), role: .destructive) { remove(plugin.id) }
-                        .disabled(busyID != nil)
+                    uninstallButton(plugin.id)
                 }
             }
         } label: {
@@ -131,14 +127,19 @@ struct PluginsSettingsView: View {
                 ProgressView().controlSize(.small)
             } else if !entry.isSupported {
                 SettingsNote(L("settings.plugins.needs_update"))
-            } else if installed == nil {
-                Button(L("settings.plugins.install")) { pendingInstall = entry }
-                    .disabled(busyID != nil)
-            } else if installed?.manifest.version != entry.version {
-                Button(L("settings.plugins.update")) { Task { await install(entry) } }
-                    .disabled(busyID != nil)
+            } else if let installed {
+                HStack {
+                    if installed.manifest.version != entry.version {
+                        Button(L("settings.plugins.update")) { Task { await install(entry) } }
+                            .disabled(busyID != nil)
+                    }
+                    if !installed.isBundled {
+                        uninstallButton(entry.id)
+                    }
+                }
             } else {
-                SettingsNote(L("settings.plugins.up_to_date"))
+                Button(L("settings.plugins.install")) { Task { await install(entry) } }
+                    .disabled(busyID != nil)
             }
         } label: {
             Label {
@@ -150,6 +151,11 @@ struct PluginsSettingsView: View {
                 Image(systemName: entry.symbol ?? "puzzlepiece.extension")
             }
         }
+    }
+
+    private func uninstallButton(_ pluginID: String) -> some View {
+        Button(L("settings.plugins.uninstall"), role: .destructive) { uninstall(pluginID) }
+            .disabled(busyID != nil)
     }
 
     /// Version, and whether it runs: on while its tab is shown, stopped with the reason if it kept failing
@@ -182,7 +188,9 @@ struct PluginsSettingsView: View {
         }
     }
 
+    /// Installs or updates it. A new plugin's tab is turned on too, while fewer than six show
     private func install(_ entry: PluginCatalogEntry) async {
+        let isNew = !plugins.installed.contains { $0.id == entry.id }
         busyID = entry.id
         defer { busyID = nil }
         do {
@@ -190,17 +198,33 @@ struct PluginsSettingsView: View {
             errorText = nil
         } catch {
             errorText = L("settings.plugins.install_failed", entry.name, String(describing: error))
+            plugins.refresh()
+            return
         }
         plugins.refresh()
+        guard isNew else {
+            notice = L("settings.plugins.updated", entry.name)
+            return
+        }
+        let tab = IslandTab.plugin(entry.id)
+        let tabs = TabStore.shared
+        if tabs.isEnabled(tab) || tabs.canToggle(tab) {
+            tabs.setEnabled(tab, true)
+            notice = L("settings.plugins.installed_with_tab", entry.name)
+        } else {
+            notice = L("settings.plugins.installed_no_room", entry.name, TabStore.maxEnabled)
+        }
     }
 
-    private func remove(_ pluginID: String) {
+    private func uninstall(_ pluginID: String) {
+        let name = plugins.installed.first { $0.id == pluginID }?.manifest.name ?? pluginID
         do {
             try client.remove(pluginID)
             plugins.preferences.removeAll(for: pluginID)
             errorText = nil
+            notice = L("settings.plugins.uninstalled", name)
         } catch {
-            errorText = String(describing: error)
+            errorText = L("settings.plugins.uninstall_failed", name, String(describing: error))
         }
         plugins.refresh()
     }

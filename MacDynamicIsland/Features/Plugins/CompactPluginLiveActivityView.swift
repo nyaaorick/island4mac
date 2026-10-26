@@ -8,7 +8,7 @@ struct CompactPluginLiveActivityView: View {
     var body: some View {
         PluginTimeline(compact: compact) { text, progress in
             HStack(spacing: 8) {
-                PluginSymbolView(symbol: compact.symbol, progress: progress, size: 14, image: compact.image)
+                PluginSymbolView(symbol: compact.symbol, progress: progress, size: 14, image: compact.image, state: compact.state)
                 Text(name)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(.white)

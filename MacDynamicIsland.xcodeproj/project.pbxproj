@@ -174,9 +174,9 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		4D5241070000000000000001 /* MusicCore */ = {
+		4D5241070000000000000001 /* Core */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MusicCore;
+			path = Core;
 			sourceTree = "<group>";
 		};
 		4D5241070000000000000002 /* Sources */ = {
@@ -184,9 +184,9 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		4D5241060000000000000001 /* FilesCore */ = {
+		4D5241060000000000000001 /* Core */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = FilesCore;
+			path = Core;
 			sourceTree = "<group>";
 		};
 		4D5241060000000000000002 /* Sources */ = {
@@ -194,9 +194,9 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		4D5241050000000000000001 /* ClipboardCore */ = {
+		4D5241050000000000000001 /* Core */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ClipboardCore;
+			path = Core;
 			sourceTree = "<group>";
 		};
 		4D5241050000000000000002 /* Sources */ = {
@@ -232,9 +232,9 @@
 			path = MediaRemoteAdapter;
 			sourceTree = "<group>";
 		};
-		4D5241040000000000000001 /* AgentsCore */ = {
+		4D5241040000000000000001 /* Core */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AgentsCore;
+			path = Core;
 			sourceTree = "<group>";
 		};
 		4D5241040000000000000002 /* Sources */ = {
@@ -312,6 +312,7 @@
 			isa = PBXGroup;
 			children = (
 				4D5241070000000000000004 /* plugin.json */,
+				4D5241070000000000000001 /* Core */,
 				4D5241070000000000000002 /* Sources */,
 			);
 			path = music;
@@ -321,6 +322,7 @@
 			isa = PBXGroup;
 			children = (
 				4D5241060000000000000004 /* plugin.json */,
+				4D5241060000000000000001 /* Core */,
 				4D5241060000000000000002 /* Sources */,
 			);
 			path = files;
@@ -330,6 +332,7 @@
 			isa = PBXGroup;
 			children = (
 				4D5241050000000000000004 /* plugin.json */,
+				4D5241050000000000000001 /* Core */,
 				4D5241050000000000000002 /* Sources */,
 			);
 			path = clipboard;
@@ -340,14 +343,10 @@
 			children = (
 				4D52410300000000000000A1 /* MacDynamicIsland */,
 				4D52410300000000000000A2 /* MacDynamicIslandTests */,
-				4D5241040000000000000001 /* AgentsCore */,
 				4D5241040000000000000004 /* BundledPlugins */,
 				4D52410300000000000000A5 /* Helpers */,
 				51E49FAC2F0B8D41002AD746 /* Products */,
 				4D5241080000000000000001 /* SharedCore */,
-				4D5241050000000000000001 /* ClipboardCore */,
-				4D5241060000000000000001 /* FilesCore */,
-				4D5241070000000000000001 /* MusicCore */,
 			);
 			sourceTree = "<group>";
 		};
@@ -390,6 +389,7 @@
 			isa = PBXGroup;
 			children = (
 				4D5241040000000000000005 /* plugin.json */,
+				4D5241040000000000000001 /* Core */,
 				4D5241040000000000000002 /* Sources */,
 			);
 			path = agents;
@@ -410,7 +410,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4D5241070000000000000001 /* MusicCore */,
+				4D5241070000000000000001 /* Core */,
 				4D5241080000000000000001 /* SharedCore */,
 				4D5241070000000000000002 /* Sources */,
 			);
@@ -434,7 +434,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4D5241060000000000000001 /* FilesCore */,
+				4D5241060000000000000001 /* Core */,
 				4D5241080000000000000001 /* SharedCore */,
 				4D5241060000000000000002 /* Sources */,
 			);
@@ -458,7 +458,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4D5241050000000000000001 /* ClipboardCore */,
+				4D5241050000000000000001 /* Core */,
 				4D5241080000000000000001 /* SharedCore */,
 				4D5241050000000000000002 /* Sources */,
 			);
@@ -496,11 +496,11 @@
 			);
 			fileSystemSynchronizedGroups = (
 				4D52410300000000000000A1 /* MacDynamicIsland */,
-				4D5241040000000000000001 /* AgentsCore */,
+				4D5241040000000000000001 /* Core */,
 				4D5241080000000000000001 /* SharedCore */,
-				4D5241050000000000000001 /* ClipboardCore */,
-				4D5241060000000000000001 /* FilesCore */,
-				4D5241070000000000000001 /* MusicCore */,
+				4D5241050000000000000001 /* Core */,
+				4D5241060000000000000001 /* Core */,
+				4D5241070000000000000001 /* Core */,
 			);
 			name = "MacDynamicIsland";
 			productName = "MacDynamicIsland";
@@ -578,7 +578,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				4D5241040000000000000001 /* AgentsCore */,
+				4D5241040000000000000001 /* Core */,
 				4D5241040000000000000002 /* Sources */,
 				4D5241080000000000000001 /* SharedCore */,
 			);

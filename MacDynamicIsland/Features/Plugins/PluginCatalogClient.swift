@@ -7,6 +7,8 @@ struct PluginCatalogClient {
     /// Where plugins keep their data (PluginStore.dataFolder); a removed plugin's goes with it
     var dataFolder: URL?
     var session: URLSession = .shared
+    /// Uninstalling moves the plugin and its data to the Trash, so a slip of the mouse can be undone there
+    var movesToTrash = true
 
     enum CatalogError: Error, CustomStringConvertible {
         case insecureURL(URL)
@@ -61,11 +63,19 @@ struct PluginCatalogClient {
         }
     }
 
+    /// Uninstalls the plugin, with what it kept in its data folder
     func remove(_ pluginID: String) throws {
-        try FileManager.default.removeItem(at: pluginsFolder.appendingPathComponent(pluginID))
+        try discard(pluginsFolder.appendingPathComponent(pluginID))
         if let dataFolder {
-            try? FileManager.default.removeItem(at: dataFolder.appendingPathComponent(pluginID))
+            let data = dataFolder.appendingPathComponent(pluginID)
+            if FileManager.default.fileExists(atPath: data.path) { try? discard(data) }
         }
+    }
+
+    /// To the Trash, or gone where there's none (a volume without one)
+    private func discard(_ item: URL) throws {
+        if movesToTrash, (try? FileManager.default.trashItem(at: item, resultingItemURL: nil)) != nil { return }
+        try FileManager.default.removeItem(at: item)
     }
 
     // MARK: - Helpers

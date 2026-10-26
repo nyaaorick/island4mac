@@ -19,11 +19,30 @@ struct PluginCard: Decodable, Equatable, Identifiable {
     var file: String?
     /// Secondary actions, on hover and in its context menu
     var actions: [PluginRowAction]?
+    /// What it's up to: colors its symbol and subtitle (protocol 6)
+    var state: PluginItemState?
 
     var trimmed: PluginCard {
         PluginCard(id: id, title: PluginMessage.cut(title), subtitle: PluginMessage.cut(subtitle), symbol: symbol, image: image,
                    preview: preview?.trimmed, file: file,
-                   actions: actions.map { Array($0.prefix(PluginRowAction.maxCount)).map(\.trimmed) })
+                   actions: actions.map { Array($0.prefix(PluginRowAction.maxCount)).map(\.trimmed) }, state: state)
+    }
+}
+
+extension PluginCard {
+    private enum CodingKeys: String, CodingKey { case id, title, subtitle, symbol, image, preview, file, actions, state }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(id: try container.decodeIfPresent(String.self, forKey: .id),
+                  title: try container.decode(String.self, forKey: .title),
+                  subtitle: try container.decodeIfPresent(String.self, forKey: .subtitle),
+                  symbol: try container.decodeIfPresent(String.self, forKey: .symbol),
+                  image: try container.decodeIfPresent(PluginImage.self, forKey: .image),
+                  preview: try container.decodeIfPresent(PluginCardPreview.self, forKey: .preview),
+                  file: try container.decodeIfPresent(String.self, forKey: .file),
+                  actions: try container.decodeIfPresent([PluginRowAction].self, forKey: .actions),
+                  state: try container.decodeState(forKey: .state))
     }
 }
 

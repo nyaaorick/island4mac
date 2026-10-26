@@ -4,7 +4,7 @@ import Combine
 import IslandKit
 
 /// Your clipboard history in the island, as a plugin that ships inside the app. Its logic is the shared
-/// ClipboardCore (the history, pasteboard polling, pasting); what it shows is a card per item, through the plugin
+/// Core/ (the history, pasteboard polling, pasting); what it shows is a card per item, through the plugin
 /// protocol only. It runs in the background, so it hears every copy whether or not its tab is open
 @main
 struct ClipboardPlugin: IslandPlugin {

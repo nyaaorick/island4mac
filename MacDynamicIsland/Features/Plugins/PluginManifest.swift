@@ -38,7 +38,7 @@ struct PluginManifest: Decodable, Equatable, Identifiable {
     /// 4: images on rows and compact content, row actions, and "background" and "priority" in plugin.json.
     /// 5: cards (PluginCard), "accepts" in plugin.json and PluginEvent.drop; media and lyrics (PluginMedia) with
     ///    PluginEvent.control and .seek
-    static let supportedProtocol = 5
+    static let supportedProtocol = 7
     static let fileName = "plugin.json"
 
     enum LoadError: Error, Equatable, CustomStringConvertible {

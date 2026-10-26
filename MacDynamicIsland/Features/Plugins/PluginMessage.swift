@@ -7,6 +7,9 @@ import Foundation
 ///     {"type":"compact","symbol":"timer","text":"04:59","progress":0.98}
 ///     {"type":"compact","symbol":"timer","until":1767225600,"total":300}     counted down by the island
 ///     {"type":"list","rows":[{"id":"r1","title":"5 min","subtitle":"Pomodoro","symbol":"play"}]}
+///     {"type":"list","rows":[{"title":"Tests","subtitle":"Running","state":"working","detail":"1:23"}]}   protocol 6: PluginItemState
+///     {"type":"list","rows":[{"title":"Running","kind":"section"},{"id":"awake","title":"Keep awake","toggle":true},
+///                            {"title":"Upgrading","progress":0.4}]}                                    protocol 7
 ///     {"type":"cards","cards":[{"id":"c1","title":"Safari","preview":{"text":"let x = 1"}}]}   protocol 5: PluginCard
 ///     {"type":"media","title":"Song","artist":"Artist","playing":true,"elapsed":42,"duration":215}   protocol 5: PluginMedia
 ///     {"type":"lyrics","lines":[{"time":12.3,"text":"…"}]}                  protocol 5: the track's lyrics
@@ -106,10 +109,61 @@ struct PluginCompact: Decodable, Equatable {
     var total: Double?
     /// Shown in place of the symbol (protocol 4)
     var image: PluginImage?
+    /// What it's up to, drawn as the island's status glyph (protocol 6)
+    var state: PluginItemState?
 
     var trimmed: PluginCompact {
         PluginCompact(symbol: symbol, text: PluginMessage.cut(text), progress: progress.map { min(max($0, 0), 1) },
-                      until: until, total: total.flatMap { $0 > 0 ? $0 : nil }, image: image)
+                      until: until, total: total.flatMap { $0 > 0 ? $0 : nil }, image: image, state: state)
+    }
+}
+
+/// What a row, a card or the compact content is up to (protocol 6). The island draws it: a turning arc for
+/// `working`, a pulsing symbol for `attention`, and the colors every tab uses for done and failed. A plugin says
+/// only the state, never a color, so every plugin's "needs you" looks the same
+enum PluginItemState: String, Equatable {
+    case working, attention, done, failed
+}
+
+extension KeyedDecodingContainer {
+    /// A state this app doesn't know, from a plugin written for a newer one, reads as none rather than failing
+    /// the whole message
+    func decodeState(forKey key: Key) throws -> PluginItemState? {
+        try decodeIfPresent(String.self, forKey: key).flatMap(PluginItemState.init(rawValue:))
+    }
+}
+
+extension PluginCompact {
+    private enum CodingKeys: String, CodingKey { case symbol, text, progress, until, total, image, state }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(symbol: try container.decodeIfPresent(String.self, forKey: .symbol),
+                  text: try container.decodeIfPresent(String.self, forKey: .text),
+                  progress: try container.decodeIfPresent(Double.self, forKey: .progress),
+                  until: try container.decodeIfPresent(Double.self, forKey: .until),
+                  total: try container.decodeIfPresent(Double.self, forKey: .total),
+                  image: try container.decodeIfPresent(PluginImage.self, forKey: .image),
+                  state: try container.decodeState(forKey: .state))
+    }
+}
+
+extension PluginRow {
+    private enum CodingKeys: String, CodingKey { case id, title, subtitle, symbol, image, actions, state, detail, kind, progress, toggle }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(id: try container.decodeIfPresent(String.self, forKey: .id),
+                  title: try container.decode(String.self, forKey: .title),
+                  subtitle: try container.decodeIfPresent(String.self, forKey: .subtitle),
+                  symbol: try container.decodeIfPresent(String.self, forKey: .symbol),
+                  image: try container.decodeIfPresent(PluginImage.self, forKey: .image),
+                  actions: try container.decodeIfPresent([PluginRowAction].self, forKey: .actions),
+                  state: try container.decodeState(forKey: .state),
+                  detail: try container.decodeIfPresent(String.self, forKey: .detail),
+                  kind: try container.decodeIfPresent(String.self, forKey: .kind).flatMap(PluginRowKind.init(rawValue:)) ?? .row,
+                  progress: try container.decodeIfPresent(Double.self, forKey: .progress),
+                  toggle: try container.decodeIfPresent(Bool.self, forKey: .toggle))
     }
 }
 
@@ -138,11 +192,30 @@ struct PluginRow: Decodable, Equatable, Identifiable {
     var image: PluginImage?
     /// Secondary actions, on hover and in its context menu (protocol 4)
     var actions: [PluginRowAction]?
+    /// What it's up to: colors its symbol and the subtitle's first line (protocol 6)
+    var state: PluginItemState?
+    /// Short text at the row's right edge, such as a time or a count (protocol 6)
+    var detail: String?
+    /// A section heading over the rows that follow, rather than a row (protocol 7)
+    var kind: PluginRowKind = .row
+    /// 0...1, drawn as a ring around the symbol (protocol 7)
+    var progress: Double?
+    /// Drawn as a switch at the row's right edge; a tap on it, or on the row, sends the row's action and the
+    /// plugin flips it (protocol 7)
+    var toggle: Bool?
 
     var trimmed: PluginRow {
         PluginRow(id: id, title: PluginMessage.cut(title), subtitle: subtitle.map { String($0.prefix(PluginMessage.maxSubtitleLength)) },
-                  symbol: symbol, image: image, actions: actions.map { Array($0.prefix(PluginRowAction.maxCount)).map(\.trimmed) })
+                  symbol: symbol, image: image, actions: actions.map { Array($0.prefix(PluginRowAction.maxCount)).map(\.trimmed) },
+                  state: state, detail: PluginMessage.cut(detail), kind: kind, progress: progress.map { min(max($0, 0), 1) }, toggle: toggle)
     }
+}
+
+/// What a line in a plugin's list is (protocol 7). A kind this app doesn't know reads as a row
+enum PluginRowKind: String, Equatable {
+    case row
+    /// A heading over the rows after it: a caption, not a pane, and never tapped
+    case section
 }
 
 /// A button under the rows in the plugin's tab

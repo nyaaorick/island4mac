@@ -72,4 +72,24 @@ final class TabStoreTests: XCTestCase {
         XCTAssertEqual(IslandTab.plugin("timer").pluginID, "timer")
         XCTAssertNil(IslandTab.music.pluginID)
     }
+
+    // MARK: - Tab labels
+
+    /// Six tabs beside a MacBook camera (about 200 pt wide) all fit whole, with no sideways scrolling
+    func testSixTabsFitBesideTheCamera() {
+        let side = (NotchMetrics.expandedWidth - 2 * NotchMetrics.expandedTopRadius - 200) / 2 - 16
+        let groups = [["Clipboard", "Timer", "Agents"], ["Files", "Music", "System"]]
+        let layout = TabBarLayout.fitting(groups, in: side)
+        XCTAssertFalse(layout.scrolls)
+        for group in groups { XCTAssertLessThanOrEqual(layout.width(of: group), side) }
+    }
+
+    /// The roomiest style that fits wins; labels that fit no style scroll rather than get cut short
+    func testLayoutTightensBeforeItScrolls() {
+        XCTAssertEqual(TabBarLayout.fitting([["Music"]], in: 300), .regular)
+        let labels = ["Clipboard", "Agents", "Battery"]
+        XCTAssertEqual(TabBarLayout.fitting([labels], in: TabBarLayout.tight.width(of: labels)), .tight)
+        XCTAssertEqual(TabBarLayout.fitting([labels], in: TabBarLayout.labelsOnly.width(of: labels)), .labelsOnly)
+        XCTAssertTrue(TabBarLayout.fitting([labels], in: 40).scrolls)
+    }
 }

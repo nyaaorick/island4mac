@@ -3,7 +3,7 @@ import AppKit
 import Combine
 import IslandKit
 
-/// The file shelf in the island, as a plugin that ships inside the app. Its logic is the shared FilesCore (the
+/// The file shelf in the island, as a plugin that ships inside the app. Its logic is the shared Core/ folder (the
 /// shelf and where it's kept); the island does the dragging (it opens on this tab, shows where to drop and hands
 /// over what was dropped), and the shelf shows as a card per item that drags back out as the file
 @main

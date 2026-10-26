@@ -25,6 +25,14 @@ final class PluginStore: ObservableObject {
         var input: PluginInput?
         /// "Loading" or "couldn't load", drawn as one standard row
         var notice: PluginNotice?
+
+        /// Whether a button, or a row's or card's action, with this id is still on show (a pending confirmation
+        /// goes with it)
+        func hasAction(_ id: String) -> Bool {
+            buttons.contains { $0.id == id }
+                || rows.contains { $0.actions?.contains { $0.id == id } ?? false }
+                || cards.contains { $0.actions?.contains { $0.id == id } ?? false }
+        }
     }
 
     /// Whether a plugin of one of your tabs is running, or why it isn't

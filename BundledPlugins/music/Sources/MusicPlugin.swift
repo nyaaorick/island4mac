@@ -2,7 +2,7 @@ import Foundation
 import Combine
 import IslandKit
 
-/// Now playing in the island, as a plugin that ships inside the app. Its logic is the shared MusicCore: the
+/// Now playing in the island, as a plugin that ships inside the app. Its logic is the shared Core/ folder: the
 /// system's now playing (read through the MediaRemote adapter beside the app's Frameworks), lyrics and artwork.
 /// It hands the island what plays as `media`, and the island draws its own player; taps on the player come back
 /// here. It runs in the background, so music shows beside the notch whether or not its tab is open
