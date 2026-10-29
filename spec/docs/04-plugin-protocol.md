@@ -145,4 +145,4 @@ for line in sys.stdin:          # ends when the app closes stdin
     event = json.loads(line)
 ```
 
-Any program works locally (Settings > Plugins > Install from File, or a folder in the plugins folder). The catalog's CI builds Swift packages; a plugin in another language is published with its binary already built, or by extending the CI (05-plugin-hub.md).
+Any program works locally (Settings > Plugins > Install from File, or a folder in the plugins folder). The catalog's CI builds Swift packages and Go modules (the program answers `--describe` with its plugin.json); another language is added to the CI (05-plugin-hub.md).
