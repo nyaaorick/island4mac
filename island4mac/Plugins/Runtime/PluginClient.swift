@@ -222,7 +222,7 @@ final class PluginClient {
         case .clear(.all):
             for kind in Self.contentKinds { shownLines[kind] = nil }
         case .clear(let target): shownLines[target.rawValue] = nil
-        case .popup, .open, .close, .done: break
+        case .popup, .open, .close, .done, .sudo: break
         }
     }
 

@@ -17,7 +17,7 @@ island4mac/                 App target. Folders are synced with Xcode: add or mo
                             PluginPreference, PluginCard, PluginRowAction, PluginCountdown, PluginTimeline
     Runtime/                Running plugins: PluginStore (what each shows, statuses, schedules), PluginClient (one
                             process, its lines), PluginProcess (posix_spawn), PluginSchedule, PluginFolderMonitor,
-                            PluginPreferencesStore, ThumbnailService
+                            PluginPreferencesStore, AdminAccessStore (sudo for plugins), ThumbnailService
     Catalog/                The hub: PluginCatalogEntry (index.json), PluginCatalogClient (fetch, verify, unpack,
                             remove), PluginCatalogStore (cache, updates, installs under way)
     Views/                  How plugin content is drawn: PluginTabView, PluginContentView, cards, rows, buttons,
@@ -69,6 +69,7 @@ spec/                       Documents and skills
 - `PluginFolderMonitor` restarts only the plugin whose files changed (an install, an update, `island-plugin dev`); Settings > Plugins > Reload restarts all.
 - Preferences (protocol 2) are kept by `PluginPreferencesStore` (UserDefaults `pluginPreferences.<id>`, secure ones in the Keychain) and sent as a `preferences` event before `visible`; a required one left empty keeps the plugin from starting (`.needsSetup`).
 - On-demand plugins (protocol 3) are started when their tab shows, on a tap, at their timeline's `wake`, or when a preference changes, and stopped when they say `done` (`.sleeping`). The island applies timeline entries itself (`PluginSchedule`), catching up after sleep and clock changes, and stops one left running silent with its tab hidden after 30 s. `PluginClient.shownLines` keeps the last line of each kind the plugin wrote; `finish` writes them to `PluginData/<id>/.shown.json`, and the next launch shows them again (`restoreShown`) instead of running the plugin once. A new build of the plugin deletes that file, so it shows itself again.
+- Administrator access (protocol 8): `AdminAccessStore` keeps the one password (Keychain) and which plugins may use it; a `sudo` message from an allowed plugin runs `sudo -S -k -p '' -- <command>` off the main thread with the password on stdin and answers with a `sudo` event. A refusal never reaches sudo.
 - `NowPlayingStore` picks one track from every plugin's `media` (a playing one first, then the one that changed last); the island runs the progress itself (`PluginMedia.position(at:)`) and loads the artwork. The Music tab is the island's player for that track; another plugin's tab that sends `media` shows the player for its own (`NowPlayingStore(only:)`).
 
 ## Things that are easy to break

@@ -106,6 +106,20 @@ final class PluginTests: XCTestCase {
         client.stop()
     }
 
+    func testASudoRequestReachesTheClient() {
+        let script = #"printf '{"type":"sudo","id":"who","command":["whoami"]}\n'; cat > /dev/null"#
+        let client = PluginClient(manifest: manifest(command: ["/bin/sh", "-c", script]),
+                                  folder: FileManager.default.temporaryDirectory, dataFolder: FileManager.default.temporaryDirectory, restartDelay: 60)
+        let received = expectation(description: "message")
+        client.onMessage = { message in
+            XCTAssertEqual(message, .sudo(PluginSudoRequest(id: "who", command: ["whoami"])))
+            received.fulfill()
+        }
+        client.start()
+        wait(for: [received], timeout: 5)
+        client.stop()
+    }
+
     func testTapsReachThePlugin() {
         // sed as a plugin: it turns each action it reads into a message the island understands
         let client = PluginClient(manifest: manifest(command: ["/usr/bin/sed", "-l", #"s/"type":"action"/"type":"clear","target":"all"/"#]),
@@ -1387,5 +1401,102 @@ final class PluginTests: XCTestCase {
         second.send(.action("refresh"), to: "cal")
         XCTAssertTrue(waitUntil(3) { lines(of: input).count > heard && second.statuses["cal"] == .sleeping })
         second.stop()
+    }
+
+    // MARK: - Administrator access (protocol 8)
+
+    /// A store whose administrator runs are faked, with a throwaway Keychain and defaults
+    private func makeAdmin(password: String? = nil, runner: @escaping AdminAccessStore.Runner) -> AdminAccessStore {
+        final class MemorySecrets: SecretStorage {
+            var values: [String: String] = [:]
+            func read(service: String, account: String) -> String? { values["\(service)/\(account)"] }
+            func write(_ value: String?, service: String, account: String) { values["\(service)/\(account)"] = value }
+            func removeAll(service: String) { values = values.filter { !$0.key.hasPrefix(service + "/") } }
+        }
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let secrets = MemorySecrets()
+        if let password { secrets.write(password, service: "test.admin", account: "administrator") }
+        let admin = AdminAccessStore(defaults: UserDefaults(suiteName: suiteName)!, secrets: secrets, service: "test.admin")
+        admin.runner = runner
+        return admin
+    }
+
+    func testASudoRequestReadsAndItsAnswerIsOneLine() throws {
+        let message = try PluginMessage.decode(line(#"{"type":"sudo","id":"flush","command":["dscacheutil","-flushcache"],"timeout":5}"#))
+        XCTAssertEqual(message, .sudo(PluginSudoRequest(id: "flush", command: ["dscacheutil", "-flushcache"], timeout: 5)))
+        guard case .sudo(let request) = message else { return XCTFail() }
+        XCTAssertEqual(request.duration, 5)
+        XCTAssertEqual(PluginSudoRequest(id: "x", command: [], timeout: 9999).duration, 600, "capped")
+        XCTAssertEqual(String(decoding: PluginEvent.sudo(id: "flush", status: 0, output: "ok\n", error: "").line, as: UTF8.self),
+                       #"{"error":"","id":"flush","output":"ok\n","status":0,"type":"sudo"}"# + "\n")
+        let manifest = try JSONDecoder().decode(PluginManifest.self, from: line(#"{"id":"x","name":"x","symbol":"x","command":["./x"],"protocol":8,"needs":["admin"]}"#))
+        XCTAssertTrue(manifest.needsAdmin)
+    }
+
+    func testAdministratorAccessIsRefusedUntilSavedAndAllowed() async {
+        nonisolated(unsafe) var ran: [[String]] = []
+        let admin = makeAdmin { command, _, password, _ in
+            ran.append(command)
+            return password == "secret" ? AdminAccessStore.Result(status: 0, output: "root\n", error: "") : .refused("wrong administrator password (Settings > Plugins)")
+        }
+        var result = await admin.run(["whoami"], input: nil, timeout: 5, for: "wifi")
+        XCTAssertEqual(result.status, -1)
+        XCTAssertTrue(result.error.contains("turned off"), "not allowed yet")
+
+        admin.setAllowed("wifi", true)
+        result = await admin.run(["whoami"], input: nil, timeout: 5, for: "wifi")
+        XCTAssertTrue(result.error.contains("no administrator password"), "allowed, but nothing saved")
+        XCTAssertTrue(ran.isEmpty, "nothing was run")
+
+        let refused = await admin.save(password: "nope")
+        XCTAssertEqual(refused, "wrong administrator password (Settings > Plugins)")
+        XCTAssertFalse(admin.isConfigured)
+        let saved = await admin.save(password: "secret")
+        XCTAssertNil(saved)
+        XCTAssertTrue(admin.isConfigured)
+        XCTAssertEqual(ran.last, ["/usr/bin/true"], "the password is checked with sudo before it is kept")
+
+        result = await admin.run(["whoami"], input: nil, timeout: 5, for: "wifi")
+        XCTAssertEqual(result, AdminAccessStore.Result(status: 0, output: "root\n", error: ""))
+        XCTAssertEqual(ran.last, ["whoami"])
+
+        admin.forget()
+        XCTAssertFalse(admin.isConfigured)
+        admin.setAllowed("wifi", false)
+        XCTAssertFalse(admin.isAllowed("wifi"))
+    }
+
+    /// Synchronous on purpose: waitUntil spins the main run loop, which an async test on the main actor would block
+    func testAPluginsSudoRequestIsAnsweredUnderItsID() throws {
+        let folder = try makeFolder()
+        let script = #"""
+        printf '{"type":"sudo","id":"who","command":["whoami"]}\n'
+        while read line; do echo "$line" >> "$ISLAND_DATA_DIR/in.txt"; done
+        """#
+        let command = try String(data: JSONSerialization.data(withJSONObject: ["/bin/sh", "-c", script]), encoding: .utf8)!
+        _ = try writePlugin(#"{"id":"who","name":"Who","symbol":"person","command":\#(command),"protocol":8,"needs":["admin"]}"#, id: "who", in: folder)
+        _ = try writePlugin(#"{"id":"plain","name":"Plain","symbol":"person","command":\#(command),"protocol":8}"#, id: "plain", in: folder)
+        let admin = makeAdmin(password: "secret") { _, _, _, _ in AdminAccessStore.Result(status: 0, output: "root\n", error: "") }
+        admin.setAllowed("who", true)
+        let data = try makeFolder()
+        let suiteName = "PluginTests-\(UUID().uuidString)"
+        addTeardownBlock { UserDefaults().removePersistentDomain(forName: suiteName) }
+        let tabs = TabStore(defaults: UserDefaults(suiteName: suiteName)!)
+        let store = PluginStore(pluginsFolder: folder, dataFolder: data, tabs: tabs, admin: admin)
+        addTeardownBlock { await MainActor.run { store.stopForQuit() } }
+        store.reload()
+        tabs.setEnabled(.plugin("who"), true)
+        tabs.setEnabled(.plugin("plain"), true)
+        store.reload()  // what start()'s subscription to your tabs does in the app
+
+        let who = data.appendingPathComponent("who/in.txt")
+        // sh's echo turns the answer's "\n" escape into a letter, so match around it
+        XCTAssertTrue(waitUntil(3) { lines(of: who).contains { $0.contains(#""id":"who","output":"root"#) && $0.contains(#""status":0,"type":"sudo"#) } },
+                      "\(lines(of: who))")
+        let plain = data.appendingPathComponent("plain/in.txt")
+        XCTAssertTrue(waitUntil(3) { lines(of: plain).contains { $0.contains(#""status":-1"#) && $0.contains("doesn't declare") } },
+                      "a plugin that didn't declare the need is told so: \(lines(of: plain))")
+        store.stop()
     }
 }

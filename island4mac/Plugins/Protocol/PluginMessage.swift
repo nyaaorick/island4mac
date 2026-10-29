@@ -23,6 +23,8 @@ import Foundation
 ///     {"type":"status","state":"loading","text":"Updating"}                 one standard row; "idle" removes it
 ///     {"type":"timeline","entries":[…],"wake":1767229200}                    protocol 3: see PluginSchedule
 ///     {"type":"done"}                                                        protocol 3: nothing more to do, stop me
+///     {"type":"sudo","id":"flush","command":["dscacheutil","-flushcache"]}  protocol 8: run this as an administrator
+///                                                                            (PluginSudoRequest); the result is PluginEvent.sudo
 enum PluginMessage: Equatable {
     case compact(PluginCompact)
     case list([PluginRow])
@@ -43,6 +45,8 @@ enum PluginMessage: Equatable {
     case status(PluginNotice?)
     case timeline(PluginSchedule)
     case done
+    /// Protocol 8: run a command as an administrator, if the plugin declares `"needs":["admin"]` and the user allows it
+    case sudo(PluginSudoRequest)
 
     /// Rows and buttons past this are dropped
     static let maxItems = 50
@@ -80,6 +84,7 @@ enum PluginMessage: Equatable {
             return .status(PluginNotice(state: state, text: cut(body.text)))
         case "timeline": return .timeline(try PluginSchedule.decode(line))
         case "done": return .done
+        case "sudo": return .sudo(try decoder.decode(PluginSudoRequest.self, from: line).trimmed)
         default: throw DecodeError.unknownType(envelope.type)
         }
     }
@@ -257,4 +262,22 @@ struct PluginNotice: Equatable {
 
 enum PluginClearTarget: String, Decodable {
     case compact, list, cards, media, lyrics, buttons, input, all
+}
+
+/// A command a plugin asks the island to run as an administrator (protocol 8). The island runs it through sudo with
+/// the password the user saved under Settings > Plugins, and answers with PluginEvent.sudo under the same id
+struct PluginSudoRequest: Decodable, Equatable {
+    var id: String
+    /// Program and arguments; the program is a path, or a name sudo finds on its secure path
+    var command: [String]
+    /// Text for the program's stdin
+    var input: String?
+    /// Seconds before the island gives up and kills it; 60 unless said, never more than 600
+    var timeout: Double?
+
+    var duration: TimeInterval { min(max(timeout ?? 60, 1), 600) }
+
+    var trimmed: PluginSudoRequest {
+        PluginSudoRequest(id: PluginMessage.cut(id), command: Array(command.prefix(200)), input: input, timeout: timeout)
+    }
 }

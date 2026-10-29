@@ -10,6 +10,7 @@ import os
 @MainActor
 final class PluginStore: ObservableObject {
     static let shared = PluginStore(pluginsFolder: defaultFolder, dataFolder: defaultDataFolder, tabs: .shared, preferences: .shared,
+                                    admin: .shared,
                                     bundledFolder: Bundle.main.resourceURL?.appendingPathComponent("Plugins", isDirectory: true),
                                     bundledProgramFolder: Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers", isDirectory: true))
 
@@ -103,6 +104,8 @@ final class PluginStore: ObservableObject {
     private var fingerprints: [String: Fingerprint] = [:]
     private var folderMonitor: PluginFolderMonitor?
     let preferences: PluginPreferencesStore
+    /// Administrator access for plugins that declare they need it (protocol 8)
+    let admin: AdminAccessStore
     private var preferencesCancellable: AnyCancellable?
     /// Preference changes wait this long for more (typing) before they go to the plugin
     static let preferencesDelay: TimeInterval = 0.5
@@ -130,9 +133,10 @@ final class PluginStore: ObservableObject {
     private let restartDelay: TimeInterval
 
     init(pluginsFolder: URL, dataFolder: URL, tabs: TabStore, preferences: PluginPreferencesStore = .shared,
-         defaults: UserDefaults = .standard, bundledFolder: URL? = nil, bundledProgramFolder: URL? = nil,
-         restartDelay: TimeInterval = 1) {
+         admin: AdminAccessStore = .shared, defaults: UserDefaults = .standard, bundledFolder: URL? = nil,
+         bundledProgramFolder: URL? = nil, restartDelay: TimeInterval = 1) {
         self.defaults = defaults
+        self.admin = admin
         self.bundledFolder = bundledFolder
         self.bundledProgramFolder = bundledProgramFolder
         self.pluginsFolder = pluginsFolder
@@ -665,8 +669,28 @@ final class PluginStore: ObservableObject {
         case .done:
             finish(pluginID)
             return
+        case .sudo(let request):
+            runAsAdministrator(request, from: pluginID)
+            return
         }
         if contents[pluginID] != content { contents[pluginID] = content }
+    }
+
+    /// Runs a plugin's command as an administrator (protocol 8) and answers under the request's id. A plugin that
+    /// hasn't declared `"needs":["admin"]`, or that the user hasn't allowed, is told so instead
+    private func runAsAdministrator(_ request: PluginSudoRequest, from pluginID: String) {
+        guard let plugin = installed.first(where: { $0.id == pluginID }) else { return }
+        if !plugin.manifest.needsAdmin {
+            clients[pluginID]?.send(.sudo(id: request.id, status: -1, output: "",
+                                          error: "the plugin's plugin.json doesn't declare \"needs\": [\"admin\"]"))
+            return
+        }
+        // An answer is activity too: an on-demand plugin waits for it
+        if idleTimeouts[pluginID] != nil { armIdleTimeout(pluginID) }
+        Task { @MainActor in
+            let result = await admin.run(request.command, input: request.input, timeout: request.duration, for: pluginID)
+            clients[pluginID]?.send(.sudo(id: request.id, status: result.status, output: result.output, error: result.error))
+        }
     }
 
     /// Opens the island on the plugin's tab, when its tab is one of yours, you allow it, and it hasn't just done so

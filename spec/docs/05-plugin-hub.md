@@ -38,6 +38,10 @@ An update is the same install for an entry whose `version` is newer than the ins
 
 **Uninstall** moves the plugin's folder and its data folder to the Trash (so a slip can be undone) and forgets its preferences. The installed row's menu also opens the plugin in Finder, its data folder, and its homepage from the index.
 
+## Administrator access
+
+Settings > Plugins has one "Administrator access" section, shown once a plugin that declares `"needs": ["admin"]` is installed: a password field (checked with `sudo /usr/bin/true` before it is saved to the Keychain under `<bundle id>.admin`) and a Forget button. Each plugin that needs it has a shield beside its name; off by default. `AdminAccessStore` keeps both and runs the commands (`PluginMessage.sudo`); `PluginStore.runAsAdministrator` refuses a plugin that didn't declare the need before it ever reaches the store. The protocol side is `04-plugin-protocol.md`, "Administrator access".
+
 ## What the island keeps for a plugin
 
 | Where | What | Survives |
@@ -46,6 +50,7 @@ An update is the same install for an entry whose `version` is newer than the ins
 | `PluginData/<id>/` | `ISLAND_DATA_DIR`: whatever it keeps; `Drops/` for text dropped on it; `.shown.json`, what an on-demand plugin last showed | Updates; removed with the plugin |
 | UserDefaults `pluginPreferences.<id>`, the Keychain for secure ones | Its preferences | Updates; removed with the plugin |
 | UserDefaults `disabledPlugins` | Which plugins are turned off | Everything |
+| UserDefaults `adminAllowedPlugins`, Keychain `<bundle id>.admin` | Which plugins may run commands as an administrator, and the password | Everything, until Forget |
 | `PluginData/.running.json` | The running plugins, to end what a crash left | Until the next launch |
 | `catalog.json` | The last catalog read | Until the catalog address changes |
 

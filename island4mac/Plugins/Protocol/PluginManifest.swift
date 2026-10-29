@@ -31,14 +31,14 @@ struct PluginManifest: Decodable, Equatable, Identifiable {
     var accepts: [String]?
 
     var acceptsFiles: Bool { accepts?.contains("files") == true }
+    /// What it needs from the island beyond the protocol (protocol 8): `["admin"]` lets it ask the island to run
+    /// commands as an administrator (PluginMessage.sudo), once the user allows it under Settings > Plugins
+    var needs: [String]?
 
-    /// The newest PluginMessage version this app understands
-    /// 2: preferences (plugin.json) and PluginEvent.preferences.
-    /// 3: lifecycle "onDemand", the timeline, done and status messages, and PluginEvent.wake.
-    /// 4: images on rows and compact content, row actions, and "background" and "priority" in plugin.json.
-    /// 5: cards (PluginCard), "accepts" in plugin.json and PluginEvent.drop; media and lyrics (PluginMedia) with
-    ///    PluginEvent.control and .seek
-    static let supportedProtocol = 7
+    var needsAdmin: Bool { needs?.contains("admin") == true }
+
+    /// The newest PluginMessage version this app understands. What each version added: spec/docs/04-plugin-protocol.md
+    static let supportedProtocol = 8
     static let fileName = "plugin.json"
 
     enum LoadError: Error, Equatable, CustomStringConvertible {

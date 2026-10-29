@@ -4,6 +4,8 @@ Status: `[ ]` not started, `[~]` in progress, `[x]` done. Done items move to `02
 
 ## Next
 
+- [~] Projects as plugins, whole: Clash Mihomac done (`mihomac island`); Storage (System Data Boomer plus the residue cleaner, Swift) and the Wi-Fi login helper (Swift) next, both on administrator access.
+
 - [ ] Add AppIcon images (the asset set is empty).
 - [ ] QQ Music as a lyrics source (`LyricsClient` reaches LrcLib and NetEase).
 - [ ] Label the bundled plugins' choices where IslandKit's labelled options don't cover a case yet.

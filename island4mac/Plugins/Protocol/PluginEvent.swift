@@ -21,6 +21,9 @@ enum PluginEvent: Equatable {
     case control(String)
     /// Protocol 5: the progress bar was dragged to this many seconds into the track
     case seek(Double)
+    /// Protocol 8: what a PluginSudoRequest came to. A refusal (not allowed, no password, timed out) is status -1
+    /// with the reason in `error`
+    case sudo(id: String, status: Int32, output: String, error: String)
 
     var line: Data {
         let object: [String: Any] = switch self {
@@ -32,6 +35,7 @@ enum PluginEvent: Equatable {
         case .drop(let paths, let urls): ["type": "drop", "paths": paths, "urls": urls]
         case .control(let command): ["type": "control", "command": command]
         case .seek(let position): ["type": "seek", "position": position]
+        case .sudo(let id, let status, let output, let error): ["type": "sudo", "id": id, "status": status, "output": output, "error": error]
         }
         var data = (try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])) ?? Data()
         data.append(UInt8(ascii: "\n"))

@@ -114,3 +114,13 @@
 "settings.plugins.phase_downloading" = "Downloading…";
 "settings.plugins.phase_verifying" = "Checking…";
 "settings.plugins.phase_installing" = "Installing…";
+"settings.plugins.admin_header" = "Administrator access";
+"settings.plugins.admin_title" = "Administrator password";
+"settings.plugins.admin_saved" = "Saved in your Keychain. Plugins never see it: the island hands it to sudo.";
+"settings.plugins.admin_forget" = "Forget";
+"settings.plugins.admin_password" = "Administrator password";
+"settings.plugins.admin_prompt" = "Your Mac account's password";
+"settings.plugins.admin_save" = "Save";
+"settings.plugins.admin_plugins" = "Asks for it: %@. Allow each one with the shield beside its name.";
+"settings.plugins.admin_about" = "A plugin that declares it needs administrator access, and that you allow with the shield beside its name, can ask the island to run commands as an administrator (flush DNS, measure root-owned folders). Your password is checked with sudo, kept in the Keychain, and only ever handed to sudo.";
+"settings.plugins.admin_allow_help" = "Allow this plugin to run commands as an administrator through the island";

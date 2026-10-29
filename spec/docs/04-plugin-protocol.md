@@ -1,6 +1,6 @@
 # The plugin protocol
 
-The one description of how a plugin and the island talk. IslandKit (the Swift SDK in the plugins repo) speaks it so a Swift plugin doesn't have to; a plugin in any other language speaks it directly. The app reads it in `island4mac/Plugins/Protocol/`; `PluginManifest.supportedProtocol` is the newest version the app speaks (7).
+The one description of how a plugin and the island talk. IslandKit (the Swift SDK in the plugins repo) speaks it so a Swift plugin doesn't have to; a plugin in any other language speaks it directly. The app reads it in `island4mac/Plugins/Protocol/`; `PluginManifest.supportedProtocol` is the newest version the app speaks (8).
 
 ## A plugin is a folder
 
@@ -35,6 +35,7 @@ timer/
 | `background` | Optional, protocol 4. `true`: runs while turned on in Settings, even when its tab isn't one of the user's |
 | `priority` | Optional, protocol 4. `"high"`: its compact content shows ahead of popups and music; the default is `"normal"` |
 | `accepts` | Optional, protocol 5. `["files"]`: files, text and links can be dropped on its tab (`drop` events) |
+| `needs` | Optional, protocol 8. `["admin"]`: the plugin may ask the island to run commands as an administrator (`sudo` messages), once the user allows it under Settings > Plugins |
 
 The app runs the command while the plugin's tab is turned on (a `background` plugin: while it's turned on in Settings), and stops it when the tab is turned off.
 
@@ -77,6 +78,7 @@ Each message replaces what the plugin showed of that kind before.
 | `{"type":"status","state":"loading","text":"Updating"}` | Protocol 3. One standard row at the top of the tab: `loading` or `error`; `idle` removes it |
 | `{"type":"timeline","entries":[{"at":1767225600,"show":[…]}],"wake":1767229200}` | Protocol 3. Each entry's messages (`compact`, `list`, `cards`, `media`, `lyrics`, `buttons`, `input`, `status`, `clear`) are shown at its time, by the island. At `wake`, the island starts the plugin again (at most every 10 seconds). Replaces the last timeline |
 | `{"type":"done"}` | Protocol 3, on-demand plugins. Nothing more to do: the island stops the plugin, and what it showed stays, across app launches too |
+| `{"type":"sudo","id":"flush","command":["dscacheutil","-flushcache"],"input":"…","timeout":60}` | Protocol 8, plugins with `"needs":["admin"]`. Runs the command as an administrator through sudo, with the password the user saved under Settings > Plugins and `input` on its stdin, and answers with a `sudo` event under the same id. `timeout` in seconds, 60 unless said, 600 at most. The plugin never sees the password |
 
 Pictures (`image`) say only where they come from: a file path (the island makes a thumbnail), an app's bundle id (its icon), or an https URL (up to 5 MB). The island sizes, crops and caches them. A plugin never sets a color, a font or a layout.
 
@@ -94,6 +96,7 @@ Beside the notch, in order: high-priority plugins (Agents is one), then plugin p
 | `{"type":"drop","paths":["/Users/me/a.pdf"],"urls":["https://…"]}` | Protocol 5, to a plugin with `"accepts":["files"]`. What was dropped on its tab: files and folders as paths, text saved by the island as a file in the plugin's data folder (`Drops/`), links as URLs |
 | `{"type":"control","command":"playPause"}` | Protocol 5, to a plugin that sends `media`. A tap on the player: `playPause`, `next` or `previous` |
 | `{"type":"seek","position":80.5}` | Protocol 5. The progress bar was dragged to this many seconds into the track |
+| `{"type":"sudo","id":"flush","status":0,"output":"…","error":"…"}` | Protocol 8. What a `sudo` request came to: the program's exit status and what it wrote. A refusal is status -1 with the reason in `error`: the plugin didn't declare the need, the user hasn't allowed it or saved a password, the password was wrong, or it timed out. Show the reason rather than retry |
 
 ## Preferences (protocol 2)
 
@@ -125,8 +128,13 @@ What it showed stays while it sleeps. The island keeps the last line of each kin
 | 5 | cards, `accepts` and `drop`, `media` and `lyrics` with `control` and `seek`, `close` of a user-opened island |
 | 6 | `state` on rows, cards and compact content; `detail` on rows |
 | 7 | row `kind` section, row `progress`, row `toggle`, `confirm` on row and card actions |
+| 8 | `needs` in plugin.json, the `sudo` message and the `sudo` event: administrator access through the island |
 
 A plugin declares the oldest version with everything it uses. Features that degrade well (a card shown as a row, an unknown state ignored) don't raise the version a plugin needs; IslandKit computes it from what the plugin declares and what its `body` shows (`Media` needs 5, since an older island shows nothing for it).
+
+## Administrator access (protocol 8)
+
+A plugin runs as the user. For the few things that need root (flushing the DNS cache, measuring root-owned folders, writing a system preference) it doesn't ask for a password itself: it declares `"needs": ["admin"]`, and the user saves one administrator password under Settings > Plugins (checked with sudo, kept in the Keychain) and allows each such plugin with the shield beside its name. The plugin then sends `sudo` requests and gets `sudo` events back. The island runs `sudo -S -k -p '' -- <command>` with the password on stdin, so the password is never on a command line or in a file, and the plugin never receives it. Each run is logged with the plugin's id and program. An island before 8 ignores the request; IslandKit's `Island.sudo` answers status -1 there without asking.
 
 ## A plugin in another language
 

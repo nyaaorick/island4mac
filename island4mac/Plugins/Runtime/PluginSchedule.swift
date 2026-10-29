@@ -77,7 +77,7 @@ extension PluginMessage {
     var canBeScheduled: Bool {
         switch self {
         case .compact, .list, .cards, .media, .lyrics, .buttons, .input, .clear, .status: return true
-        case .popup, .open, .close, .timeline, .done: return false
+        case .popup, .open, .close, .timeline, .done, .sudo: return false
         }
     }
 }

@@ -6,6 +6,10 @@ import AppKit
 struct PluginsSettingsView: View {
     @ObservedObject private var plugins = PluginStore.shared
     @ObservedObject private var catalog = PluginCatalogStore.shared
+    @ObservedObject private var admin = AdminAccessStore.shared
+    @State private var adminPassword = ""
+    @State private var adminNote: String?
+    @State private var isSavingAdmin = false
 
     var body: some View {
         SettingsForm {
@@ -28,6 +32,10 @@ struct PluginsSettingsView: View {
 
             ForEach(plugins.installed.filter { $0.manifest.preferences?.isEmpty == false }) { plugin in
                 PluginPreferencesView(plugin: plugin, store: plugins.preferences)
+            }
+
+            if plugins.installed.contains(where: \.manifest.needsAdmin) || admin.isConfigured {
+                adminSection
             }
 
             availableSection
@@ -90,6 +98,14 @@ struct PluginsSettingsView: View {
                 .toggleStyle(.switch)
                 .controlSize(.small)
                 .help(L("settings.plugins.enabled"))
+                if plugin.manifest.needsAdmin {
+                    Toggle(isOn: Binding(get: { admin.isAllowed(plugin.id) }, set: { admin.setAllowed(plugin.id, $0) })) {
+                        Image(systemName: admin.isAllowed(plugin.id) ? "lock.open.shield" : "lock.shield")
+                    }
+                    .toggleStyle(.button)
+                    .controlSize(.small)
+                    .help(L("settings.plugins.admin_allow_help"))
+                }
                 if !plugin.isBundled {
                     Menu {
                         Button(L("settings.plugins.show_in_finder")) { NSWorkspace.shared.activateFileViewerSelecting([plugin.folder]) }
@@ -135,6 +151,49 @@ struct PluginsSettingsView: View {
         var parts = [plugin.manifest.version, status].compactMap { $0 }
         if plugin.isBundled { parts.append(L("settings.plugins.bundled")) }
         return parts.joined(separator: " · ")
+    }
+
+    // MARK: - Administrator access
+
+    /// One password for every plugin that needs it, kept in the Keychain and handed only to sudo
+    private var adminSection: some View {
+        Section {
+            if admin.isConfigured {
+                StatusSettingsRow(title: L("settings.plugins.admin_title"), isOK: true, note: L("settings.plugins.admin_saved")) {
+                    Button(L("settings.plugins.admin_forget")) { admin.forget() }
+                }
+            } else {
+                HStack {
+                    SecureField(L("settings.plugins.admin_password"), text: $adminPassword, prompt: Text(L("settings.plugins.admin_prompt")))
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { Task { await saveAdminPassword() } }
+                    if isSavingAdmin {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Button(L("settings.plugins.admin_save")) { Task { await saveAdminPassword() } }
+                            .disabled(adminPassword.isEmpty)
+                    }
+                }
+            }
+            if let adminNote {
+                SettingsNote(adminNote, color: .red)
+            }
+            let needing = plugins.installed.filter(\.manifest.needsAdmin)
+            if !needing.isEmpty {
+                SettingsNote(L("settings.plugins.admin_plugins", needing.map(\.manifest.name).joined(separator: ", ")))
+            }
+        } header: {
+            Text(L("settings.plugins.admin_header"))
+        } footer: {
+            SettingsNote(L("settings.plugins.admin_about"))
+        }
+    }
+
+    private func saveAdminPassword() async {
+        isSavingAdmin = true
+        defer { isSavingAdmin = false }
+        adminNote = await admin.save(password: adminPassword)
+        if adminNote == nil { adminPassword = "" }
     }
 
     // MARK: - Available
