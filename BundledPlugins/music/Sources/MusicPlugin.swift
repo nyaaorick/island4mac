@@ -17,7 +17,7 @@ struct MusicPlugin: IslandPlugin {
     /// is one of yours
     static let background = true
 
-    @Preference("Lyrics from", options: ["auto", "lrclib", "netease"]) var lyricsSource = "auto"
+    @Preference("Lyrics from", options: [("auto", "Wherever they are"), ("lrclib", "LRCLIB"), ("netease", "NetEase Cloud Music")]) var lyricsSource = "auto"
 
     private var store: MusicStore { MusicService.shared.store }
 

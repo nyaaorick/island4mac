@@ -1,13 +1,3 @@
-//
-//  MediaRemoteAdapter.swift
-//  MacDynamicIsland
-//
-//  Since macOS 15.4, mediaremoted only answers now-playing queries from Apple-signed
-//  processes. This library is loaded into /usr/bin/perl (see NowPlayingClient) and
-//  streams the system-wide now-playing state to stdout, one JSON object per line.
-//  The process exits when its stdin is closed, i.e. when the app goes away.
-//
-
 import Foundation
 
 // The private MediaRemote functions, as the C ABI sees them

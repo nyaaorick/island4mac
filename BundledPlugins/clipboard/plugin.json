@@ -13,15 +13,15 @@
       "kind" : "choice",
       "options" : [
         {
-          "title" : "10",
+          "title" : "10 items",
           "value" : 10
         },
         {
-          "title" : "20",
+          "title" : "20 items",
           "value" : 20
         },
         {
-          "title" : "50",
+          "title" : "50 items",
           "value" : 50
         }
       ],
@@ -33,23 +33,23 @@
       "kind" : "choice",
       "options" : [
         {
-          "title" : "24",
+          "title" : "A day",
           "value" : 24
         },
         {
-          "title" : "72",
+          "title" : "Three days",
           "value" : 72
         },
         {
-          "title" : "168",
+          "title" : "A week",
           "value" : 168
         },
         {
-          "title" : "0",
+          "title" : "Forever",
           "value" : 0
         }
       ],
-      "title" : "Hours to keep them (0: forever)"
+      "title" : "Keep them for"
     }
   ],
   "protocol" : 4,

@@ -1,20 +1,14 @@
-//
-//  AppleScriptClient.swift
-//  boringNotch
-//
-//  Created by Alexander on 2025-08-20.
-//
-
 import Foundation
+import os
 import AppKit
 
 /// Runs AppleScript commands against other apps
-/// Note: AppleScript automation is not allowed in sandboxed App Store apps
+/// Needs the Apple Events entitlement and the user's Automation permission; the app isn't sandboxed
 nonisolated final class AppleScriptClient {
 
     /// Scripts run one at a time here rather than on the main thread: an Apple Event round trip
     /// can take hundreds of milliseconds (or wait on a permission prompt) and would stall the UI
-    private static let queue = DispatchQueue(label: "com.maclingdonggao.applescript", qos: .userInitiated)
+    private static let queue = DispatchQueue(label: "island4mac.applescript", qos: .userInitiated)
 
     /// Off-main-thread version of `executeScript(_:)`
     static func execute(_ script: String) async -> String? {
@@ -29,7 +23,7 @@ nonisolated final class AppleScriptClient {
         if let scriptObject = NSAppleScript(source: script) {
             let output = scriptObject.executeAndReturnError(&error)
             if let error = error {
-                print("AppleScript error: \(error)")
+                Logger(subsystem: Bundle.main.bundleIdentifier ?? "island4mac", category: "AppleScript").error("\(String(describing: error), privacy: .public)")
                 return nil
             }
             return output.stringValue

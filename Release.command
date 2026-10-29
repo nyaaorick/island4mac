@@ -1,21 +1,21 @@
 #!/usr/bin/env swift
 // Builds a release: the Release configuration, signed with the self-signed "island4mac Release" certificate, as
 // build/Release/island4mac.dmg. With --publish it also publishes the DMG as the GitHub release v<version>, with the
-// version's CHANGELOG.md section as its notes; installed copies find it there when they launch (UpdateClient).
-// The whole process and where the certificate lives: CLAUDE.md, "Releasing". Swift, so the repo stays Swift-only.
+// version's section of spec/docs/08-changelog.md as its notes; installed copies find it there when they launch (UpdateClient).
+// The whole process and where the certificate lives: spec/docs/06-dev-builds-and-releases.md and spec/skills/release. Swift, so the repo stays Swift-only.
 import Foundation
 
 let identity = "island4mac Release"
 /// SHA-1 of that certificate. Installed copies only take an update signed with it, and macOS keeps their permissions
 /// only for it, so a release signed with any other certificate is refused here
 let certificateHash = "0549e796d95b726aaf3976ba02629b29b8367590"
-let bundleID = "com.macdynamicisland.app"
+let bundleID = "com.nyaaorick.island4mac"
 
 let publish = CommandLine.arguments.contains("--publish")
 let root = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath().deletingLastPathComponent()
 let output = root.appendingPathComponent("build/Release")
-let archive = output.appendingPathComponent("MacDynamicIsland.xcarchive")
-let app = archive.appendingPathComponent("Products/Applications/MacDynamicIsland.app")
+let archive = output.appendingPathComponent("island4mac.xcarchive")
+let app = archive.appendingPathComponent("Products/Applications/island4mac.app")
 let dmg = output.appendingPathComponent("island4mac.dmg")
 
 @discardableResult
@@ -52,9 +52,9 @@ func fail(_ message: String) -> Never {
     exit(1)
 }
 
-/// What CHANGELOG.md says under "## <version>", up to the next "## "
+/// What spec/docs/08-changelog.md says under "## <version>", up to the next "## "
 func changelog(for version: String) -> String? {
-    guard let text = try? String(contentsOf: root.appendingPathComponent("CHANGELOG.md"), encoding: .utf8) else { return nil }
+    guard let text = try? String(contentsOf: root.appendingPathComponent("spec/docs/08-changelog.md"), encoding: .utf8) else { return nil }
     var section: [Substring]?
     for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
         if line.hasPrefix("## ") {
@@ -70,9 +70,9 @@ func changelog(for version: String) -> String? {
 
 // 1. The certificate, and the version (MARKETING_VERSION)
 guard capture("/usr/bin/security", ["find-identity", "-p", "codesigning"])?.contains("\"\(identity)\"") == true else {
-    fail("No \"\(identity)\" certificate in the keychain. Import its .p12 backup (CLAUDE.md, \"Releasing\").")
+    fail("No \"\(identity)\" certificate in the keychain. Import its .p12 backup (spec/docs/06-dev-builds-and-releases.md).")
 }
-let settings = capture("/usr/bin/xcodebuild", ["-project", "MacDynamicIsland.xcodeproj", "-target", "MacDynamicIsland",
+let settings = capture("/usr/bin/xcodebuild", ["-project", "island4mac.xcodeproj", "-target", "island4mac",
                                                "-configuration", "Release", "-showBuildSettings"]) ?? ""
 guard let version = settings.split(separator: "\n")
     .map({ $0.trimmingCharacters(in: .whitespaces) })
@@ -81,7 +81,7 @@ guard let version = settings.split(separator: "\n")
 let tag = "v\(version)"
 let notes = changelog(for: String(version))
 
-// 2. Publishing needs a clean, pushed commit, a CHANGELOG.md section and a version not yet released
+// 2. Publishing needs a clean, pushed commit, a changelog section and a version not yet released
 if publish {
     guard capture("/usr/bin/git", ["status", "--porcelain"]) == "" else {
         fail("Commit your changes first: a release is built from a commit.")
@@ -89,20 +89,20 @@ if publish {
     guard let remotes = capture("/usr/bin/git", ["branch", "-r", "--contains", "HEAD"]), !remotes.isEmpty else {
         fail("Push this commit first.")
     }
-    guard notes != nil else { fail("CHANGELOG.md has no section \"## \(version)\". Add one: it becomes the release notes.") }
+    guard notes != nil else { fail("spec/docs/08-changelog.md has no section \"## \(version)\". Add one: it becomes the release notes.") }
     guard capture("/usr/bin/env", ["gh", "release", "view", tag]) == nil else {
         fail("\(tag) is already released. Raise MARKETING_VERSION.")
     }
 } else if notes == nil {
-    print("Note: CHANGELOG.md has no section \"## \(version)\" yet; --publish will need one.")
+    print("Note: spec/docs/08-changelog.md has no section \"## \(version)\" yet; --publish will need one.")
 }
 
 // 3. Build and sign
 try? FileManager.default.removeItem(at: output)
 print("Building \(version)...")
 let build = run("/usr/bin/xcodebuild", [
-    "-project", "MacDynamicIsland.xcodeproj",
-    "-scheme", "MacDynamicIsland",
+    "-project", "island4mac.xcodeproj",
+    "-scheme", "island4mac",
     "-configuration", "Release",
     "-destination", "generic/platform=macOS",
     "-derivedDataPath", root.appendingPathComponent("build").path,

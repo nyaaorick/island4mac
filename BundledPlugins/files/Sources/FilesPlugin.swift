@@ -67,11 +67,7 @@ struct FilesPlugin: IslandPlugin {
 final class FilesService {
     static let shared = FilesService()
 
-    let store = ShelfStore(
-        folder: Island.dataDirectory ?? FileManager.default.temporaryDirectory.appendingPathComponent("files"),
-        // Where the app kept the shelf before; moved into the data folder once
-        legacyFile: FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("MacDynamicIsland/shelf_items_v2.json"))
+    let store = ShelfStore(folder: Island.dataDirectory ?? FileManager.default.temporaryDirectory.appendingPathComponent("files"))
     private var changes: AnyCancellable?
 
     func start() {

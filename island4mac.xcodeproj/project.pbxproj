@@ -1,0 +1,1309 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		4D524107000000000000000F /* music in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241070000000000000005 /* music */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241070000000000000010 /* plugin.json in Embed Bundled Plugin music */ = {isa = PBXBuildFile; fileRef = 4D5241070000000000000004 /* plugin.json */; };
+		4D5241070000000000000012 /* IslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5241070000000000000011 /* IslandKit */; };
+		4D524106000000000000000F /* files in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000005 /* files */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241060000000000000010 /* plugin.json in Embed Bundled Plugin files */ = {isa = PBXBuildFile; fileRef = 4D5241060000000000000004 /* plugin.json */; };
+		4D5241060000000000000012 /* IslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5241060000000000000011 /* IslandKit */; };
+		4D524105000000000000000F /* clipboard in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241050000000000000005 /* clipboard */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241050000000000000010 /* plugin.json in Embed Bundled Plugin clipboard */ = {isa = PBXBuildFile; fileRef = 4D5241050000000000000004 /* plugin.json */; };
+		4D5241050000000000000012 /* IslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5241050000000000000011 /* IslandKit */; };
+		4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */ = {isa = PBXBuildFile; fileRef = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241020000000000000016 /* island-claude-hook in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241020000000000000012 /* island-claude-hook */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241040000000000000010 /* agents in Embed Helpers */ = {isa = PBXBuildFile; fileRef = 4D5241040000000000000006 /* agents */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D5241040000000000000011 /* plugin.json in Embed Bundled Plugins */ = {isa = PBXBuildFile; fileRef = 4D5241040000000000000005 /* plugin.json */; };
+		4D5241040000000000000014 /* IslandKit in Frameworks */ = {isa = PBXBuildFile; productRef = 4D5241040000000000000013 /* IslandKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		4D524107000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241070000000000000006;
+			remoteInfo = MusicPlugin;
+		};
+		4D524106000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241060000000000000006;
+			remoteInfo = FilesPlugin;
+		};
+		4D524105000000000000000C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241050000000000000006;
+			remoteInfo = ClipboardPlugin;
+		};
+		3AC496CAE455ED04B550BBB2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 51E49FAA2F0B8D41002AD746;
+			remoteInfo = "island4mac";
+		};
+		4D52410100000000000000AA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D52410100000000000000A6;
+			remoteInfo = MediaRemoteAdapter;
+		};
+		4D5241020000000000000018 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241020000000000000015;
+			remoteInfo = ClaudeHookBridge;
+		};
+		4D524104000000000000000D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 51E49FA32F0B8D41002AD746 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D5241040000000000000007;
+			remoteInfo = AgentsPlugin;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		4D524107000000000000000E /* Embed Bundled Plugin music */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Plugins/music;
+			dstSubfolderSpec = 7;
+			files = (
+				4D5241070000000000000010 /* plugin.json in Embed Bundled Plugin music */,
+			);
+			name = "Embed Bundled Plugin music";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D524106000000000000000E /* Embed Bundled Plugin files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Plugins/files;
+			dstSubfolderSpec = 7;
+			files = (
+				4D5241060000000000000010 /* plugin.json in Embed Bundled Plugin files */,
+			);
+			name = "Embed Bundled Plugin files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D524105000000000000000E /* Embed Bundled Plugin clipboard */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Plugins/clipboard;
+			dstSubfolderSpec = 7;
+			files = (
+				4D5241050000000000000010 /* plugin.json in Embed Bundled Plugin clipboard */,
+			);
+			name = "Embed Bundled Plugin clipboard";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D52410100000000000000A9 /* Embed Libraries */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				4D52410100000000000000A4 /* libMediaRemoteAdapter.dylib in Embed Libraries */,
+			);
+			name = "Embed Libraries";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241020000000000000017 /* Embed Helpers */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Helpers;
+			dstSubfolderSpec = 1;
+			files = (
+				4D5241020000000000000016 /* island-claude-hook in Embed Helpers */,
+				4D5241040000000000000010 /* agents in Embed Helpers */,
+				4D524105000000000000000F /* clipboard in Embed Helpers */,
+				4D524106000000000000000F /* files in Embed Helpers */,
+				4D524107000000000000000F /* music in Embed Helpers */,
+			);
+			name = "Embed Helpers";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D524104000000000000000F /* Embed Bundled Plugins */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Plugins/agents;
+			dstSubfolderSpec = 7;
+			files = (
+				4D5241040000000000000011 /* plugin.json in Embed Bundled Plugins */,
+			);
+			name = "Embed Bundled Plugins";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		4D5241070000000000000004 /* plugin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = plugin.json; sourceTree = "<group>"; };
+		4D5241070000000000000005 /* music */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = music; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D5241060000000000000004 /* plugin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = plugin.json; sourceTree = "<group>"; };
+		4D5241060000000000000005 /* files */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = files; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D5241050000000000000004 /* plugin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = plugin.json; sourceTree = "<group>"; };
+		4D5241050000000000000005 /* clipboard */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = clipboard; sourceTree = BUILT_PRODUCTS_DIR; };
+		51E49FAB2F0B8D41002AD746 /* island4mac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "island4mac.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		16699883D1FCA93359C8C3D6 /* island4macTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "island4macTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = libMediaRemoteAdapter.dylib; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D5241020000000000000012 /* island-claude-hook */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "island-claude-hook"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4D5241040000000000000005 /* plugin.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = plugin.json; sourceTree = "<group>"; };
+		4D5241040000000000000006 /* agents */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = agents; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		4D52410300000000000000A6 /* Exceptions for "island4mac" folder in "island4mac" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Resources/Info.plist,
+			);
+			target = 51E49FAA2F0B8D41002AD746 /* island4mac */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		4D5241070000000000000001 /* Core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Core;
+			sourceTree = "<group>";
+		};
+		4D5241070000000000000002 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		4D5241060000000000000001 /* Core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Core;
+			sourceTree = "<group>";
+		};
+		4D5241060000000000000002 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		4D5241050000000000000001 /* Core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Core;
+			sourceTree = "<group>";
+		};
+		4D5241050000000000000002 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		4D5241080000000000000001 /* SharedCore */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = SharedCore;
+			sourceTree = "<group>";
+		};
+		4D52410300000000000000A1 /* island4mac */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				4D52410300000000000000A6 /* Exceptions for "island4mac" folder in "island4mac" target */,
+			);
+			path = island4mac;
+			sourceTree = "<group>";
+		};
+		4D52410300000000000000A2 /* island4macTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = island4macTests;
+			sourceTree = "<group>";
+		};
+		4D52410300000000000000A3 /* ClaudeHookBridge */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ClaudeHookBridge;
+			sourceTree = "<group>";
+		};
+		4D52410300000000000000A4 /* MediaRemoteAdapter */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = MediaRemoteAdapter;
+			sourceTree = "<group>";
+		};
+		4D5241040000000000000001 /* Core */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Core;
+			sourceTree = "<group>";
+		};
+		4D5241040000000000000002 /* Sources */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Sources;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		4D5241070000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D5241070000000000000012 /* IslandKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241060000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D5241060000000000000012 /* IslandKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241050000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D5241050000000000000012 /* IslandKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		51E49FA82F0B8D41002AD746 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9D559604FAB6932EE5648ED8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D52410100000000000000A8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241020000000000000014 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241040000000000000009 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4D5241040000000000000014 /* IslandKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		4D5241070000000000000003 /* music */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241070000000000000004 /* plugin.json */,
+				4D5241070000000000000001 /* Core */,
+				4D5241070000000000000002 /* Sources */,
+			);
+			path = music;
+			sourceTree = "<group>";
+		};
+		4D5241060000000000000003 /* files */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241060000000000000004 /* plugin.json */,
+				4D5241060000000000000001 /* Core */,
+				4D5241060000000000000002 /* Sources */,
+			);
+			path = files;
+			sourceTree = "<group>";
+		};
+		4D5241050000000000000003 /* clipboard */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241050000000000000004 /* plugin.json */,
+				4D5241050000000000000001 /* Core */,
+				4D5241050000000000000002 /* Sources */,
+			);
+			path = clipboard;
+			sourceTree = "<group>";
+		};
+		51E49FA22F0B8D41002AD746 = {
+			isa = PBXGroup;
+			children = (
+				4D52410300000000000000A1 /* island4mac */,
+				4D52410300000000000000A2 /* island4macTests */,
+				4D5241040000000000000004 /* BundledPlugins */,
+				4D52410300000000000000A5 /* Helpers */,
+				51E49FAC2F0B8D41002AD746 /* Products */,
+				4D5241080000000000000001 /* SharedCore */,
+			);
+			sourceTree = "<group>";
+		};
+		4D52410300000000000000A5 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				4D52410300000000000000A3 /* ClaudeHookBridge */,
+				4D52410300000000000000A4 /* MediaRemoteAdapter */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		51E49FAC2F0B8D41002AD746 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				51E49FAB2F0B8D41002AD746 /* island4mac.app */,
+				16699883D1FCA93359C8C3D6 /* island4macTests.xctest */,
+				4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */,
+				4D5241020000000000000012 /* island-claude-hook */,
+				4D5241040000000000000006 /* agents */,
+				4D5241050000000000000005 /* clipboard */,
+				4D5241060000000000000005 /* files */,
+				4D5241070000000000000005 /* music */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		4D5241040000000000000004 /* BundledPlugins */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241040000000000000003 /* agents */,
+				4D5241050000000000000003 /* clipboard */,
+				4D5241060000000000000003 /* files */,
+				4D5241070000000000000003 /* music */,
+			);
+			path = BundledPlugins;
+			sourceTree = "<group>";
+		};
+		4D5241040000000000000003 /* agents */ = {
+			isa = PBXGroup;
+			children = (
+				4D5241040000000000000005 /* plugin.json */,
+				4D5241040000000000000001 /* Core */,
+				4D5241040000000000000002 /* Sources */,
+			);
+			path = agents;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4D5241070000000000000006 /* MusicPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D5241070000000000000009 /* Build configuration list for PBXNativeTarget "MusicPlugin" */;
+			buildPhases = (
+				4D5241070000000000000007 /* Sources */,
+				4D5241070000000000000008 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D5241070000000000000001 /* Core */,
+				4D5241080000000000000001 /* SharedCore */,
+				4D5241070000000000000002 /* Sources */,
+			);
+			name = MusicPlugin;
+			packageProductDependencies = (
+				4D5241070000000000000011 /* IslandKit */,
+			);
+			productName = music;
+			productReference = 4D5241070000000000000005 /* music */;
+			productType = "com.apple.product-type.tool";
+		};
+		4D5241060000000000000006 /* FilesPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D5241060000000000000009 /* Build configuration list for PBXNativeTarget "FilesPlugin" */;
+			buildPhases = (
+				4D5241060000000000000007 /* Sources */,
+				4D5241060000000000000008 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D5241060000000000000001 /* Core */,
+				4D5241080000000000000001 /* SharedCore */,
+				4D5241060000000000000002 /* Sources */,
+			);
+			name = FilesPlugin;
+			packageProductDependencies = (
+				4D5241060000000000000011 /* IslandKit */,
+			);
+			productName = files;
+			productReference = 4D5241060000000000000005 /* files */;
+			productType = "com.apple.product-type.tool";
+		};
+		4D5241050000000000000006 /* ClipboardPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D5241050000000000000009 /* Build configuration list for PBXNativeTarget "ClipboardPlugin" */;
+			buildPhases = (
+				4D5241050000000000000007 /* Sources */,
+				4D5241050000000000000008 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D5241050000000000000001 /* Core */,
+				4D5241080000000000000001 /* SharedCore */,
+				4D5241050000000000000002 /* Sources */,
+			);
+			name = ClipboardPlugin;
+			packageProductDependencies = (
+				4D5241050000000000000011 /* IslandKit */,
+			);
+			productName = clipboard;
+			productReference = 4D5241050000000000000005 /* clipboard */;
+			productType = "com.apple.product-type.tool";
+		};
+		51E49FAA2F0B8D41002AD746 /* island4mac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 51E49FB62F0B8D44002AD746 /* Build configuration list for PBXNativeTarget "island4mac" */;
+			buildPhases = (
+				51E49FA72F0B8D41002AD746 /* Sources */,
+				51E49FA82F0B8D41002AD746 /* Frameworks */,
+				51E49FA92F0B8D41002AD746 /* Resources */,
+				4D52410100000000000000A9 /* Embed Libraries */,
+				4D5241020000000000000017 /* Embed Helpers */,
+				4D524104000000000000000F /* Embed Bundled Plugins */,
+				4D524105000000000000000E /* Embed Bundled Plugin clipboard */,
+				4D524106000000000000000E /* Embed Bundled Plugin files */,
+				4D524107000000000000000E /* Embed Bundled Plugin music */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4D52410100000000000000AB /* PBXTargetDependency */,
+				4D5241020000000000000019 /* PBXTargetDependency */,
+				4D524104000000000000000E /* PBXTargetDependency */,
+				4D524105000000000000000D /* PBXTargetDependency */,
+				4D524106000000000000000D /* PBXTargetDependency */,
+				4D524107000000000000000D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4D52410300000000000000A1 /* island4mac */,
+				4D5241040000000000000001 /* Core */,
+				4D5241080000000000000001 /* SharedCore */,
+				4D5241050000000000000001 /* Core */,
+				4D5241060000000000000001 /* Core */,
+				4D5241070000000000000001 /* Core */,
+			);
+			name = "island4mac";
+			productName = "island4mac";
+			productReference = 51E49FAB2F0B8D41002AD746 /* island4mac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		2013CF6D78CAA4315DA29D50 /* island4macTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 267CAFEC18DF207FD29D72F0 /* Build configuration list for PBXNativeTarget "island4macTests" */;
+			buildPhases = (
+				F51191A9A03FB5923DF89BC0 /* Sources */,
+				9D559604FAB6932EE5648ED8 /* Frameworks */,
+				07767327C1495053AC163223 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				020B16BB8ED51250DF6147D9 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				4D52410300000000000000A2 /* island4macTests */,
+			);
+			name = "island4macTests";
+			productName = "island4macTests";
+			productReference = 16699883D1FCA93359C8C3D6 /* island4macTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		4D52410100000000000000A6 /* MediaRemoteAdapter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D52410100000000000000AC /* Build configuration list for PBXNativeTarget "MediaRemoteAdapter" */;
+			buildPhases = (
+				4D52410100000000000000A7 /* Sources */,
+				4D52410100000000000000A8 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D52410300000000000000A4 /* MediaRemoteAdapter */,
+			);
+			name = MediaRemoteAdapter;
+			productName = MediaRemoteAdapter;
+			productReference = 4D52410100000000000000A2 /* libMediaRemoteAdapter.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		4D5241020000000000000015 /* ClaudeHookBridge */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D524102000000000000001A /* Build configuration list for PBXNativeTarget "ClaudeHookBridge" */;
+			buildPhases = (
+				4D5241020000000000000013 /* Sources */,
+				4D5241020000000000000014 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D52410300000000000000A3 /* ClaudeHookBridge */,
+			);
+			name = ClaudeHookBridge;
+			productName = "island-claude-hook";
+			productReference = 4D5241020000000000000012 /* island-claude-hook */;
+			productType = "com.apple.product-type.tool";
+		};
+		4D5241040000000000000007 /* AgentsPlugin */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4D524104000000000000000A /* Build configuration list for PBXNativeTarget "AgentsPlugin" */;
+			buildPhases = (
+				4D5241040000000000000008 /* Sources */,
+				4D5241040000000000000009 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				4D5241040000000000000001 /* Core */,
+				4D5241040000000000000002 /* Sources */,
+				4D5241080000000000000001 /* SharedCore */,
+			);
+			name = AgentsPlugin;
+			packageProductDependencies = (
+				4D5241040000000000000013 /* IslandKit */,
+			);
+			productName = agents;
+			productReference = 4D5241040000000000000006 /* agents */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		51E49FA32F0B8D41002AD746 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					4D5241070000000000000006 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					4D5241060000000000000006 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					4D5241050000000000000006 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					2013CF6D78CAA4315DA29D50 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = 51E49FAA2F0B8D41002AD746;
+					};
+					51E49FAA2F0B8D41002AD746 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					4D52410100000000000000A6 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					4D5241020000000000000015 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					4D5241040000000000000007 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				};
+			};
+			buildConfigurationList = 51E49FA62F0B8D41002AD746 /* Build configuration list for PBXProject "island4mac" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 51E49FA22F0B8D41002AD746;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 51E49FAC2F0B8D41002AD746 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				51E49FAA2F0B8D41002AD746 /* island4mac */,
+				2013CF6D78CAA4315DA29D50 /* island4macTests */,
+				4D52410100000000000000A6 /* MediaRemoteAdapter */,
+				4D5241020000000000000015 /* ClaudeHookBridge */,
+				4D5241040000000000000007 /* AgentsPlugin */,
+				4D5241050000000000000006 /* ClipboardPlugin */,
+				4D5241060000000000000006 /* FilesPlugin */,
+				4D5241070000000000000006 /* MusicPlugin */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		51E49FA92F0B8D41002AD746 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		07767327C1495053AC163223 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4D5241070000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241060000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241050000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		51E49FA72F0B8D41002AD746 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F51191A9A03FB5923DF89BC0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D52410100000000000000A7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241020000000000000013 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4D5241040000000000000008 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4D524107000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241070000000000000006 /* MusicPlugin */;
+			targetProxy = 4D524107000000000000000C /* PBXContainerItemProxy */;
+		};
+		4D524106000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241060000000000000006 /* FilesPlugin */;
+			targetProxy = 4D524106000000000000000C /* PBXContainerItemProxy */;
+		};
+		4D524105000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241050000000000000006 /* ClipboardPlugin */;
+			targetProxy = 4D524105000000000000000C /* PBXContainerItemProxy */;
+		};
+		020B16BB8ED51250DF6147D9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 51E49FAA2F0B8D41002AD746 /* island4mac */;
+			targetProxy = 3AC496CAE455ED04B550BBB2 /* PBXContainerItemProxy */;
+		};
+		4D52410100000000000000AB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D52410100000000000000A6 /* MediaRemoteAdapter */;
+			targetProxy = 4D52410100000000000000AA /* PBXContainerItemProxy */;
+		};
+		4D5241020000000000000019 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241020000000000000015 /* ClaudeHookBridge */;
+			targetProxy = 4D5241020000000000000018 /* PBXContainerItemProxy */;
+		};
+		4D524104000000000000000E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4D5241040000000000000007 /* AgentsPlugin */;
+			targetProxy = 4D524104000000000000000D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		4D524107000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = music;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4D524107000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = music;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4D524106000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = files;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4D524106000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = files;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4D524105000000000000000B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = clipboard;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4D524105000000000000000A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = clipboard;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		51E49FB42F0B8D44002AD746 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		51E49FB52F0B8D44002AD746 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		51E49FB72F0B8D44002AD746 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_DISPLAY_NAME = "island4mac Dev";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "island4mac/Resources/island4mac.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "island4mac/Resources/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nyaaorick.island4mac.dev;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = NO;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		51E49FB82F0B8D44002AD746 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APP_DISPLAY_NAME = "island4mac";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "island4mac/Resources/island4mac.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Distribution";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "island4mac/Resources/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nyaaorick.island4mac;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = NO;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		20DB8833730467E63D22FA03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nyaaorick.island4mac.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/island4mac.app/Contents/MacOS/island4mac";
+			};
+			name = Debug;
+		};
+		4575B3060E10CC94493875FE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nyaaorick.island4mac.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/island4mac.app/Contents/MacOS/island4mac";
+			};
+			name = Release;
+		};
+		4D52410100000000000000AD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4D52410100000000000000AE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4D524102000000000000001B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = "island-claude-hook";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4D524102000000000000001C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = "island-claude-hook";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		4D524104000000000000000B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = agents;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4D524104000000000000000C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_CODE_COVERAGE = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 66233X8P8H;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_NAME = agents;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		4D5241070000000000000009 /* Build configuration list for PBXNativeTarget "MusicPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524107000000000000000A /* Debug */,
+				4D524107000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D5241060000000000000009 /* Build configuration list for PBXNativeTarget "FilesPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524106000000000000000A /* Debug */,
+				4D524106000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D5241050000000000000009 /* Build configuration list for PBXNativeTarget "ClipboardPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524105000000000000000A /* Debug */,
+				4D524105000000000000000B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		51E49FA62F0B8D41002AD746 /* Build configuration list for PBXProject "island4mac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				51E49FB42F0B8D44002AD746 /* Debug */,
+				51E49FB52F0B8D44002AD746 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		51E49FB62F0B8D44002AD746 /* Build configuration list for PBXNativeTarget "island4mac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				51E49FB72F0B8D44002AD746 /* Debug */,
+				51E49FB82F0B8D44002AD746 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		267CAFEC18DF207FD29D72F0 /* Build configuration list for PBXNativeTarget "island4macTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				20DB8833730467E63D22FA03 /* Debug */,
+				4575B3060E10CC94493875FE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D52410100000000000000AC /* Build configuration list for PBXNativeTarget "MediaRemoteAdapter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D52410100000000000000AD /* Debug */,
+				4D52410100000000000000AE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D524102000000000000001A /* Build configuration list for PBXNativeTarget "ClaudeHookBridge" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524102000000000000001B /* Debug */,
+				4D524102000000000000001C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4D524104000000000000000A /* Build configuration list for PBXNativeTarget "AgentsPlugin" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4D524104000000000000000B /* Debug */,
+				4D524104000000000000000C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../island4mac-plugins";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		4D5241070000000000000011 /* IslandKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */;
+			productName = IslandKit;
+		};
+		4D5241060000000000000011 /* IslandKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */;
+			productName = IslandKit;
+		};
+		4D5241050000000000000011 /* IslandKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */;
+			productName = IslandKit;
+		};
+		4D5241040000000000000013 /* IslandKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4D5241040000000000000012 /* XCLocalSwiftPackageReference "../island4mac-plugins" */;
+			productName = IslandKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 51E49FA32F0B8D41002AD746 /* Project object */;
+}

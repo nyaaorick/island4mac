@@ -1,11 +1,11 @@
 import Foundation
 import OSLog
 
-/// Lyrics service - fetches lyrics from multiple music platforms
+/// Fetches a track's lyrics from LrcLib or NetEase, remembering what it found
 final class LyricsClient {
     static let shared = LyricsClient()
     
-    private let logger = os.Logger(subsystem: "com.maclingdonggao.overlay", category: "lyrics")
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "island4mac", category: "LyricsClient")
     private var cache: [String: LyricsResult] = [:]
     
     struct LyricsResult {
@@ -23,13 +23,11 @@ final class LyricsClient {
         // Check the cache
         if let cached = cache[cacheKey] {
             #if DEBUG
-            print("🎵 [LyricsClient] Using cached lyrics: \(title)")
             #endif
             return cached
         }
         
         #if DEBUG
-        print("🎵 [LyricsClient] Fetching lyrics: \(title) - \(artist) [Source: \(source)]")
         #endif
         
         // Route the request according to the setting
@@ -54,7 +52,6 @@ final class LyricsClient {
             if let result = await fetchFromLrcLib(title: title, artist: artist, album: album) {
                 cache[cacheKey] = result
                 #if DEBUG
-                print("🎵 [LyricsClient] ✅ Fetched from LrcLib")
                 #endif
                 return result
             }
@@ -63,7 +60,6 @@ final class LyricsClient {
             if let result = await fetchFromNetease(title: title, artist: artist) {
                 cache[cacheKey] = result
                 #if DEBUG
-                print("🎵 [LyricsClient] ✅ Fetched from NetEase")
                 #endif
                 return result
             }
@@ -72,14 +68,13 @@ final class LyricsClient {
             if let result = await fetchFromQQMusic(title: title, artist: artist) {
                 cache[cacheKey] = result
                 #if DEBUG
-                print("🎵 [LyricsClient] ✅ Fetched from QQ Music")
                 #endif
                 return result
             }
         }
         
         #if DEBUG
-        print("🎵 [LyricsClient] ❌ No lyrics found: \(title) - \(artist)")
+        logger.info("No lyrics for \(title, privacy: .public) - \(artist, privacy: .public)")
         #endif
         return nil
     }

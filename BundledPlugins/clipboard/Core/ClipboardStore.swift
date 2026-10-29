@@ -31,15 +31,9 @@ final class ClipboardStore: ObservableObject {
     /// ignores the island app that runs it)
     let frontmostApps: FrontmostAppMonitor
 
-    /// The app's own clipboard history before it moved into the folder (UserDefaults, `mac_island_clipvault_v1`)
-    private let legacyDefaults: UserDefaults?
-    static let legacyKey = "mac_island_clipvault_v1"
-
-    init(folder: URL, settings: Settings = Settings(), legacyDefaults: UserDefaults? = .standard,
-         frontmostApps: FrontmostAppMonitor? = nil) {
+    init(folder: URL, settings: Settings = Settings(), frontmostApps: FrontmostAppMonitor? = nil) {
         self.folder = folder
         self.settings = settings
-        self.legacyDefaults = legacyDefaults
         self.frontmostApps = frontmostApps ?? FrontmostAppMonitor(ignoring: ProcessInfo.processInfo.processIdentifier)
     }
 
@@ -160,17 +154,11 @@ final class ClipboardStore: ObservableObject {
         try? data.write(to: historyFile, options: .atomic)
     }
 
-    /// Reads the history, moving the app's old one (UserDefaults) into the folder the first time
+    /// Reads the history from the folder
     func load() {
         if let data = try? Data(contentsOf: historyFile),
            let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
             items = decoded
-        } else if let legacyDefaults, let data = legacyDefaults.data(forKey: Self.legacyKey),
-                  let decoded = try? JSONDecoder().decode([ClipboardItem].self, from: data) {
-            items = decoded
-            save()
-            // Only once the history is safely in the folder
-            if (try? Data(contentsOf: historyFile)) != nil { legacyDefaults.removeObject(forKey: Self.legacyKey) }
         }
         pruneExpiredItems()
     }

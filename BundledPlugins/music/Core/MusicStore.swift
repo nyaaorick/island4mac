@@ -1,10 +1,3 @@
-//
-//  MusicStore.swift
-//  boringNotch
-//
-//  Created by Alexander on 2025-08-20.
-//
-
 import Foundation
 import Combine
 import CryptoKit

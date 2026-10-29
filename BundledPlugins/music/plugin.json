@@ -13,15 +13,15 @@
       "kind" : "choice",
       "options" : [
         {
-          "title" : "auto",
+          "title" : "Wherever they are",
           "value" : "auto"
         },
         {
-          "title" : "lrclib",
+          "title" : "LRCLIB",
           "value" : "lrclib"
         },
         {
-          "title" : "netease",
+          "title" : "NetEase Cloud Music",
           "value" : "netease"
         }
       ],

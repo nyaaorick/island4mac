@@ -1,0 +1,116 @@
+/* Settings window */
+"settings.title" = "Settings";
+"settings.tab.general" = "General";
+"settings.tab.appearance" = "Appearance";
+"settings.tab.media" = "Media";
+"settings.tab.shortcuts" = "Shortcuts";
+"settings.tab.advanced" = "Advanced";
+"settings.tab.about" = "About";
+"settings.tab.tabs" = "Tabs";
+"settings.tab.plugins" = "Plugins";
+
+/* The island's tabs */
+"tab.music" = "Music";
+"tab.clipboard" = "Clipboard";
+"tab.files" = "Files";
+"tab.agents" = "Agents";
+
+/* The island */
+"island.drop" = "Drop to add";
+
+/* Settings > Tabs */
+"settings.tabs.shown" = "Shown in the island";
+"settings.tabs.shown_help" = "Up to 6 tabs, three either side of the camera. Drag to reorder.";
+"settings.tabs.hidden" = "Not shown";
+"settings.tabs.hidden_none" = "Every tab is shown.";
+"settings.tabs.limit" = "Hide a tab first: the island shows at most 6.";
+
+/* Settings > Plugins */
+"settings.plugins.live_activity" = "Show plugins beside the notch";
+"settings.plugins.live_activity_help" = "A plugin's countdown or status shows beside the notch when no agent or music needs the space; its popups show ahead of music";
+"settings.plugins.about" = "Plugins are small programs that tell the island what to show. They run while their tab is on (Tabs) and stop when it's off.";
+"settings.plugins.installed" = "Installed";
+"settings.plugins.none_installed" = "No plugins installed.";
+"settings.plugins.open_folder" = "Open Plugins Folder";
+"settings.plugins.reload" = "Reload";
+"settings.plugins.available" = "Available";
+"settings.plugins.refresh" = "Refresh";
+"settings.plugins.catalog_empty" = "The catalog lists no plugins.";
+"settings.plugins.not_published" = "No plugins published yet.";
+"settings.plugins.catalog_unreachable" = "Couldn't reach the catalog. Check your connection and refresh.";
+"settings.plugins.may_open" = "Let plugins open the island";
+"settings.plugins.may_open_help" = "A plugin may open the island on its tab, e.g. when a timer ends; at most every 10 seconds, and never over something you're using";
+"settings.plugins.status_running" = "Running";
+"settings.plugins.status_off" = "Off: turn its tab on under Tabs";
+"settings.plugins.status_stopped" = "Stopped: %@";
+"settings.plugins.status_needs_setup" = "Waiting for its settings below";
+"settings.plugins.status_sleeping" = "Runs when needed";
+"settings.plugins.status_disabled" = "Turned off";
+"settings.plugins.enabled" = "Turned on: runs while its tab is on, or always if it runs in the background";
+"settings.plugins.required" = "Required: the plugin starts once this is filled in";
+"settings.plugins.install" = "Install";
+"settings.plugins.update" = "Update";
+"settings.plugins.uninstall" = "Uninstall";
+"settings.plugins.needs_update" = "Needs a newer version of the app";
+"settings.plugins.install_failed" = "Couldn't install %@: %@";
+"settings.plugins.uninstall_failed" = "Couldn't uninstall %@: %@";
+"settings.plugins.trust_note" = "A plugin runs as a program on your Mac. Install the ones you trust.";
+"settings.plugins.installed_with_tab" = "%@ is installed, and its tab is on.";
+"settings.plugins.installed_no_room" = "%@ is installed. %d tabs show at most: turn one off under Tabs to make room for it.";
+"settings.plugins.updated" = "%@ is now version %@.";
+"settings.plugins.uninstalled" = "%@ was uninstalled. It and its data are in the Trash.";
+
+/* A plugin's tab */
+"plugins.tab.empty" = "Nothing to show yet";
+"plugins.tab.stopped" = "%@ stopped";
+"plugins.tab.restart" = "Restart";
+"plugins.tab.cancel" = "Cancel";
+"plugins.tab.missing" = "This plugin isn't installed";
+"plugins.tab.needs_setup" = "%@ needs setting up";
+"plugins.tab.open_settings" = "Open Settings";
+"plugins.tab.settings" = "%@ settings";
+"plugins.tab.turned_off" = "%@ is turned off";
+"plugins.tab.loading" = "Loading";
+"plugins.tab.failed" = "Couldn't load";
+
+/* Settings > General */
+"settings.startup.header" = "Startup";
+"settings.startup.launch_at_login" = "Launch at login";
+"settings.behavior.header" = "Behavior";
+"settings.behavior.show_on_hover" = "Show on hover";
+"settings.behavior.show_on_hover_help" = "Show overlay when mouse approaches it";
+"settings.behavior.hover_delay" = "Hover delay";
+"settings.behavior.haptic_feedback" = "Enable haptic feedback";
+"settings.behavior.haptic_feedback_help" = "Play a subtle haptic when the island opens or closes (if the hardware supports it)";
+"settings.display.header" = "Display";
+"settings.display.show_on" = "Show on";
+"settings.display.mode.all" = "All Displays";
+
+/* Settings > Appearance */
+"settings.appearance.header" = "Appearance";
+"settings.appearance.corner_radius" = "Corner radius scale";
+"settings.appearance.theme" = "Theme";
+"settings.appearance.theme.default" = "Default";
+"settings.appearance.theme.default_help" = "Solid background, as black as the notch";
+"settings.appearance.theme.glass" = "Glass";
+"settings.appearance.theme.glass_help" = "Black level with the camera, then Liquid Glass like Control Center";
+"settings.appearance.background_color_help" = "Used by the Default theme";
+
+/* Settings > Media */
+"settings.media.timeout_unit" = "s";
+"settings.plugins.install_file" = "Install from File…";
+"settings.plugins.install_file_message" = "Choose a plugin's zip, or its folder with plugin.json and its program";
+"settings.plugins.update_all" = "Update All (%d)";
+"settings.plugins.update_to" = "Update to %@";
+"settings.plugins.all_updated" = "%d plugins updated.";
+"settings.plugins.show_in_finder" = "Show in Finder";
+"settings.plugins.open_data_folder" = "Open Data Folder";
+"settings.plugins.homepage" = "Homepage";
+"settings.plugins.bundled" = "Ships with the app";
+"settings.plugins.all_installed" = "Every plugin in the catalog is installed.";
+"settings.plugins.no_match" = "No plugin matches.";
+"settings.plugins.search" = "Search";
+"settings.plugins.catalog_stale" = "Couldn't reach the catalog; showing the last copy.";
+"settings.plugins.phase_downloading" = "Downloading…";
+"settings.plugins.phase_verifying" = "Checking…";
+"settings.plugins.phase_installing" = "Installing…";

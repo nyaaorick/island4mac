@@ -1,0 +1,308 @@
+import Cocoa
+import SwiftUI
+import Combine
+
+// MARK: - IslandPanel (Pixel-Perfect Boring Notch Setup)
+final class IslandPanel: NSPanel {
+    override init(
+        contentRect: NSRect,
+        styleMask style: NSWindow.StyleMask,
+        backing backingStoreType: NSWindow.BackingStoreType,
+        defer flag: Bool
+    ) {
+        // Removed .nonactivatingPanel to support full user interaction (including drag and drop)
+        super.init(contentRect: contentRect, styleMask: [.borderless], backing: backingStoreType, defer: flag)
+
+        self.isOpaque = false
+        self.backgroundColor = .clear
+        self.hasShadow = false
+        self.ignoresMouseEvents = false
+        // The island is dark in every system appearance: white text on black or on the Glass theme's glass.
+        // Under a light system appearance the glass would otherwise come back light (washed out, the text
+        // unreadable) from the second time the island opens
+        self.appearance = NSAppearance(named: .darkAqua)
+
+        // Shadow removed entirely: make sure no layer renders one
+        self.invalidateShadow()
+
+        self.level = .screenSaver
+        self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+
+        self.titlebarAppearsTransparent = true
+        self.titleVisibility = .hidden
+        self.isMovable = false
+        self.hidesOnDeactivate = false
+        self.acceptsMouseMovedEvents = true
+    }
+
+    // Key fix: allow the window to receive keyboard focus so drag and drop works
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+    override var acceptsFirstResponder: Bool { true }
+
+    // Liquid Glass (NSGlassEffectView) takes its window's active look and has no public switch for it, unlike
+    // NSVisualEffectView.state. The island opens on hover or a swipe without becoming key (it must not take
+    // the keyboard from the app you're in), so its glass came up in the inactive, opaque look until a click
+    // made it key. AppKit asks the window these to pick the look; the island always shows the active one
+    @objc func _hasActiveAppearance() -> Bool { true }
+    @objc func _hasActiveAppearanceIgnoringKeyFocus() -> Bool { true }
+}
+
+// MARK: - IslandController
+/// Keeps the islands: the main one on the display you chose (or under the mouse, with "automatically switch display"),
+/// and with "all screens" on, one more on every other display. Everything outside that asks for "the" island
+/// (hotkeys, the clipboard, Settings) gets the main one.
+@MainActor
+final class IslandController: NSObject {
+
+    static let shared = IslandController()
+
+    private let appState = AppState()
+    private let settingsStore = SettingsDefaults.shared
+    private var cancellables = Set<AnyCancellable>()
+
+    // MANAGERS
+    private var globalMouseMonitor: Any?
+    private var localMouseMonitor: Any?
+
+    private var mainIsland: IslandWindow!
+    /// With "all screens" on: an island on each display other than the main island's
+    private var otherIslands: [CGDirectDisplayID: IslandWindow] = [:]
+    private var islands: [IslandWindow] { [mainIsland] + otherIslands.values }
+
+    private var islandSyncScheduled = false
+    private var lastMouseCheckTime: Date = .distantPast
+    /// Now playing (only counts as stopped after being paused for over 1 second)
+    private var musicIsPlaying = false
+
+    /// The app you were using before a click on an island brought this one to the front (the panel has to become
+    /// key for text fields and drops). The keyboard goes back to it when the island closes, and pastes go into it
+    private(set) var previousApp: NSRunningApplication?
+
+    private override init() {
+        super.init()
+        setupNowPlaying()
+        mainIsland = IslandWindow(appState: appState) { [weak self] in
+            self?.mainIslandScreen()
+        }
+        setupObservers()
+        // First placement is deferred to the next runloop turn: init runs inside the app's @StateObject initialization, i.e. in the middle of a SwiftUI update,
+        // and changing the hosting view or appState then triggers a "setting value during update" crash
+        scheduleIslandSync()
+    }
+
+    func getAppState() -> AppState { return appState }
+    /// The main island's panel, the one hotkeys and the clipboard open
+    var mainPanel: NSWindow { mainIsland.panel }
+
+    /// Opens the island on a plugin's tab, as the plugin asked: the island on the display you're working on.
+    /// Never over something you're using, or over another plugin's tab held open for you (an agent's question).
+    /// With `hold` it stays open, without auto-close, until the plugin closes it or you do
+    func showPluginTab(_ pluginID: String, hold: Bool = false) {
+        let state = islandUnderMouse()?.appState ?? appState
+        let tab = IslandTab.tab(forPlugin: pluginID)
+        if state.islandMode == .expanded && state.islandFrame.contains(NSEvent.mouseLocation) { return }
+        if state.islandMode == .expanded && state.visibilityReason == .heldByPlugin && state.currentSection != tab { return }
+        state.currentSection = tab
+        withAnimation(boringOpenAnimation) {
+            state.activateIsland(reason: hold ? .heldByPlugin : .plugin)
+        }
+    }
+
+    /// A plugin says `close`: the islands open on its tab close. One it held open for you stays while the pointer
+    /// is on it; any other closes at once, since the plugin is answering what you just did there (a paste)
+    func closePluginTab(_ pluginID: String) {
+        let tab = IslandTab.tab(forPlugin: pluginID)
+        for state in islands.map(\.appState) {
+            guard state.islandMode == .expanded, state.currentSection == tab else { continue }
+            if state.visibilityReason == .heldByPlugin && state.islandFrame.contains(NSEvent.mouseLocation) { continue }
+            withAnimation(boringCloseAnimation) {
+                state.deactivateIsland()
+            }
+        }
+    }
+
+    /// Gives the keyboard back to the app you were using once the island in `panel` has closed. Not while you're
+    /// in another window of this app (Settings, a file dialog, another island), and not when you'd left already
+    func returnFocus(from panel: NSWindow) {
+        guard NSApp.isActive, let app = previousApp, !app.isTerminated else { return }
+        if let key = NSApp.keyWindow, key !== panel { return }
+        app.activate(options: [])
+    }
+
+    private func islandUnderMouse() -> IslandWindow? {
+        guard let display = ScreenService.activeScreenContainingMouse()?.displayID else { return nil }
+        return islands.first { $0.currentDisplayID == display }
+    }
+
+    private func setupNowPlaying() {
+        // What plays: the Music plugin's track, and any other plugin that reports media
+        NowPlayingStore.shared.start(plugins: .shared)
+    }
+
+    private func setupObservers() {
+        // Settings changes can affect sizing (e.g. nonNotchHeight) and which displays get an island
+        settingsStore.objectWillChange
+            .sink { [weak self] _ in
+                self?.scheduleIslandSync()
+            }
+            .store(in: &cancellables)
+
+        // Collapse the playback wings when paused (after 1 second, so the brief pause when switching tracks doesn't count); show them again when the mouse moves onto the notch
+        NowPlayingStore.shared.$current
+            .map { $0?.media.playing ?? false }
+            .removeDuplicates()
+            .map { playing -> AnyPublisher<Bool, Never> in
+                playing
+                    ? Just(true).eraseToAnyPublisher()
+                    : Just(false).delay(for: .seconds(1), scheduler: DispatchQueue.main).eraseToAnyPublisher()
+            }
+            .switchToLatest()
+            .removeDuplicates()
+            .sink { [weak self] playing in
+                guard let self else { return }
+                self.musicIsPlaying = playing
+                self.islands.forEach { $0.musicIsPlaying = playing }
+            }
+            .store(in: &cancellables)
+
+        // The collapsed island extends or retracts its wings when playback content appears or disappears
+        // Playback info is reassigned periodically; only whether there is any content matters
+        NowPlayingStore.shared.$current
+            .map { $0 != nil }
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateAllIslands()
+            }
+            .store(in: &cancellables)
+
+        // The wings extend while a plugin shows something beside the notch (an agent at work, a popup, a
+        // countdown) and retract afterwards. All are watched, since a popup over a running countdown changes
+        // what fills the wings, not whether they show
+        PluginStore.shared.$popup.map { _ in () }
+            .merge(with: PluginStore.shared.$contents.map { _ in () }, TabStore.shared.$enabledTabs.map { _ in () })
+            .receive(on: DispatchQueue.main)
+            .map { [PluginStore.shared.showsPriorityContent, PluginStore.shared.showsPopupLiveActivity, PluginStore.shared.showsCompactContent] }
+            .removeDuplicates()
+            .sink { [weak self] _ in
+                self?.updateAllIslands()
+            }
+            .store(in: &cancellables)
+
+        // When the frontmost app's menus or status bar icons change, re-extend the wings into the space left on either side of the notch
+        MenuBarSpace.shared.didChange
+            .sink { [weak self] _ in
+                self?.updateAllIslands()
+            }
+            .store(in: &cancellables)
+
+        // A display is connected or disconnected
+        NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
+            .sink { [weak self] _ in
+                self?.scheduleIslandSync()
+            }
+            .store(in: &cancellables)
+
+        // Remember the app you're using: clicking the island brings this app to the front, and the keyboard goes back to that app when the island collapses
+        let ownPID = ProcessInfo.processInfo.processIdentifier
+        previousApp = NSWorkspace.shared.frontmostApplication.flatMap { $0.processIdentifier == ownPID ? nil : $0 }
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didActivateApplicationNotification)
+            .compactMap { $0.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication }
+            .filter { $0.processIdentifier != ownPID }
+            .sink { [weak self] app in
+                self?.previousApp = app
+            }
+            .store(in: &cancellables)
+
+        // Multiple displays: when the mouse moves to another display, the island follows (the "Follow mouse across displays" setting is checked in the callback, so changing it needs no restart)
+        setupMouseTracking()
+    }
+
+    private func setupMouseTracking() {
+        // Global monitors don't receive events on this app's own windows, so listen locally too; while dragging files only dragged events arrive
+        let events: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged]
+        globalMouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: events) { [weak self] _ in
+            self?.followMouseToScreen()
+        }
+        localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: events) { [weak self] event in
+            self?.followMouseToScreen()
+            return event
+        }
+    }
+
+    private func followMouseToScreen() {
+        guard followsMouse else { return }
+        let now = Date()
+        guard now.timeIntervalSince(lastMouseCheckTime) > 0.1 else { return }
+        lastMouseCheckTime = now
+
+        if let screen = ScreenService.activeScreenContainingMouse(), screen.displayID != mainIsland.currentDisplayID {
+            mainIsland.scheduleWindowUpdate()
+        }
+    }
+
+    // MARK: - Displays
+
+    /// With an island on every display there's nothing to follow
+    private var followsMouse: Bool {
+        settingsStore.get(SettingsDefaults.automaticallySwitchDisplay) && !settingsStore.get(SettingsDefaults.showOnAllDisplays)
+    }
+
+    /// With "Follow mouse across displays" on, follows the display the mouse is on; otherwise uses the display chosen in Settings, or the built-in display with the notch (the main display if there is none) when none is chosen or it isn't connected
+    private func mainIslandScreen() -> NSScreen? {
+        let screens = NSScreen.screens
+        let chosenUUID = settingsStore.get(SettingsDefaults.preferredDisplayUUID)
+        let display = ScreenService.islandDisplay(
+            followsMouse: followsMouse,
+            mouseDisplay: ScreenService.activeScreenContainingMouse()?.displayID,
+            currentDisplay: mainIsland?.currentDisplayID,
+            chosenDisplay: chosenUUID.isEmpty ? nil : screens.first { $0.displayUUID == chosenUUID }?.displayID,
+            builtInDisplay: screens.first(where: \.hasNotch)?.displayID,
+            mainDisplay: NSScreen.main?.displayID
+        )
+        return screens.first { $0.displayID == display } ?? NSScreen.main
+    }
+
+    /// Settings and display changes fire at willSet; wait for the new value to take effect, then rearrange the islands on each display
+    private func scheduleIslandSync() {
+        guard !islandSyncScheduled else { return }
+        islandSyncScheduled = true
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            self.islandSyncScheduled = false
+            self.syncOtherIslands()
+            self.updateAllIslands()
+        }
+    }
+
+    /// With "All displays" on, every display besides the main island's gets its own island; they're removed when it's turned off or a display is unplugged
+    private func syncOtherIslands() {
+        let wanted = Set(ScreenService.otherIslandDisplays(
+            allScreens: settingsStore.get(SettingsDefaults.showOnAllDisplays),
+            displays: NSScreen.screens.compactMap(\.displayID),
+            primary: mainIslandScreen()?.displayID
+        ))
+        for (display, island) in otherIslands where !wanted.contains(display) {
+            island.close()
+            otherIslands[display] = nil
+        }
+        for display in wanted where otherIslands[display] == nil {
+            let island = IslandWindow(appState: AppState(sharingWith: appState)) {
+                NSScreen.screens.first { $0.displayID == display }
+            }
+            island.musicIsPlaying = musicIsPlaying
+            otherIslands[display] = island
+        }
+    }
+
+    private func updateAllIslands() {
+        islands.forEach { $0.scheduleWindowUpdate() }
+    }
+
+    func reposition() {
+        islands.forEach { $0.reposition() }
+    }
+
+    func show() { islands.forEach { $0.appState.isIslandVisible = true } }
+    func hide() { islands.forEach { $0.appState.isIslandVisible = false } }
+}

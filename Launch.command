@@ -1,11 +1,11 @@
 #!/usr/bin/env swift
-// Double-click to build the dev app (Debug: "Mac Dynamic Island Dev") and launch it. Written in Swift so the repo stays
+// Double-click to build the dev app (Debug: "island4mac Dev") and launch it. Written in Swift so the repo stays
 // Swift-only.
 import AppKit
 
 let root = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath().deletingLastPathComponent()
 let derivedData = root.appendingPathComponent("build").path
-let appPath = "\(derivedData)/Build/Products/Debug/MacDynamicIsland.app"
+let appPath = "\(derivedData)/Build/Products/Debug/island4mac.app"
 
 var environment = ProcessInfo.processInfo.environment
 
@@ -56,10 +56,10 @@ let arch = "x86_64"
 // The project signs with the maintainer's team, whose certificate other machines don't have.
 // Sign ad hoc instead: no certificate needed, and the app is not sandboxed. macOS may ask for
 // Accessibility and Automation again after a rebuild because the ad-hoc signature changes.
-print("Building MacDynamicIsland...")
+print("Building island4mac...")
 let build = run("/usr/bin/xcodebuild", [
-    "-project", "MacDynamicIsland.xcodeproj",
-    "-scheme", "MacDynamicIsland",
+    "-project", "island4mac.xcodeproj",
+    "-scheme", "island4mac",
     "-configuration", "Debug",
     "-destination", "platform=macOS,arch=\(arch)",
     "-derivedDataPath", derivedData,
@@ -72,8 +72,8 @@ let build = run("/usr/bin/xcodebuild", [
 guard build == 0 else { fail("Build failed (xcodebuild exit \(build)). Check the output above.") }
 
 // Quit a running dev build so the fresh one is what shows up. Only the dev app: the installed release is a separate
-// app (com.macdynamicisland.app), which a dev build quits while it runs and reopens when it quits.
-let running = NSRunningApplication.runningApplications(withBundleIdentifier: "com.macdynamicisland.app.dev")
+// app (com.nyaaorick.island4mac), which a dev build quits while it runs and reopens when it quits.
+let running = NSRunningApplication.runningApplications(withBundleIdentifier: "com.nyaaorick.island4mac.dev")
 running.forEach { $0.forceTerminate() }
 let deadline = Date().addingTimeInterval(5)
 while running.contains(where: { !$0.isTerminated }), Date() < deadline {

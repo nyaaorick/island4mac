@@ -16,8 +16,8 @@ struct ClipboardPlugin: IslandPlugin {
     /// Copies are kept whether or not the Clipboard tab is one of yours
     static let background = true
 
-    @Preference("Items to keep", options: [10, 20, 50]) var maxItems = 50
-    @Preference("Hours to keep them (0: forever)", options: [24, 72, 168, 0]) var keepHours = 24
+    @Preference("Items to keep", options: [(10, "10 items"), (20, "20 items"), (50, "50 items")]) var maxItems = 50
+    @Preference("Keep them for", options: [(24, "A day"), (72, "Three days"), (168, "A week"), (0, "Forever")]) var keepHours = 24
 
     private var store: ClipboardStore { ClipboardService.shared.store }
 
@@ -60,8 +60,6 @@ final class ClipboardService {
 
     let store = ClipboardStore(
         folder: Island.dataDirectory ?? FileManager.default.temporaryDirectory.appendingPathComponent("clipboard"),
-        // The app kept the history in its own defaults before; read once, then moved into the data folder
-        legacyDefaults: UserDefaults(suiteName: "com.macdynamicisland.app"),
         // The island app runs this plugin: it's the app to skip when remembering the one you were using
         frontmostApps: FrontmostAppMonitor(ignoring: getppid()))
     private var monitor: ClipboardMonitor?

@@ -38,7 +38,7 @@ nonisolated struct AgentHookInstaller {
             agent: agent,
             homeURL: fileManager.homeDirectoryForCurrentUser,
             supportURL: fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-                .appendingPathComponent(Bundle(url: appBundleURL)?.bundleIdentifier ?? "com.macdynamicisland.app", isDirectory: true),
+                .appendingPathComponent(Bundle(url: appBundleURL)?.bundleIdentifier ?? "com.nyaaorick.island4mac", isDirectory: true),
             bundledHelperURL: appBundleURL.appendingPathComponent("Contents/Helpers/\(helperName)")
         )
     }
@@ -249,7 +249,7 @@ nonisolated struct AgentHookInstaller {
         try fileManager.createDirectory(at: settingsURL.deletingLastPathComponent(), withIntermediateDirectories: true)
 
         // Keep the file as it was before the island first touched it
-        let backup = settingsURL.appendingPathExtension("mac-island-backup")
+        let backup = settingsURL.appendingPathExtension("island4mac-backup")
         if fileManager.fileExists(atPath: settingsURL.path), !fileManager.fileExists(atPath: backup.path) {
             try fileManager.copyItem(at: settingsURL, to: backup)
         }

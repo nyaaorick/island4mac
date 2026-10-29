@@ -11,8 +11,8 @@ final class ShelfStore: ObservableObject {
     let maxItems = 50
     private let persistence: ShelfPersistenceService
 
-    init(folder: URL, legacyFile: URL? = nil) {
-        persistence = ShelfPersistenceService(folder: folder, legacyFile: legacyFile)
+    init(folder: URL) {
+        persistence = ShelfPersistenceService(folder: folder)
         items = persistence.load()
     }
 
