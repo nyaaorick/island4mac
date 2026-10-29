@@ -1,6 +1,6 @@
 # Current state
 
-As of 2026-10-29, after the restructuring on branch `island-plugins`. Release 1.1.0 is the one on GitHub; what is described here ships in the next release (see `08-changelog.md`).
+As of 2026-10-29, after the restructuring (merged to `main`). Release 1.1.0 is the one on GitHub; what is described here ships in the next release (see `08-changelog.md`).
 
 ## Requirements
 
